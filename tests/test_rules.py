@@ -8,7 +8,7 @@ def ctx(**kw):
     base = dict(now=datetime(2026, 11, 8, 11, 0), stagione="INVERNO", manuale="AUTO",
                 free_cooling="DISATTIVATO", acs_attivo=False, soc=60.0, pv=0.0, load=800.0,
                 t_zg=21.0, t_zn=20.8, lim_inf=20.0, lim_sup=21.7, mattina=time(8, 30),
-                serale=time(22, 0), t_ext=8.0)
+                serale=time(22, 0), t_ext=8.0, soglia_estate=24.5)
     base.update(kw)
     return Ctx(**base)
 
@@ -30,7 +30,9 @@ def test_blockers_each():
     assert "ciclo ACS in corso" in start_blockers(ctx(acs_attivo=True), "HEAT", False, 0, None)
     assert "energia insufficiente" in start_blockers(ctx(soc=30, pv=100, load=800), "HEAT", False, 0, None)
     assert start_blockers(ctx(soc=30, pv=900, load=800), "HEAT", False, 0, None) == []
-    assert "zona troppo calda per scaldare" in start_blockers(ctx(t_zg=21.5), "HEAT", False, 0, None)
+    assert "zona troppo calda per scaldare" in start_blockers(ctx(t_zg=23.6), "HEAT", False, 0, None)
+    # d'inverno lim_sup (21.7) non limita più le prove di riscaldamento
+    assert start_blockers(ctx(t_zg=22.0, t_zn=22.1), "HEAT", False, 0, None) == []
     assert "zona troppo fredda per raffrescare" in start_blockers(ctx(stagione="ESTATE", t_zn=20.1), "COOL", False, 0, None)
 
 def test_blockers_auto_only():
@@ -43,7 +45,8 @@ def test_abort():
     lbl = "E84 - CP ON V2 • HEAT V2"
     assert abort_reason(ctx(manuale=lbl), "HEAT", lbl) is None
     assert abort_reason(ctx(manuale="AUTO"), "HEAT", lbl) == "interrotta dall'utente"
-    assert abort_reason(ctx(manuale=lbl, t_zg=21.8), "HEAT", lbl) == "zona oltre il limite superiore"
+    assert abort_reason(ctx(manuale=lbl, t_zg=21.8), "HEAT", lbl) is None
+    assert abort_reason(ctx(manuale=lbl, t_zg=24.1), "HEAT", lbl) == "zona vicina al cambio stagione"
     assert abort_reason(ctx(manuale=lbl, soc=24, pv=0), "HEAT", lbl) == "batteria sotto 25%"
 
 def per(code, tipo, s=1.0):
@@ -73,12 +76,30 @@ def test_is_night_three_cases():
     assert not is_night(at(3, **kw)) and not is_night(at(12, **kw))
 
 def test_zone_blockers_shared():
-    assert zone_blockers(ctx(t_zg=21.5), "HEAT") == ["zona troppo calda per scaldare"]
+    assert zone_blockers(ctx(t_zg=23.6), "HEAT") == ["zona troppo calda per scaldare"]
+    assert zone_blockers(ctx(t_zg=23.4), "HEAT") == []
+    assert zone_blockers(ctx(t_zg=23.6, soglia_estate=26.0), "HEAT") == []
     assert zone_blockers(ctx(), "HEAT") == []
 
+def test_zone_blockers_neutro_only_cold():
+    assert zone_blockers(ctx(t_zg=23.0, t_zn=22.9), "NEUTRO") == []
+    assert zone_blockers(ctx(t_zn=20.2), "NEUTRO") == ["zona troppo fredda"]
+    assert zone_blockers(ctx(stagione="ESTATE", t_zn=20.2), "COOL") == ["zona troppo fredda per raffrescare"]
+    assert zone_blockers(ctx(stagione="ESTATE", t_zn=20.2), "DRY") == ["zona troppo fredda per raffrescare"]
+
+def test_abort_neutro_and_cool():
+    lbl = "E2 - CP OFF V3 • Split OFF"
+    assert abort_reason(ctx(manuale=lbl, t_zg=23.0), "NEUTRO", lbl) is None
+    assert abort_reason(ctx(manuale=lbl, t_zn=19.9), "NEUTRO", lbl) == "zona sotto il limite inferiore"
+    lbl = "E44 - CP ON V2 • COOL V1"
+    assert abort_reason(ctx(stagione="ESTATE", manuale=lbl, t_zn=19.9), "COOL", lbl) == "zona sotto il limite inferiore"
+
 def test_propose_skips_zone_blocked():
-    # inverno, zona troppo calda: HEAT e NEUTRO bloccati -> nessuna proposta
-    assert propose({}, ctx(t_zg=21.6)) is None
+    # inverno, zona troppo calda per scaldare e troppo fredda per i neutri -> nessuna proposta
+    assert propose({}, ctx(t_zg=23.6, t_zn=20.0)) is None
+    # inverno, zona vicina al cambio stagione: solo neutri
+    p = propose({}, ctx(t_zg=23.6))
+    assert p is not None and p.tipo == "NEUTRO"
     # inverno, zona troppo fredda per i neutri ma non per scaldare: solo HEAT
     p = propose({}, ctx(t_zn=19.9))
     assert p is not None and p.tipo == "HEAT"

@@ -19,6 +19,8 @@ ENTITIES = {
     "durata_manuale": "input_number.ecm_manuale_durata_minuti",
     "lim_inf": "sensor.ecm_limite_inferiore",
     "lim_sup": "sensor.ecm_limite_superiore",
+    "commutazione": "input_number.commutazione_estate_inverno",
+    "isteresi_comm": "input_number.isteresi_commutazione_estate_inverno",
     "mattina": "input_datetime.nilan_mattina",
     "serale": "input_datetime.nilan_serale",
     "acs_inv": "input_boolean.ecm_acs_inverno_ciclo_attivo",
@@ -48,4 +50,5 @@ ENTITIES = {
 }
 
 NUMERIC_KEYS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext",
-                "soc", "pv", "load", "imp", "discharge", "charge", "lim_inf", "lim_sup"]
+                "soc", "pv", "load", "imp", "discharge", "charge", "lim_inf", "lim_sup",
+                "commutazione", "isteresi_comm"]

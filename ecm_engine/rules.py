@@ -9,6 +9,8 @@ AUTO_WINDOW = (time(10, 0), time(17, 0))
 AUTO_MAX_PER_DAY = 3
 AUTO_PAUSE = timedelta(minutes=60)
 MARGINE = 0.3
+MARGINE_HEAT_START = 1.0
+MARGINE_HEAT_ABORT = 0.5
 
 
 @dataclass
@@ -28,6 +30,7 @@ class Ctx:
     mattina: time
     serale: time
     t_ext: float
+    soglia_estate: float = 24.5   # commutazione + isteresi: oltre si passa a ESTATE
 
 
 @dataclass
@@ -66,13 +69,16 @@ def _energia_ok(c: Ctx, soc_min: float) -> bool:
 
 
 def zone_blockers(c: Ctx, tipo: str) -> list[str]:
+    """Il riscaldamento è limitato dalla soglia di cambio stagione (non da lim_sup,
+    che d'inverno è sotto la temperatura abituale delle zone)."""
     b = []
     zmax, zmin = max(c.t_zg, c.t_zn), min(c.t_zg, c.t_zn)
-    lo, hi = c.lim_inf + MARGINE, c.lim_sup - MARGINE
-    if tipo in ("HEAT", "NEUTRO") and zmax > hi:
-        b.append("zona troppo calda per scaldare" if tipo == "HEAT" else "zona fuori fascia")
-    if tipo in ("COOL", "DRY", "NEUTRO") and zmin < lo:
-        b.append("zona troppo fredda per raffrescare" if tipo != "NEUTRO" else "zona fuori fascia")
+    if tipo == "HEAT" and zmax > c.soglia_estate - MARGINE_HEAT_START:
+        b.append("zona troppo calda per scaldare")
+    if tipo == "NEUTRO" and zmin < c.lim_inf + MARGINE:
+        b.append("zona troppo fredda")
+    if tipo in ("COOL", "DRY") and zmin < c.lim_inf + MARGINE:
+        b.append("zona troppo fredda per raffrescare")
     return b
 
 
@@ -102,8 +108,8 @@ def abort_reason(c: Ctx, tipo: str, expected_label: str) -> str | None:
     if c.manuale != expected_label:
         return "interrotta dall'utente"
     zmax, zmin = max(c.t_zg, c.t_zn), min(c.t_zg, c.t_zn)
-    if tipo in ("HEAT", "NEUTRO") and zmax > c.lim_sup:
-        return "zona oltre il limite superiore"
+    if tipo == "HEAT" and zmax > c.soglia_estate - MARGINE_HEAT_ABORT:
+        return "zona vicina al cambio stagione"
     if tipo in ("COOL", "DRY", "NEUTRO") and zmin < c.lim_inf:
         return "zona sotto il limite inferiore"
     if c.soc < 25 and c.pv < c.load:

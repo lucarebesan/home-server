@@ -18,6 +18,8 @@ SAMPLE_FIELDS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_e
 SOGLIA_ESTATE_DEFAULT = 24.5
 MANUALE = "input_select.ecm_manuale"
 DURATA = "input_number.ecm_manuale_durata_minuti"
+SNAP_MAX_AGE_S = 120   # oltre, start_test rifiuta: "dati non aggiornati"
+AUTO_BLOCK_S = 900     # dopo un avvio fallito niente prove automatiche per 15 minuti
 DATI_MANCANTI_S = 300   # ctx incompleto per più di 5 minuti durante una prova -> AUTO
 OVERRUN_S = 180         # 09 non è tornato in AUTO oltre la durata + 3 minuti -> AUTO
 
@@ -67,6 +69,8 @@ class Engine:
         self.ha_error: str | None = None
         self.started_at = self.clock()
         self.ctx_missing_since: float | None = None
+        self.snap_ts: float | None = None
+        self.auto_block_until: float = 0.0
 
     # ---------- contesto
     def _ctx(self) -> Ctx | None:
@@ -98,25 +102,34 @@ class Engine:
             now = int(self.clock())
             try:
                 self.snap = self.api.snapshot(config.ENTITIES, config.NUMERIC_KEYS)
+                self.snap_ts = now
                 self.ha_error = None
             except Exception as ex:  # rete o HA giù
                 self.ha_error = f"HA non raggiungibile: {ex}"
                 log.warning(self.ha_error)
                 self._publish_status()
                 return
-            self.store.add_sample(build_sample(self.snap, now, self.store.open_test()))
-            for k in REQUIRED:
-                if self.snap.get(k) is None:
-                    self.missing_since.setdefault(k, now)
-                else:
-                    self.missing_since.pop(k, None)
-            self._update_proposal()
-            self._supervise()
-            self._auto_start()
-            self._publish_status()
+            try:
+                try:
+                    self.store.add_sample(build_sample(self.snap, now, self.store.open_test()))
+                except Exception:
+                    log.exception("salvataggio campione fallito")
+                for k in REQUIRED:
+                    if self.snap.get(k) is None:
+                        self.missing_since.setdefault(k, now)
+                    else:
+                        self.missing_since.pop(k, None)
+                self._update_proposal()
+                self._supervise()
+                self._auto_start()
+            finally:
+                self._publish_status()
 
     # ---------- prove
     def start_test(self, origine: str) -> str | None:
+        now = int(self.clock())
+        if self.snap_ts is None or now - self.snap_ts > SNAP_MAX_AGE_S:
+            return "dati non aggiornati"
         c = self._ctx()
         p = self.proposal
         if c is None or p is None:
@@ -133,9 +146,17 @@ class Engine:
             self.api.call_service("input_number", "set_value", {"entity_id": DURATA, "value": p.durata})
         except Exception as ex:  # helper assente: 09 usa la sua durata, la prova parte lo stesso
             log.warning("impostazione durata fallita: %s", ex)
-        self.api.call_service("input_select", "select_option",
-                              {"entity_id": MANUALE, "option": label_09(p.code)})
-        self.store.start_test(p.code, p.durata, origine, int(self.clock()))
+        # la riga va scritta prima: se il motore muore dopo la selezione, recover la trova
+        tid = self.store.start_test(p.code, p.durata, origine, now)
+        try:
+            self.api.call_service("input_select", "select_option",
+                                  {"entity_id": MANUALE, "option": label_09(p.code)})
+        except Exception as ex:
+            log.error("avvio prova fallito: %s", ex)
+            self._select_auto()
+            self.store.end_test(tid, now, "avvio fallito")
+            self.auto_block_until = now + AUTO_BLOCK_S
+            return f"avvio fallito: {ex}"
         log.info("prova %s avviata: E%s per %s min", origine, p.code, p.durata)
         return None
 
@@ -200,6 +221,8 @@ class Engine:
 
     def _auto_start(self) -> None:
         if self.store.get_setting("auto", "0") != "1" or self.store.open_test():
+            return
+        if self.clock() < self.auto_block_until:
             return
         err = self.start_test("auto")
         if err:

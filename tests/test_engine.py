@@ -333,3 +333,84 @@ def test_recover_when_already_auto_does_not_call(tmp_path):
     e2.recover()
     assert len(api.calls) == n
     assert e2.store.tests_since(0)[0]["esito"] == "interrotta dal riavvio del motore"
+
+
+# ---------- avvio protetto
+def _fail_select(api, option_prefix="E"):
+    orig = api.call_service
+
+    def cs(d, s, data):
+        if s == "select_option" and data["option"].startswith(option_prefix):
+            raise OSError("HA 500")
+        orig(d, s, data)
+    api.call_service = cs
+
+
+def test_select_failure_rolls_back(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample(); e.tick_learn()
+    _fail_select(api)
+    err = e.start_test("manuale")
+    assert err and err.startswith("avvio fallito")
+    assert api.calls[-1][2]["option"] == "AUTO"
+    assert e.store.open_test() is None
+    assert e.store.tests_since(0)[0]["esito"] == "avvio fallito"
+    assert e.auto_block_until == T0 + 900
+
+
+def test_select_failure_and_auto_failure_still_closes_row(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample(); e.tick_learn()
+    api.call_service = lambda *a: (_ for _ in ()).throw(OSError("HA giù"))
+    assert e.start_test("manuale").startswith("avvio fallito")
+    assert e.store.tests_since(0)[0]["esito"] == "avvio fallito"
+
+
+def test_test_row_written_before_select(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample(); e.tick_learn()
+    seen = []
+    orig = api.call_service
+
+    def cs(d, s, data):
+        if s == "select_option":
+            seen.append(e.store.open_test())
+        orig(d, s, data)
+    api.call_service = cs
+    assert e.start_test("manuale") is None
+    assert seen[0] is not None
+
+
+def test_auto_start_respects_block(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.store.set_setting("auto", "1")
+    e.auto_block_until = T0 + 900
+    e.tick_sample(); e.tick_learn(); e.tick_sample()
+    assert e.store.open_test() is None
+    clock["t"] = T0 + 901
+    # la pausa tra le prove non c'è: nessuna prova chiusa prima
+    e.tick_sample()
+    assert e.store.open_test()["origine"] == "auto"
+
+
+def test_stale_snapshot_refuses_start(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample(); e.tick_learn()
+    clock["t"] += 121
+    assert e.start_test("manuale") == "dati non aggiornati"
+    assert api.calls == []
+
+
+def test_exception_after_snapshot_still_publishes(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample()
+    pub.states.clear()
+
+    def boom():
+        raise RuntimeError("bug")
+    e._supervise = boom
+    try:
+        e.tick_sample()
+    except RuntimeError:
+        pass
+    assert "stato" in pub.states

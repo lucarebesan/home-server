@@ -1,6 +1,9 @@
-"""Aggregazione periodi -> statistiche per (combinazione, fascia esterna)."""
+"""Aggregazione periodi -> statistiche per (codice, tipo, fascia esterna)."""
+import math
 from dataclasses import dataclass
 from statistics import pstdev
+
+from .combo import tipo_of
 
 FASCE = [(-99, 5, "<5"), (5, 10, "5-10"), (10, 15, "10-15"), (15, 20, "15-20"),
          (20, 25, "20-25"), (25, 30, "25-30"), (30, 99, "≥30")]
@@ -24,9 +27,12 @@ class Stat:
     eff: float
     costo: float | None
     affidabilita: float
+    p_cp_on: float | None = None
 
 
 def fascia(t_ext: float) -> str:
+    if t_ext is None or not isinstance(t_ext, (int, float)) or not math.isfinite(t_ext):
+        raise ValueError(f"t_ext non valida: {t_ext!r}")
     for lo, hi, name in FASCE:
         if lo <= t_ext < hi:
             return name
@@ -41,10 +47,10 @@ def _wmean(vals, weights):
 def aggregate(periods) -> dict:
     groups = {}
     for p in periods:
-        groups.setdefault((p.code, fascia(p.t_ext)), []).append(p)
+        groups.setdefault((p.code, p.tipo, fascia(p.t_ext)), []).append(p)
     out = {}
-    for (code, f), ps in groups.items():
-        tipo, sign = ps[0].tipo, SIGN[ps[0].tipo]
+    for (code, tipo, f), ps in groups.items():
+        sign = SIGN[tipo]
         w = [p.minutes for p in ps]
         eff_zg = sign * _wmean([p.slope_zg for p in ps], w)
         eff_zn = sign * _wmean([p.slope_zn for p in ps], w)
@@ -55,12 +61,16 @@ def aggregate(periods) -> dict:
         else:
             serie = [sign * (p.slope_zg + p.slope_zn) / 2 for p in ps]
         m = sum(serie) / len(serie)
-        coerente = len(serie) < 2 or pstdev(serie) <= 0.5 * abs(m)
+        coerente = len(serie) < 2 or (abs(m) > 0 and pstdev(serie) < 0.5 * abs(m))
         aff = min(len(ps) / 5, 1.0) * (1.0 if coerente else 0.6)
         costo = p_tot / eff if sign != 0 and eff > EFF_MIN else None
-        out[(code, f)] = Stat(code, tipo, f, len(ps), sum(w), round(p_tot, 1),
+        on_w = [p.minutes * p.duty_cp for p in ps]
+        p_cp_on = (sum(p.p_cp_on * w for p, w in zip(ps, on_w) if p.p_cp_on is not None)
+                   / sum(w for p, w in zip(ps, on_w) if p.p_cp_on is not None)
+                   if any(p.p_cp_on is not None and w > 0 for p, w in zip(ps, on_w)) else None)
+        out[(code, tipo, f)] = Stat(code, tipo, f, len(ps), sum(w), round(p_tot, 1),
                               _wmean([p.duty_cp for p in ps], w), _wmean([p.duty_tosh for p in ps], w),
-                              eff_zg, eff_zn, eff, costo, aff)
+                              eff_zg, eff_zn, eff, costo, aff, p_cp_on)
     return out
 
 
@@ -76,8 +86,9 @@ def ranking(stats: dict, tipo: str, f: str) -> list[Stat]:
     return sorted(sel, key=lambda s: (s.costo is None, s.costo or 0, s.p_tot))
 
 
-def learning_pct(stats: dict, codes: list[int], f: str) -> int:
+def learning_pct(stats: dict, codes: list[int], f: str, stagione: str) -> int:
     if not codes:
         return 0
-    tot = sum(stats[(c, f)].affidabilita if (c, f) in stats else 0.0 for c in codes)
+    keys = [(c, tipo_of(c, stagione), f) for c in codes]
+    tot = sum(stats[k].affidabilita if k in stats else 0.0 for k in keys)
     return round(100 * tot / len(codes))

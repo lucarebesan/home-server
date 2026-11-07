@@ -104,13 +104,13 @@ def propose(stats: dict, c: Ctx) -> Proposal | None:
         return None
 
     def key(code):
-        st = stats.get((code, f))
         tipo = tipo_of(code, c.stagione)
+        st = stats.get((code, tipo, f))
         return (st.affidabilita if st else 0.0, tipo == "NEUTRO", code)
 
     code = min(cands, key=key)
     tipo = tipo_of(code, c.stagione)
-    st = stats.get((code, f))
+    st = stats.get((code, tipo, f))
     if tipo == "NEUTRO":
         durata, motivo = 15, "manca il consumo"
     elif st is None or abs(st.eff) < EFF_MIN:

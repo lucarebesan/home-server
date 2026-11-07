@@ -39,15 +39,23 @@ class Proposal:
 
 
 def is_night(c: Ctx) -> bool:
+    """Giorno = tra mattina e serale (anche se serale è dopo mezzanotte).
+    Se mattina == serale non c'è notte."""
     t = c.now.time()
-    return not (c.mattina <= t < c.serale)
+    if c.mattina == c.serale:
+        return False
+    if c.mattina < c.serale:
+        return not (c.mattina <= t < c.serale)
+    return not (t >= c.mattina or t < c.serale)
 
 
 def codes_for_season(stagione: str, night: bool) -> list[int]:
     if stagione == "INVERNO":
-        codes = [1, 2, 3, 4, 5, 6] + [10 * d + u for d in (7, 8, 9) for u in range(7)]
+        codes = [0, 1, 2, 3, 4, 5, 6] + [10 * d + u for d in (7, 8, 9) for u in range(7)]
+    elif stagione == "ESTATE":
+        codes = [0, 1, 2, 3, 4, 5, 6] + [10 * d + u for d in range(1, 7) for u in range(7)]
     else:
-        codes = [1, 2, 3, 4, 5, 6] + [10 * d + u for d in range(1, 7) for u in range(7)]
+        return []
     if night:
         codes = [c for c in codes if c % 10 not in (3, 6) and not (c >= 10 and (c // 10) % 3 == 0)]
     return codes
@@ -55,6 +63,17 @@ def codes_for_season(stagione: str, night: bool) -> list[int]:
 
 def _energia_ok(c: Ctx, soc_min: float) -> bool:
     return c.soc >= soc_min or c.pv >= c.load
+
+
+def zone_blockers(c: Ctx, tipo: str) -> list[str]:
+    b = []
+    zmax, zmin = max(c.t_zg, c.t_zn), min(c.t_zg, c.t_zn)
+    lo, hi = c.lim_inf + MARGINE, c.lim_sup - MARGINE
+    if tipo in ("HEAT", "NEUTRO") and zmax > hi:
+        b.append("zona troppo calda per scaldare" if tipo == "HEAT" else "zona fuori fascia")
+    if tipo in ("COOL", "DRY", "NEUTRO") and zmin < lo:
+        b.append("zona troppo fredda per raffrescare" if tipo != "NEUTRO" else "zona fuori fascia")
+    return b
 
 
 def start_blockers(c: Ctx, tipo: str, auto: bool, tests_today: int,
@@ -68,12 +87,7 @@ def start_blockers(c: Ctx, tipo: str, auto: bool, tests_today: int,
         b.append("ciclo ACS in corso")
     if not _energia_ok(c, 40):
         b.append("energia insufficiente")
-    zmax, zmin = max(c.t_zg, c.t_zn), min(c.t_zg, c.t_zn)
-    lo, hi = c.lim_inf + MARGINE, c.lim_sup - MARGINE
-    if tipo in ("HEAT", "NEUTRO") and zmax > hi:
-        b.append("zona troppo calda per scaldare" if tipo == "HEAT" else "zona fuori fascia")
-    if tipo in ("COOL", "DRY", "NEUTRO") and zmin < lo:
-        b.append("zona troppo fredda per raffrescare" if tipo != "NEUTRO" else "zona fuori fascia")
+    b += zone_blockers(c, tipo)
     if auto:
         if not (AUTO_WINDOW[0] <= c.now.time() < AUTO_WINDOW[1]):
             b.append("fuori finestra prove automatiche")
@@ -99,7 +113,8 @@ def abort_reason(c: Ctx, tipo: str, expected_label: str) -> str | None:
 
 def propose(stats: dict, c: Ctx) -> Proposal | None:
     f = fascia(c.t_ext)
-    cands = codes_for_season(c.stagione, is_night(c))
+    cands = [x for x in codes_for_season(c.stagione, is_night(c))
+             if not zone_blockers(c, tipo_of(x, c.stagione))]
     if not cands:
         return None
 
@@ -112,8 +127,11 @@ def propose(stats: dict, c: Ctx) -> Proposal | None:
     tipo = tipo_of(code, c.stagione)
     st = stats.get((code, tipo, f))
     if tipo == "NEUTRO":
-        durata, motivo = 15, "manca il consumo"
-    elif st is None or abs(st.eff) < EFF_MIN:
+        if st is None or st.affidabilita < 1:
+            durata, motivo = 15, "manca il consumo"
+        else:
+            durata, motivo = 20, "dato da confermare"
+    elif st is None or st.eff < EFF_MIN:
         durata, motivo = 30, "manca l'efficacia"
     else:
         durata, motivo = 20, "dato da confermare"

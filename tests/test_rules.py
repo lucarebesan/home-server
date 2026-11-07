@@ -1,5 +1,6 @@
 from datetime import datetime, time
-from ecm_engine.rules import Ctx, abort_reason, codes_for_season, propose, start_blockers
+from ecm_engine.rules import (Ctx, abort_reason, codes_for_season, is_night, propose,
+                              start_blockers, zone_blockers)
 from ecm_engine.learner import aggregate
 from ecm_engine.segmenter import Period
 
@@ -13,7 +14,7 @@ def ctx(**kw):
 
 def test_codes_inverno_day_night():
     day = codes_for_season("INVERNO", night=False)
-    assert 0 not in day and 1 in day and 4 in day and 96 in day and 45 not in day
+    assert 0 in day and 1 in day and 4 in day and 96 in day and 45 not in day
     night = codes_for_season("INVERNO", night=True)
     assert 6 not in night and 93 not in night and 3 not in night and 85 in night
 
@@ -51,6 +52,52 @@ def per(code, tipo, s=1.0):
 def test_propose_picks_least_known_and_duration():
     stats = aggregate([per(c, "HEAT") for c in codes_for_season("INVERNO", False) if c >= 4] * 5)
     p = propose(stats, ctx())
-    assert p.code in (1, 2, 3) and p.durata == 15       # restano solo i neutri senza dati
+    assert p.code in (0, 1, 2, 3) and p.durata == 15       # restano solo i neutri senza dati
     p2 = propose({}, ctx())
     assert p2.code == 4 and p2.durata == 30              # niente dati: prima prova HEAT, 30 min
+
+def test_codes_zero_both_seasons_and_unknown():
+    assert 0 in codes_for_season("INVERNO", False) and 0 in codes_for_season("ESTATE", False)
+    assert 0 in codes_for_season("ESTATE", True)
+    assert codes_for_season("BOH", False) == []
+
+def test_is_night_three_cases():
+    at = lambda h, **kw: ctx(now=datetime(2026, 11, 8, h, 0), **kw)
+    # normale
+    assert not is_night(at(12)) and is_night(at(23)) and is_night(at(7))
+    # serale dopo mezzanotte
+    kw = dict(mattina=time(8, 0), serale=time(1, 0))
+    assert not is_night(at(12, **kw)) and not is_night(at(0, **kw)) and is_night(at(3, **kw))
+    # uguali: mai notte
+    kw = dict(mattina=time(8, 0), serale=time(8, 0))
+    assert not is_night(at(3, **kw)) and not is_night(at(12, **kw))
+
+def test_zone_blockers_shared():
+    assert zone_blockers(ctx(t_zg=21.5), "HEAT") == ["zona troppo calda per scaldare"]
+    assert zone_blockers(ctx(), "HEAT") == []
+
+def test_propose_skips_zone_blocked():
+    # inverno, zona troppo calda: HEAT e NEUTRO bloccati -> nessuna proposta
+    assert propose({}, ctx(t_zg=21.6)) is None
+    # inverno, zona troppo fredda per i neutri ma non per scaldare: solo HEAT
+    p = propose({}, ctx(t_zn=19.9))
+    assert p is not None and p.tipo == "HEAT"
+    # estate, zona troppo calda: niente neutri, solo COOL/DRY
+    p = propose({}, ctx(stagione="ESTATE", t_zg=21.6))
+    assert p is not None and p.tipo in ("COOL", "DRY")
+
+def test_propose_duration_signed_eff():
+    cands = [c for c in codes_for_season("INVERNO", False) if c != 4]
+    stats = aggregate([per(4, "HEAT", s=-1.0)] * 5)
+    stats.update(aggregate([per(c, "HEAT" if c >= 4 else "NEUTRO") for c in cands] * 5))
+    p = propose(stats, ctx())
+    assert p.code == 4 and p.durata == 30 and p.motivo == "manca l'efficacia"
+
+def test_propose_neutro_durations(monkeypatch):
+    monkeypatch.setattr("ecm_engine.rules.codes_for_season", lambda s, n: [2])
+    p = propose({}, ctx())
+    assert (p.durata, p.motivo) == (15, "manca il consumo")
+    p = propose(aggregate([per(2, "NEUTRO")] * 2), ctx())          # affidabilita 0.4
+    assert (p.durata, p.motivo) == (15, "manca il consumo")
+    p = propose(aggregate([per(2, "NEUTRO")] * 5), ctx())          # affidabilita 1
+    assert (p.durata, p.motivo) == (20, "dato da confermare")

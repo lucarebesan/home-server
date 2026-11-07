@@ -120,3 +120,9 @@ def test_da_misurare_rows():
     assert 0 < rows[1]["misure"] < 100
     many = [Proposal(6, "HEAT", 30, "x")] * 30
     assert len(da_misurare_rows(many, {}, "5-10", "INVERNO")) == 20
+
+
+def test_testi_write():
+    from ecm_engine.texts import esito_testo
+    assert blocco_testo("write spenta", None) == "Il comando delle macchine (00-NILAN WRITE) è spento."
+    assert esito_testo("comando macchine spento") == "Interrotta: comando delle macchine spento"

@@ -71,6 +71,7 @@ def _t(x: float) -> str:
 def blocco_testo(code: str, c) -> str:
     """Motivo di blocco interno -> frase per Luca."""
     fissi = {
+        "write spenta": "Il comando delle macchine (00-NILAN WRITE) è spento.",
         "modalità manuale già attiva": "È già attiva una combinazione manuale.",
         "stato manuale sconosciuto": "Stato della modalità manuale non disponibile.",
         "free cooling attivo": "È attivo il Free Cooling.",
@@ -111,6 +112,7 @@ ESITI = {
     "stato manuale sconosciuto": "Interrotta: stato della modalità manuale non disponibile",
     "interrotta dal riavvio del motore": "Interrotta: riavvio del sistema",
     "avvio fallito": "Non partita: errore di comando",
+    "comando macchine spento": "Interrotta: comando delle macchine spento",
 }
 
 

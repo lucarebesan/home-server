@@ -32,6 +32,7 @@ class Ctx:
     serale: time
     t_ext: float
     soglia_estate: float = 24.5   # commutazione + isteresi: oltre si passa a ESTATE
+    write_on: bool = True         # automation.nilan_write: senza, gli helper non arrivano alle macchine
 
 
 @dataclass
@@ -88,6 +89,8 @@ def zone_blockers(c: Ctx, tipo: str) -> list[str]:
 def start_blockers(c: Ctx, tipo: str, auto: bool, tests_today: int,
                    last_end: datetime | None) -> list[str]:
     b = []
+    if not c.write_on:
+        b.append("write spenta")
     if c.manuale in MANUALE_IGNOTO:
         b.append("stato manuale sconosciuto")
     elif c.manuale != "AUTO":

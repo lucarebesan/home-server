@@ -149,3 +149,10 @@ def test_ordered_candidates_first_is_propose():
     assert len(cs) == len(codes_for_season("INVERNO", False))
     assert cs[-1].code == 82   # il più misurato in fondo
     assert ordered_candidates({}, ctx(t_zg=23.6, t_zn=20.0)) == [] and propose({}, ctx(t_zg=23.6, t_zn=20.0)) is None
+
+
+def test_write_off_blocks_first_manual_and_auto():
+    c = ctx(write_on=False, acs_attivo=True)
+    assert start_blockers(c, "HEAT", auto=False, tests_today=0, last_end=None)[0] == "write spenta"
+    assert start_blockers(c, "HEAT", auto=True, tests_today=0, last_end=None)[0] == "write spenta"
+    assert "write spenta" not in start_blockers(ctx(), "HEAT", auto=True, tests_today=0, last_end=None)

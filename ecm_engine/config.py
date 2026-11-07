@@ -47,6 +47,7 @@ ENTITIES = {
     "imp": "sensor.growatt_inverter_growatt_total_import_power",
     "discharge": "sensor.growatt_inverter_growatt_battery_discharge_power",
     "charge": "sensor.growatt_inverter_growatt_battery_charge_power",
+    "write": "automation.nilan_write",
 }
 
 NUMERIC_KEYS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext",

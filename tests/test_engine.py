@@ -10,7 +10,7 @@ SNAP = {"stagione": "INVERNO", "free_cooling": "DISATTIVATO", "manuale": "AUTO",
         "cp_resistenza": "OFF", "tosh_on": "SPENTO", "tosh_modo": "RISCALDAMENTO",
         "tosh_vent": "MEDIA", "tosh_rps": 0.0, "p_cp": 30.0, "p_tosh": 9.0, "t_zg": 21.0,
         "t_zn": 20.8, "t10": 21.0, "t2": 19.0, "t_ext": 8.0, "soc": 60.0, "pv": 0.0,
-        "load": 800.0, "imp": 0.0, "discharge": 800.0, "charge": 0.0}
+        "load": 800.0, "imp": 0.0, "discharge": 800.0, "charge": 0.0, "write": "on"}
 
 
 class FakeApi:
@@ -512,3 +512,51 @@ def test_publish_ultime_prove_e_da_misurare(tmp_path):
     e.tick_sample()
     v, a = pub.states["ultime_prove"]
     assert v == 1 and a["righe"][0]["esito"] == "In corso" and a["righe"][0]["avvio"] == "A mano"
+
+
+def test_ctx_write_on_from_snapshot(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample()
+    assert e._ctx().write_on is True
+    api.snap["write"] = "off"
+    clock["t"] += 60; e.tick_sample()
+    assert e._ctx().write_on is False
+
+
+def test_write_off_blocks_manual_start(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    api.snap["write"] = "off"
+    e.tick_sample(); e.tick_learn()
+    assert e.start_test("manuale") == "write spenta"
+    assert e.store.open_test() is None and api.calls == []
+    attrs = pub.states["prova_proposta"][1]
+    assert attrs["motivo_blocco_codice"] == "write spenta"
+    assert attrs["motivo_blocco"] == "Il comando delle macchine (00-NILAN WRITE) è spento."
+    assert pub.states["prova_avviabile"][0] == "OFF"
+
+
+def test_write_off_blocks_auto_start(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    api.snap["write"] = "off"
+    e.store.set_setting("auto", "1")
+    e.tick_sample()
+    assert e.store.open_test() is None and api.calls == []
+
+
+def test_write_off_two_samples_aborts_test(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    api.snap["write"] = "off"
+    clock["t"] += 60; e.tick_sample()
+    assert e.store.open_test() is not None            # un solo campione: si aspetta
+    clock["t"] += 60; e.tick_sample()
+    assert api.calls[-1][2]["option"] == "AUTO"
+    assert e.store.open_test() is None
+    assert e.store.tests_since(0)[0]["esito"] == "comando macchine spento"
+
+
+def test_write_off_counter_resets(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    for w in ("off", "on", "off", "on"):
+        api.snap["write"] = w
+        clock["t"] += 60; e.tick_sample()
+    assert e.store.open_test() is not None

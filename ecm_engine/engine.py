@@ -24,6 +24,7 @@ AUTO_BLOCK_S = 900     # dopo un avvio fallito niente prove automatiche per 15 m
 DATI_MANCANTI_S = 300   # ctx incompleto per più di 5 minuti durante una prova -> AUTO
 MAN_IGNOTO_S = 300      # manuale sconosciuto per più di 5 minuti durante una prova -> AUTO
 OVERRUN_S = 180         # 09 non è tornato in AUTO oltre la durata + 3 minuti -> AUTO
+WRITE_OFF_SAMPLES = 2   # 00-NILAN WRITE spenta per 2 campioni consecutivi durante una prova -> AUTO
 
 
 def build_sample(snap: dict, ts: int, open_test: dict | None) -> dict:
@@ -72,6 +73,7 @@ class Engine:
         self.started_at = self.clock()
         self.ctx_missing_since: float | None = None
         self.man_unknown_since: float | None = None
+        self.write_off_count = 0
         self.snap_ts: float | None = None
         self.auto_block_until: float = 0.0
 
@@ -89,7 +91,7 @@ class Engine:
                    t_zg=s["t_zg"], t_zn=s["t_zn"], lim_inf=s["lim_inf"], lim_sup=s["lim_sup"],
                    mattina=_t(s.get("mattina"), dtime(8, 30)), serale=_t(s.get("serale"), dtime(22, 0)),
                    t_ext=s["t_ext"] if s.get("t_ext") is not None else 10.0,
-                   soglia_estate=soglia)
+                   soglia_estate=soglia, write_on=s.get("write") == "on")
 
     def _day_start(self) -> float:
         d = datetime.fromtimestamp(self.clock())
@@ -194,6 +196,7 @@ class Engine:
         if not t:
             self.ctx_missing_since = None
             self.man_unknown_since = None
+            self.write_off_count = 0
             return
         now = int(self.clock())
         man = (self.snap or {}).get("manuale")
@@ -201,6 +204,7 @@ class Engine:
         elapsed = now - t["inizio"]
         durata_s = t["durata_min"] * 60
         c = self._ctx()
+        self.write_off_count = 0 if (self.snap or {}).get("write") == "on" else self.write_off_count + 1
         # timer propri: valgono anche con manuale sconosciuto
         if c is None:
             if self.ctx_missing_since is None:
@@ -235,6 +239,9 @@ class Engine:
             return
         if man != label:
             self._close(t, now, "interrotta dall'utente", select_auto=False)
+            return
+        if self.write_off_count >= WRITE_OFF_SAMPLES:
+            self._close(t, now, "comando macchine spento", select_auto=True)
             return
         if c is None:
             return

@@ -1,0 +1,18 @@
+services:
+  ecm-engine:
+    build: .
+    container_name: ecm-engine
+    network_mode: host
+    restart: unless-stopped
+    environment:
+      TZ: Europe/Rome
+      HA_BASE: http://127.0.0.1:8123
+      HA_TOKEN_FILE: /run/secrets/ha_token
+      MQTT_HOST: 127.0.0.1
+      DB_PATH: /data/engine.db
+    volumes:
+      - ./data:/data
+      - /home/home/.config/ecm/ha_token:/run/secrets/ha_token:ro
+    logging:
+      driver: json-file
+      options: {max-size: 5m, max-file: "2"}

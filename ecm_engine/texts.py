@@ -13,11 +13,24 @@ def _consigliati(stats, tipo, f):
     return [s for s in r if s.affidabilita >= SOGLIA] + [s for s in r if s.affidabilita < SOGLIA]
 
 
-def best_line(stats, tipo, f, stagione) -> str:
+def best_stat(stats, tipo, f):
+    """La combinazione consigliata (stessa preferenza della frase), o None."""
     r = _consigliati(stats, tipo, f)
-    if not r:
+    return r[0] if r else None
+
+
+def best_attrs(stats, tipo, f) -> dict:
+    s = best_stat(stats, tipo, f)
+    if s is None:
+        return {}
+    return {"codice": f"E{s.code}", "W": round(s.p_tot), "eff_c_h": round(s.eff, 2),
+            "affidabilita": round(s.affidabilita, 2), "da_confermare": s.affidabilita < SOGLIA}
+
+
+def best_line(stats, tipo, f, stagione) -> str:
+    s = best_stat(stats, tipo, f)
+    if s is None:
         return f"Per {VERBO[tipo]}: non ho ancora abbastanza dati"
-    s = r[0]
     line = (f"Per {VERBO[tipo]} adesso conviene: {descrizione(s.code, stagione)} "
             f"(circa {round(s.p_tot)} W)")
     return line + " (da confermare)" if s.affidabilita < SOGLIA else line

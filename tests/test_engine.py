@@ -438,3 +438,10 @@ def test_tick_learn_segments_outside_lock(tmp_path, monkeypatch):
     e.tick_learn()
     assert free == [True]
     assert "in_breve" in pub.states
+
+
+def test_migliore_attributes_published(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample(); e.tick_learn()
+    assert pub.states["migliore_caldo"][1] == {}
+    assert pub.states["migliore_freddo"][1] == {}

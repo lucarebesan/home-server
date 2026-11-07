@@ -45,3 +45,14 @@ def test_detail_rows_new_keys():
     r5, r82 = rows[0], rows[1]
     assert r5["fascia"] == "5-10" and r5["da_confermare"] is False and r5["W_cp_on"] == 700
     assert r82["da_confermare"] is True and r82["W_cp_on"] is None
+
+
+def test_best_stat_and_attrs():
+    from ecm_engine.texts import best_attrs, best_stat
+    stats = aggregate([per(82)] * 5 + [per(6, p=700, s=0.5)] * 2)
+    s = best_stat(stats, "HEAT", "5-10")
+    assert s.code == 82
+    assert best_stat({}, "HEAT", "5-10") is None
+    assert best_attrs({}, "HEAT", "5-10") == {}
+    a = best_attrs(stats, "HEAT", "5-10")
+    assert a == {"codice": "E82", "W": 450, "eff_c_h": 1.0, "affidabilita": 1.0, "da_confermare": False}

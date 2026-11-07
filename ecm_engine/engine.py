@@ -9,7 +9,7 @@ from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
 from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, is_night, propose, start_blockers
 from .segmenter import segment
-from .texts import best_line, detail_rows, summary_lines
+from .texts import best_attrs, best_line, detail_rows, summary_lines
 
 log = logging.getLogger(__name__)
 REQUIRED = ["p_cp", "p_tosh", "t_zg", "t_zn", "t_ext"]
@@ -286,8 +286,10 @@ class Engine:
         pct = pct_h if c.stagione == "INVERNO" else pct_c
         lines = summary_lines(self.stats, c.stagione, f, pct)
         self.pub.set_state("in_breve", lines[0], {"righe": lines, "fascia_esterna": f})
-        self.pub.set_state("migliore_caldo", best_line(self.stats, "HEAT", f, c.stagione))
-        self.pub.set_state("migliore_freddo", best_line(self.stats, "COOL", f, c.stagione))
+        self.pub.set_state("migliore_caldo", best_line(self.stats, "HEAT", f, c.stagione),
+                           best_attrs(self.stats, "HEAT", f))
+        self.pub.set_state("migliore_freddo", best_line(self.stats, "COOL", f, c.stagione),
+                           best_attrs(self.stats, "COOL", f))
         self.pub.set_state("apprendimento_caldo", pct_h)
         self.pub.set_state("apprendimento_freddo", pct_c)
         rows = detail_rows(self.stats, f, c.stagione)

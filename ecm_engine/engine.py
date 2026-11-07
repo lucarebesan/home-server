@@ -7,7 +7,7 @@ from datetime import datetime, time as dtime
 from . import config
 from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
-from .rules import Ctx, abort_reason, codes_for_season, is_night, propose, start_blockers
+from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, is_night, propose, start_blockers
 from .segmenter import segment
 from .texts import best_line, detail_rows, summary_lines
 
@@ -18,6 +18,8 @@ SAMPLE_FIELDS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_e
 SOGLIA_ESTATE_DEFAULT = 24.5
 MANUALE = "input_select.ecm_manuale"
 DURATA = "input_number.ecm_manuale_durata_minuti"
+DATI_MANCANTI_S = 300   # ctx incompleto per più di 5 minuti durante una prova -> AUTO
+OVERRUN_S = 180         # 09 non è tornato in AUTO oltre la durata + 3 minuti -> AUTO
 
 
 def build_sample(snap: dict, ts: int, open_test: dict | None) -> dict:
@@ -63,6 +65,8 @@ class Engine:
         self.proposal = None
         self.missing_since: dict[str, float] = {}
         self.ha_error: str | None = None
+        self.started_at = self.clock()
+        self.ctx_missing_since: float | None = None
 
     # ---------- contesto
     def _ctx(self) -> Ctx | None:
@@ -135,27 +139,64 @@ class Engine:
         log.info("prova %s avviata: E%s per %s min", origine, p.code, p.durata)
         return None
 
+    def _select_auto(self) -> bool:
+        try:
+            self.api.call_service("input_select", "select_option", {"entity_id": MANUALE, "option": "AUTO"})
+            return True
+        except Exception as ex:
+            log.warning("ritorno ad AUTO fallito: %s", ex)
+            return False
+
+    def _close(self, t: dict, now: int, esito: str, select_auto: bool) -> None:
+        """Chiude la prova; se serve riporta 09 in AUTO e, se la chiamata fallisce,
+        lascia la prova aperta così la supervisione riprova al minuto successivo."""
+        if select_auto and not self._select_auto():
+            return
+        self.store.end_test(t["id"], now, esito)
+        log.info("prova %s chiusa: %s", t["id"], esito)
+
     def _supervise(self) -> None:
         t = self.store.open_test()
-        c = self._ctx()
-        if not t or c is None:
+        if not t:
+            self.ctx_missing_since = None
             return
         now = int(self.clock())
+        man = (self.snap or {}).get("manuale")
         label = label_09(t["code"])
         elapsed = now - t["inizio"]
-        if elapsed < 90 and c.manuale != label:
+        durata_s = t["durata_min"] * 60
+        c = self._ctx()
+        # timer propri: valgono anche con manuale sconosciuto
+        if c is None:
+            if self.ctx_missing_since is None:
+                self.ctx_missing_since = now
+            if now - self.ctx_missing_since > DATI_MANCANTI_S:
+                self._close(t, now, "dati mancanti", select_auto=True)
+                return
+        else:
+            self.ctx_missing_since = None
+        if man in MANUALE_IGNOTO:
+            return  # stato di 09 sconosciuto: non si conclude nulla
+        if t["inizio"] < self.started_at:  # prova sopravvissuta a un riavvio del motore
+            self._close(t, now, "interrotta dal riavvio del motore", select_auto=man == label)
+            return
+        if man == label and elapsed > durata_s + OVERRUN_S:
+            self._close(t, now, "durata superata", select_auto=True)
+            return
+        if elapsed < 90 and man != label:
             return  # 09 non ha ancora applicato la selezione
-        if c.manuale == "AUTO" and elapsed >= t["durata_min"] * 60 - 60:
-            self.store.end_test(t["id"], now, "completata")
-            log.info("prova %s completata", t["id"])
+        if man == "AUTO":
+            esito = "completata" if elapsed >= durata_s - 60 else "interrotta dall'utente"
+            self._close(t, now, esito, select_auto=False)
+            return
+        if man != label:
+            self._close(t, now, "interrotta dall'utente", select_auto=False)
+            return
+        if c is None:
             return
         reason = abort_reason(c, tipo_of(t["code"], c.stagione), label)
-        if reason is None:
-            return
-        if reason != "interrotta dall'utente":
-            self.api.call_service("input_select", "select_option", {"entity_id": MANUALE, "option": "AUTO"})
-        self.store.end_test(t["id"], now, reason)
-        log.info("prova %s chiusa: %s", t["id"], reason)
+        if reason is not None:
+            self._close(t, now, reason, select_auto=True)
 
     def _auto_start(self) -> None:
         if self.store.get_setting("auto", "0") != "1" or self.store.open_test():
@@ -165,19 +206,23 @@ class Engine:
             log.debug("avvio automatico non possibile: %s", err)
 
     def recover(self) -> None:
-        """All'avvio: chiude una prova rimasta aperta."""
+        """All'avvio: chiude una prova rimasta aperta. Se non riesce (HA giù, 09 in stato
+        sconosciuto, chiamata fallita) la lascia aperta: ci riprova la supervisione."""
         with self.lock:
             t = self.store.open_test()
             if not t:
                 return
             try:
                 snap = self.api.snapshot(config.ENTITIES, config.NUMERIC_KEYS)
-                if snap.get("manuale") == label_09(t["code"]):
-                    self.api.call_service("input_select", "select_option",
-                                          {"entity_id": MANUALE, "option": "AUTO"})
             except Exception as ex:
-                log.warning("recover: %s", ex)
-            self.store.end_test(t["id"], int(self.clock()), "interrotta dal riavvio del motore")
+                log.warning("recover: snapshot fallito, riprovo in supervisione: %s", ex)
+                return
+            man = snap.get("manuale")
+            if man in MANUALE_IGNOTO:
+                log.warning("recover: stato manuale %r, riprovo in supervisione", man)
+                return
+            self._close(t, int(self.clock()), "interrotta dal riavvio del motore",
+                        select_auto=man == label_09(t["code"]))
 
     def on_command(self, topic: str, payload: str) -> None:
         with self.lock:

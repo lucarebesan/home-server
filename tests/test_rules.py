@@ -122,3 +122,8 @@ def test_propose_neutro_durations(monkeypatch):
     assert (p.durata, p.motivo) == (15, "manca il consumo")
     p = propose(aggregate([per(2, "NEUTRO")] * 5), ctx())          # affidabilita 1
     assert (p.durata, p.motivo) == (20, "dato da confermare")
+
+def test_unknown_manuale_blocker():
+    for v in ("unavailable", "unknown", None):
+        b = start_blockers(ctx(manuale=v), "HEAT", False, 0, None)
+        assert "stato manuale sconosciuto" in b and "modalità manuale già attiva" not in b

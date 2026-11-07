@@ -11,6 +11,7 @@ AUTO_PAUSE = timedelta(minutes=60)
 MARGINE = 0.3
 MARGINE_HEAT_START = 1.0
 MARGINE_HEAT_ABORT = 0.5
+MANUALE_IGNOTO = (None, "", "unavailable", "unknown")
 
 
 @dataclass
@@ -85,7 +86,9 @@ def zone_blockers(c: Ctx, tipo: str) -> list[str]:
 def start_blockers(c: Ctx, tipo: str, auto: bool, tests_today: int,
                    last_end: datetime | None) -> list[str]:
     b = []
-    if c.manuale != "AUTO":
+    if c.manuale in MANUALE_IGNOTO:
+        b.append("stato manuale sconosciuto")
+    elif c.manuale != "AUTO":
         b.append("modalità manuale già attiva")
     if c.free_cooling in ("ATTIVATO", "PREPARAZIONE"):
         b.append("free cooling attivo")

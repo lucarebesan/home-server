@@ -191,3 +191,145 @@ def test_recover_closes_open_test(tmp_path):
     e2.recover()
     assert api.calls[-1][2]["option"] == "AUTO"
     assert e.store.tests_since(0)[0]["esito"] == "interrotta dal riavvio del motore"
+
+
+# ---------- supervisione robusta
+def _started(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample(); e.tick_learn()
+    e.on_command("ecm_engine/avvia_prova/cmd", "PRESS")
+    label = api.calls[1][2]["option"]
+    api.snap["manuale"] = label
+    clock["t"] += 60; e.tick_sample()
+    assert e.store.open_test() is not None
+    return e, api, pub, clock, label
+
+
+def test_completed_even_without_ctx(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    api.snap.update(manuale="AUTO", lim_sup=None)      # ctx incompleto
+    clock["t"] += 30 * 60; e.tick_sample()
+    assert e.store.tests_since(0)[0]["esito"] == "completata"
+
+
+def test_user_interrupt_without_ctx(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    n = len(api.calls)
+    api.snap.update(manuale="AUTO", t_zg=None)
+    clock["t"] += 60; e.tick_sample()
+    assert e.store.tests_since(0)[0]["esito"] == "interrotta dall'utente"
+    assert len(api.calls) == n
+
+
+def test_other_option_is_user_interrupt_without_auto(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    n = len(api.calls)
+    api.snap["manuale"] = "E5 - CP ON V3 • Split OFF"
+    clock["t"] += 60; e.tick_sample()
+    assert e.store.tests_since(0)[0]["esito"] == "interrotta dall'utente"
+    assert len(api.calls) == n
+
+
+def test_unavailable_manuale_concludes_nothing(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    n = len(api.calls)
+    for v in ("unavailable", "unknown", None):
+        api.snap["manuale"] = v
+        clock["t"] += 60; e.tick_sample()
+    clock["t"] += 40 * 60; e.tick_sample()          # anche oltre la durata
+    assert e.store.open_test() is not None
+    assert len(api.calls) == n
+
+
+def test_missing_data_for_5_minutes_selects_auto(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    api.snap["t_zg"] = None
+    for _ in range(6):                                # 0..300 s: ancora aperta
+        clock["t"] += 60 if _ else 0
+        e.tick_sample()
+        assert e.store.open_test() is not None
+    clock["t"] += 60; e.tick_sample()                 # 360 s > 5 minuti
+    assert api.calls[-1][2]["option"] == "AUTO"
+    assert e.store.tests_since(0)[0]["esito"] == "dati mancanti"
+
+
+def test_missing_data_timer_resets(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    api.snap["t_zg"] = None
+    for _ in range(4):
+        clock["t"] += 60; e.tick_sample()
+    api.snap["t_zg"] = 21.0
+    clock["t"] += 60; e.tick_sample()
+    api.snap["t_zg"] = None
+    for _ in range(4):
+        clock["t"] += 60; e.tick_sample()
+    assert e.store.open_test() is not None
+
+
+def test_overrun_selects_auto(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    clock["t"] = e.store.open_test()["inizio"] + 30 * 60 + 180
+    e.tick_sample()
+    assert e.store.open_test() is not None
+    clock["t"] += 60; e.tick_sample()
+    assert api.calls[-1][2]["option"] == "AUTO"
+    assert e.store.tests_since(0)[0]["esito"] == "durata superata"
+
+
+def test_auto_select_failure_keeps_test_open(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    api.call_service = lambda *a: (_ for _ in ()).throw(OSError("HA 500"))
+    api.snap["t_zg"] = 24.1
+    clock["t"] += 60; e.tick_sample()
+    assert e.store.open_test() is not None            # riprova al prossimo minuto
+
+
+def _recovering(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    clock["t"] += 60
+    e2 = Engine(api, e.store, pub, clock=lambda: clock["t"])
+    return e2, api, pub, clock, label
+
+
+def test_recover_snapshot_failure_leaves_open(tmp_path):
+    e2, api, pub, clock, label = _recovering(tmp_path)
+    good = api.snapshot
+    api.snapshot = lambda *a: (_ for _ in ()).throw(OSError("conn refused"))
+    e2.recover()
+    assert e2.store.open_test() is not None
+    api.snapshot = good
+    n = len(api.calls)
+    clock["t"] += 60; e2.tick_sample()                # la supervisione riprova
+    assert api.calls[n][2]["option"] == "AUTO"
+    assert e2.store.tests_since(0)[0]["esito"] == "interrotta dal riavvio del motore"
+
+
+def test_recover_unavailable_leaves_open(tmp_path):
+    e2, api, pub, clock, label = _recovering(tmp_path)
+    api.snap["manuale"] = "unavailable"
+    e2.recover()
+    assert e2.store.open_test() is not None
+    api.snap["manuale"] = "AUTO"
+    clock["t"] += 60; e2.tick_sample()
+    assert e2.store.tests_since(0)[0]["esito"] == "interrotta dal riavvio del motore"
+
+
+def test_recover_call_failure_leaves_open(tmp_path):
+    e2, api, pub, clock, label = _recovering(tmp_path)
+    orig = api.call_service
+    api.call_service = lambda *a: (_ for _ in ()).throw(OSError("HA 500"))
+    e2.recover()
+    assert e2.store.open_test() is not None
+    api.call_service = orig
+    clock["t"] += 60; e2.tick_sample()
+    assert api.calls[-1][2]["option"] == "AUTO"
+    assert e2.store.tests_since(0)[0]["esito"] == "interrotta dal riavvio del motore"
+
+
+def test_recover_when_already_auto_does_not_call(tmp_path):
+    e2, api, pub, clock, label = _recovering(tmp_path)
+    api.snap["manuale"] = "AUTO"
+    n = len(api.calls)
+    e2.recover()
+    assert len(api.calls) == n
+    assert e2.store.tests_since(0)[0]["esito"] == "interrotta dal riavvio del motore"

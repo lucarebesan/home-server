@@ -445,3 +445,12 @@ def test_migliore_attributes_published(tmp_path):
     e.tick_sample(); e.tick_learn()
     assert pub.states["migliore_caldo"][1] == {}
     assert pub.states["migliore_freddo"][1] == {}
+
+
+def test_proposal_error_does_not_skip_supervision(tmp_path, monkeypatch):
+    import ecm_engine.engine as eng
+    e, api, pub, clock, label = _started(tmp_path)
+    monkeypatch.setattr(eng, "propose", lambda *a: (_ for _ in ()).throw(ValueError("bug")))
+    api.snap["t_zg"] = 24.1
+    clock["t"] += 60; e.tick_sample()
+    assert e.store.tests_since(0)[0]["esito"] == "zona vicina al cambio stagione"

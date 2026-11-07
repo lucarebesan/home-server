@@ -119,7 +119,11 @@ class Engine:
                         self.missing_since.setdefault(k, now)
                     else:
                         self.missing_since.pop(k, None)
-                self._update_proposal()
+                try:
+                    self._update_proposal()
+                except Exception:
+                    self.proposal = None
+                    log.exception("calcolo proposta fallito")
                 self._supervise()
                 self._auto_start()
             finally:

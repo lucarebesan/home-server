@@ -82,3 +82,11 @@ class Publisher:
         self.c.publish(f"ecm_engine/{key}/state", str(state)[:255], retain=True)
         if attrs is not None:
             self.c.publish(f"ecm_engine/{key}/attr", json.dumps(attrs, ensure_ascii=False), retain=True)
+
+    def close(self) -> None:
+        try:
+            self.c.publish(AVAIL, "offline", retain=True).wait_for_publish(2)
+        except Exception:
+            pass
+        self.c.disconnect()
+        self.c.loop_stop()

@@ -27,3 +27,8 @@ def test_button_and_switch():
     p = json.loads(p)
     assert p["command_topic"] == "ecm_engine/prove_automatiche/set"
     assert p["state_topic"] == "ecm_engine/prove_automatiche/state"
+
+
+def test_main_importable():
+    import ecm_engine.__main__ as m
+    assert callable(m.main)

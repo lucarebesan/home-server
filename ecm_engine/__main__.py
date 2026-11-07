@@ -15,6 +15,23 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 log = logging.getLogger("ecm_engine")
 
 
+def cycle(engine, t0: float, next_learn: float) -> float:
+    """Un giro del ciclo; restituisce il prossimo istante di apprendimento.
+    next_learn avanza prima di tick_learn: un apprendimento che fallisce non si
+    ripete a ogni minuto."""
+    try:
+        engine.tick_sample()
+    except Exception:
+        log.exception("errore nel campionamento")
+    if t0 >= next_learn:
+        next_learn = t0 + config.LEARN_PERIOD_S
+        try:
+            engine.tick_learn()
+        except Exception:
+            log.exception("errore nell'apprendimento")
+    return next_learn
+
+
 def main():
     store = Store(config.DB_PATH)
     api = HAApi(config.HA_BASE, config.HA_TOKEN_FILE)
@@ -35,13 +52,7 @@ def main():
     try:
         while True:
             t0 = time.time()
-            try:
-                engine.tick_sample()
-                if t0 >= next_learn:
-                    engine.tick_learn()
-                    next_learn = t0 + config.LEARN_PERIOD_S
-            except Exception:
-                log.exception("errore nel ciclo")
+            next_learn = cycle(engine, t0, next_learn)
             time.sleep(max(1.0, config.SAMPLE_PERIOD_S - (time.time() - t0)))
     finally:
         pub.close()

@@ -261,11 +261,14 @@ class Engine:
 
     # ---------- apprendimento e pubblicazione
     def tick_learn(self) -> None:
+        # lettura, segmentazione e aggregazione fuori dal lock: possono durare a lungo
+        # e non devono ritardare comandi e supervisione
+        now = int(self.clock())
+        since = now - config.RETENTION_DAYS * 86400
+        self.store.purge(since)
+        stats = aggregate(segment(self.store.iter_samples_since(since)))
         with self.lock:
-            now = int(self.clock())
-            since = now - config.RETENTION_DAYS * 86400
-            self.store.purge(since)
-            self.stats = aggregate(segment(self.store.iter_samples_since(since)))
+            self.stats = stats
             self._update_proposal()
             self._publish_learn()
             self._publish_status()

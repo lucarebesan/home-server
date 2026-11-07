@@ -414,3 +414,27 @@ def test_exception_after_snapshot_still_publishes(tmp_path):
     except RuntimeError:
         pass
     assert "stato" in pub.states
+
+
+# ---------- apprendimento fuori dal lock
+def test_tick_learn_segments_outside_lock(tmp_path, monkeypatch):
+    import threading
+    import ecm_engine.engine as eng
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample()
+    free = []
+    real = eng.segment
+
+    def spy(rows):
+        def probe():
+            ok = e.lock.acquire(blocking=False)
+            free.append(ok)
+            if ok:
+                e.lock.release()
+        th = threading.Thread(target=probe)
+        th.start(); th.join()
+        return real(rows)
+    monkeypatch.setattr(eng, "segment", spy)
+    e.tick_learn()
+    assert free == [True]
+    assert "in_breve" in pub.states

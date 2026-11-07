@@ -32,3 +32,24 @@ def test_button_and_switch():
 def test_main_importable():
     import ecm_engine.__main__ as m
     assert callable(m.main)
+
+
+def test_failing_learn_does_not_rerun_every_minute():
+    import ecm_engine.__main__ as m
+
+    class E:
+        def __init__(self):
+            self.learns = 0
+            self.samples = 0
+
+        def tick_sample(self):
+            self.samples += 1
+
+        def tick_learn(self):
+            self.learns += 1
+            raise RuntimeError("bug")
+    e = E()
+    nl = 0.0
+    for i in range(5):
+        nl = m.cycle(e, 1000.0 + 60 * i, nl)
+    assert e.learns == 1 and e.samples == 5

@@ -127,3 +127,16 @@ def test_unknown_manuale_blocker():
     for v in ("unavailable", "unknown", None):
         b = start_blockers(ctx(manuale=v), "HEAT", False, 0, None)
         assert "stato manuale sconosciuto" in b and "modalità manuale già attiva" not in b
+
+def test_neutro_summer_too_hot():
+    hot = ctx(stagione="ESTATE", t_zg=22.0, t_zn=21.0)      # lim_sup 21.7
+    assert "zona troppo calda" in start_blockers(hot, "NEUTRO", False, 0, None)
+    assert abort_reason(hot, "NEUTRO", "AUTO") == "zona troppo calda"
+    ok = ctx(stagione="ESTATE", t_zg=21.5, t_zn=21.0)
+    assert start_blockers(ok, "NEUTRO", False, 0, None) == []
+    assert abort_reason(ok, "NEUTRO", "AUTO") is None
+
+def test_neutro_winter_not_blocked_by_lim_sup():
+    w = ctx(t_zg=22.5, t_zn=22.0)
+    assert start_blockers(w, "NEUTRO", False, 0, None) == []
+    assert abort_reason(w, "NEUTRO", "AUTO") is None

@@ -78,6 +78,8 @@ def zone_blockers(c: Ctx, tipo: str) -> list[str]:
         b.append("zona troppo calda per scaldare")
     if tipo == "NEUTRO" and zmin < c.lim_inf + MARGINE:
         b.append("zona troppo fredda")
+    if tipo == "NEUTRO" and c.stagione == "ESTATE" and zmax > c.lim_sup:
+        b.append("zona troppo calda")   # d'estate senza raffrescare la casa si scalda
     if tipo in ("COOL", "DRY") and zmin < c.lim_inf + MARGINE:
         b.append("zona troppo fredda per raffrescare")
     return b
@@ -115,6 +117,8 @@ def abort_reason(c: Ctx, tipo: str, expected_label: str) -> str | None:
         return "zona vicina al cambio stagione"
     if tipo in ("COOL", "DRY", "NEUTRO") and zmin < c.lim_inf:
         return "zona sotto il limite inferiore"
+    if tipo == "NEUTRO" and c.stagione == "ESTATE" and zmax > c.lim_sup:
+        return "zona troppo calda"
     if c.soc < 25 and c.pv < c.load:
         return "batteria sotto 25%"
     return None

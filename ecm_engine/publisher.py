@@ -42,6 +42,12 @@ def button_config(key, name, icon):
     return f"homeassistant/button/ecm_engine/{key}/config", json.dumps(p)
 
 
+def binary_sensor_config(key, name, icon):
+    p = _base("binary_sensor", key, name, icon)
+    p.update(state_topic=f"ecm_engine/{key}/state", payload_on="ON", payload_off="OFF")
+    return f"homeassistant/binary_sensor/ecm_engine/{key}/config", json.dumps(p)
+
+
 def switch_config(key, name, icon):
     p = _base("switch", key, name, icon)
     p.update(command_topic=f"ecm_engine/{key}/set", state_topic=f"ecm_engine/{key}/state")
@@ -70,6 +76,8 @@ class Publisher:
                 return
             for key, name, icon, unit in SENSORS:
                 client.publish(*sensor_config(key, name, icon, unit), retain=True)
+            client.publish(*binary_sensor_config("prova_avviabile", "Prova avviabile", "mdi:play-circle-outline"),
+                           retain=True)
             client.publish(*button_config("avvia_prova", "Avvia prova proposta", "mdi:play"), retain=True)
             client.publish(*switch_config("prove_automatiche", "Prove automatiche", "mdi:robot"), retain=True)
             with self._lock:   # stesso lock di set_state: una cache vecchia non sovrascrive un valore nuovo

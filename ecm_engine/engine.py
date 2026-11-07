@@ -9,7 +9,7 @@ from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
 from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, is_night, propose, start_blockers
 from .segmenter import segment
-from .texts import best_attrs, best_line, detail_rows, summary_lines
+from .texts import best_attrs, best_line, blocco_testo, detail_rows, summary_lines
 
 log = logging.getLogger(__name__)
 REQUIRED = ["p_cp", "p_tosh", "t_zg", "t_zn", "t_ext"]
@@ -301,8 +301,7 @@ class Engine:
         cool = [x for x in codes_for_season("ESTATE", night) if tipo_of(x, "ESTATE") in ("COOL", "DRY")]
         pct_h = learning_pct(self.stats, heat, f, "INVERNO")
         pct_c = learning_pct(self.stats, cool, f, "ESTATE")
-        pct = pct_h if c.stagione == "INVERNO" else pct_c
-        lines = summary_lines(self.stats, c.stagione, f, pct)
+        lines = summary_lines(self.stats, c.stagione, f)
         self.pub.set_state("in_breve", lines[0], {"righe": lines, "fascia_esterna": f})
         self.pub.set_state("migliore_caldo", best_line(self.stats, "HEAT", f, c.stagione),
                            best_attrs(self.stats, "HEAT", f))
@@ -342,7 +341,12 @@ class Engine:
                 blk = ["prova in corso"] + blk
             self.pub.set_state("prova_proposta", f"{descrizione(p.code, c.stagione)} per {p.durata} minuti",
                                {"codice": f"E{p.code}", "durata": p.durata, "motivo": p.motivo,
-                                "avviabile": not blk, "motivo_blocco": blk[0] if blk else ""})
+                                "avviabile": not blk,
+                                "motivo_blocco": blocco_testo(blk[0], c) if blk else "",
+                                "motivo_blocco_codice": blk[0] if blk else ""})
+            self.pub.set_state("prova_avviabile", "OFF" if blk else "ON")
         else:
             why = "dati non disponibili" if c is None else "nessuna combinazione provabile con queste temperature"
-            self.pub.set_state("prova_proposta", "nessuna", {"avviabile": False, "motivo_blocco": why})
+            self.pub.set_state("prova_proposta", "nessuna", {"avviabile": False, "motivo_blocco": blocco_testo(why, c),
+                                                         "motivo_blocco_codice": why})
+            self.pub.set_state("prova_avviabile", "OFF")

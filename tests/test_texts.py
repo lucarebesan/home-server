@@ -1,4 +1,4 @@
-from ecm_engine.texts import best_line, detail_rows, summary_lines
+from ecm_engine.texts import best_line, blocco_testo, detail_rows, summary_lines
 from ecm_engine.learner import aggregate
 from ecm_engine.segmenter import Period
 
@@ -13,9 +13,9 @@ def test_best_line():
 
 def test_summary_mentions_useless_combo():
     stats = aggregate([per(82)] * 5 + [per(6, p=700, s=0.02)] * 5)
-    lines = summary_lines(stats, "INVERNO", "5-10", 40)
+    lines = summary_lines(stats, "INVERNO", "5-10")
     assert any("non rende" in l and "Nilan pompa di calore V4" in l for l in lines)
-    assert any("40%" in l for l in lines)
+    assert not any("Ho imparato" in l for l in lines)
 
 def test_detail_rows_sorted_and_compact():
     stats = aggregate([per(82)] * 2 + [per(5)])
@@ -56,3 +56,34 @@ def test_best_stat_and_attrs():
     assert best_attrs({}, "HEAT", "5-10") == {}
     a = best_attrs(stats, "HEAT", "5-10")
     assert a == {"codice": "E82", "W": 450, "eff_c_h": 1.0, "affidabilita": 1.0, "da_confermare": False}
+
+
+def _ctx(**kw):
+    from datetime import datetime, time
+    from ecm_engine.rules import Ctx
+    d = dict(now=datetime(2026, 1, 5, 12), stagione="INVERNO", manuale="AUTO", free_cooling="DISATTIVATO",
+             acs_attivo=False, soc=80, pv=0, load=0, t_zg=21, t_zn=21, lim_inf=20.0, lim_sup=21.7,
+             mattina=time(7), serale=time(22), t_ext=8.0, soglia_estate=24.5)
+    d.update(kw)
+    return Ctx(**d)
+
+
+def test_blocco_testo_fissi():
+    assert blocco_testo("modalità manuale già attiva", None) == "È già attiva una combinazione manuale."
+    assert blocco_testo("ciclo ACS in corso", None) == "È in corso il riscaldamento dell'acqua calda."
+    assert blocco_testo("prova in corso", None) == "C'è già una prova in corso."
+    assert blocco_testo("prova già in corso", None) == "C'è già una prova in corso."
+    assert blocco_testo("già 3 prove oggi", None) == "Fatte già 3 prove automatiche oggi."
+    assert blocco_testo("dati non disponibili", None) == "Mancano alcune letture dei sensori."
+
+
+def test_blocco_testo_con_numeri():
+    c = _ctx()
+    assert blocco_testo("zona troppo calda per scaldare", c) == "La casa è già calda: una zona supera 23,5 °C."
+    assert blocco_testo("zona troppo fredda", c) == "Una zona è sotto 20,3 °C."
+    assert blocco_testo("zona troppo fredda per raffrescare", c) == "Una zona è sotto 20,3 °C."
+    assert blocco_testo("zona troppo calda", c) == "Una zona supera 21,7 °C."
+
+
+def test_blocco_testo_sconosciuto():
+    assert blocco_testo("qualcosa di nuovo", None) == "Qualcosa di nuovo."

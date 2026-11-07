@@ -1,6 +1,7 @@
 """Frasi semplici per Luca e righe della tabella di dettaglio."""
 from .combo import descrizione
 from .learner import EFF_MIN, ranking
+from .rules import AUTO_MAX_PER_DAY, MARGINE, MARGINE_HEAT_START
 
 VERBO = {"HEAT": "scaldare", "COOL": "raffrescare"}
 TIPI = {"HEAT": ("HEAT",), "COOL": ("COOL", "DRY")}   # d'estate anche la deumidifica raffresca
@@ -36,13 +37,12 @@ def best_line(stats, tipo, f, stagione) -> str:
     return line + " (da confermare)" if s.affidabilita < SOGLIA else line
 
 
-def summary_lines(stats, stagione, f, pct) -> list[str]:
+def summary_lines(stats, stagione, f) -> list[str]:
     tipo = "HEAT" if stagione == "INVERNO" else "COOL"
     lines = [best_line(stats, tipo, f, stagione)]
     for s in ranking(stats, TIPI[tipo], f):
         if s.affidabilita >= SOGLIA and s.eff < EFF_MIN:
             lines.append(f"{descrizione(s.code, stagione)}: non rende con questo clima esterno")
-    lines.append(f"Ho imparato il {pct}% di quello che serve per {VERBO[tipo]}")
     return lines
 
 
@@ -59,3 +59,37 @@ def detail_rows(stats, f, stagione) -> list[dict]:
             "fascia": s.fascia, "da_confermare": s.affidabilita < SOGLIA,
         })
     return rows
+
+
+def _t(x: float) -> str:
+    return f"{x:.1f}".replace(".", ",")
+
+
+def blocco_testo(code: str, c) -> str:
+    """Motivo di blocco interno -> frase per Luca."""
+    fissi = {
+        "modalità manuale già attiva": "È già attiva una combinazione manuale.",
+        "stato manuale sconosciuto": "Stato della modalità manuale non disponibile.",
+        "free cooling attivo": "È attivo il Free Cooling.",
+        "ciclo ACS in corso": "È in corso il riscaldamento dell'acqua calda.",
+        "energia insufficiente": "Batteria sotto il 40% e fotovoltaico inferiore al consumo della casa.",
+        "fuori finestra prove automatiche": "Fuori dall'orario delle prove automatiche (10–17).",
+        f"già {AUTO_MAX_PER_DAY} prove oggi": f"Fatte già {AUTO_MAX_PER_DAY} prove automatiche oggi.",
+        "pausa tra le prove": "Sono passati meno di 60 minuti dall'ultima prova.",
+        "prova già in corso": "C'è già una prova in corso.",
+        "prova in corso": "C'è già una prova in corso.",
+        "dati non aggiornati": "Dati di Home Assistant non aggiornati.",
+        "dati non disponibili": "Mancano alcune letture dei sensori.",
+        "nessuna combinazione provabile con queste temperature":
+            "Con le temperature attuali non c'è nessuna prova possibile.",
+    }
+    if code in fissi:
+        return fissi[code]
+    if c is not None:
+        if code == "zona troppo calda per scaldare":
+            return f"La casa è già calda: una zona supera {_t(c.soglia_estate - MARGINE_HEAT_START)} °C."
+        if code in ("zona troppo fredda per raffrescare", "zona troppo fredda"):
+            return f"Una zona è sotto {_t(c.lim_inf + MARGINE)} °C."
+        if code == "zona troppo calda":
+            return f"Una zona supera {_t(c.lim_sup)} °C."
+    return code[:1].upper() + code[1:] + "."

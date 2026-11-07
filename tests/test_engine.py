@@ -172,6 +172,7 @@ def test_publish_after_learn(tmp_path):
     assert pub.states["stato"][0] == "online"
     assert pub.states["prova_proposta"][1]["avviabile"] is True
     assert pub.states["prova_proposta"][1]["codice"] == "E4"
+    assert pub.states["prova_avviabile"][0] == "ON"
 
 
 def test_proposal_blocked_low_battery(tmp_path):
@@ -179,7 +180,10 @@ def test_proposal_blocked_low_battery(tmp_path):
     api.snap["soc"] = 19.0
     e.tick_sample(); e.tick_learn()
     attrs = pub.states["prova_proposta"][1]
-    assert attrs["avviabile"] is False and attrs["motivo_blocco"] == "energia insufficiente"
+    assert attrs["avviabile"] is False and attrs["motivo_blocco"] == \
+        "Batteria sotto il 40% e fotovoltaico inferiore al consumo della casa."
+    assert attrs["motivo_blocco_codice"] == "energia insufficiente"
+    assert pub.states["prova_avviabile"][0] == "OFF"
 
 
 def test_recover_closes_open_test(tmp_path):

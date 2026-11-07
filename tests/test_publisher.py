@@ -1,5 +1,5 @@
 import json
-from ecm_engine.publisher import AVAIL, button_config, sensor_config, switch_config
+from ecm_engine.publisher import AVAIL, binary_sensor_config, button_config, sensor_config, switch_config
 
 
 def test_sensor_config():
@@ -126,3 +126,13 @@ def test_reconnect_republish_holds_lock(monkeypatch):
 
     p._on_connect(Probe(), None, None, _RC())
     assert seen == [True]
+
+
+def test_binary_sensor_config():
+    t, p = binary_sensor_config("prova_avviabile", "Prova avviabile", "mdi:play-circle-outline")
+    p = json.loads(p)
+    assert t == "homeassistant/binary_sensor/ecm_engine/prova_avviabile/config"
+    assert p["default_entity_id"] == "binary_sensor.ecm_engine_prova_avviabile"
+    assert p["state_topic"] == "ecm_engine/prova_avviabile/state"
+    assert p["payload_on"] == "ON" and p["payload_off"] == "OFF"
+    assert p["availability_topic"] == AVAIL

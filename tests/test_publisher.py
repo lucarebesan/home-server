@@ -111,3 +111,18 @@ def test_callbacks_do_not_raise(monkeypatch):
         topic = "ecm_engine/avvia_prova/cmd"
         payload = b"\xff\xfe"                      # decode fallisce
     p._on_message(p.c, None, Msg())
+
+
+def test_reconnect_republish_holds_lock(monkeypatch):
+    p = _pub(monkeypatch)
+    p.set_state("stato", "vecchio")
+    seen = []
+
+    class Probe(_FakeClient):
+        def publish(self, topic, payload=None, qos=0, retain=False):
+            if topic == "ecm_engine/stato/state":
+                seen.append(p._lock.locked())
+            super().publish(topic, payload, qos, retain)
+
+    p._on_connect(Probe(), None, None, _RC())
+    assert seen == [True]

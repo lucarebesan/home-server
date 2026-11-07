@@ -21,6 +21,7 @@ DURATA = "input_number.ecm_manuale_durata_minuti"
 SNAP_MAX_AGE_S = 120   # oltre, start_test rifiuta: "dati non aggiornati"
 AUTO_BLOCK_S = 900     # dopo un avvio fallito niente prove automatiche per 15 minuti
 DATI_MANCANTI_S = 300   # ctx incompleto per più di 5 minuti durante una prova -> AUTO
+MAN_IGNOTO_S = 300      # manuale sconosciuto per più di 5 minuti durante una prova -> AUTO
 OVERRUN_S = 180         # 09 non è tornato in AUTO oltre la durata + 3 minuti -> AUTO
 
 
@@ -69,6 +70,7 @@ class Engine:
         self.ha_error: str | None = None
         self.started_at = self.clock()
         self.ctx_missing_since: float | None = None
+        self.man_unknown_since: float | None = None
         self.snap_ts: float | None = None
         self.auto_block_until: float = 0.0
 
@@ -157,8 +159,10 @@ class Engine:
                                   {"entity_id": MANUALE, "option": label_09(p.code)})
         except Exception as ex:
             log.error("avvio prova fallito: %s", ex)
-            self._select_auto()
-            self.store.end_test(tid, now, "avvio fallito")
+            if self._select_auto():
+                self.store.end_test(tid, now, "avvio fallito")
+            # altrimenti la riga resta aperta: 09 potrebbe essere rimasto sulla prova e la
+            # supervisione la chiude con i suoi percorsi (AUTO dopo tolleranza, durata superata)
             self.auto_block_until = now + AUTO_BLOCK_S
             return f"avvio fallito: {ex}"
         log.info("prova %s avviata: E%s per %s min", origine, p.code, p.durata)
@@ -184,6 +188,7 @@ class Engine:
         t = self.store.open_test()
         if not t:
             self.ctx_missing_since = None
+            self.man_unknown_since = None
             return
         now = int(self.clock())
         man = (self.snap or {}).get("manuale")
@@ -196,12 +201,21 @@ class Engine:
             if self.ctx_missing_since is None:
                 self.ctx_missing_since = now
             if now - self.ctx_missing_since > DATI_MANCANTI_S:
-                self._close(t, now, "dati mancanti", select_auto=True)
+                # 09 si tocca solo se è sulla nostra prova (o in stato ignoto)
+                self._close(t, now, "dati mancanti",
+                            select_auto=man == label or man in MANUALE_IGNOTO)
                 return
         else:
             self.ctx_missing_since = None
         if man in MANUALE_IGNOTO:
-            return  # stato di 09 sconosciuto: non si conclude nulla
+            if self.man_unknown_since is None:
+                self.man_unknown_since = now
+            if now - self.man_unknown_since > MAN_IGNOTO_S:
+                self._close(t, now, "stato manuale sconosciuto", select_auto=True)
+            elif elapsed > durata_s + OVERRUN_S:
+                self._close(t, now, "durata superata", select_auto=True)
+            return  # altrimenti non si conclude nulla
+        self.man_unknown_since = None
         if t["inizio"] < self.started_at:  # prova sopravvissuta a un riavvio del motore
             self._close(t, now, "interrotta dal riavvio del motore", select_auto=man == label)
             return

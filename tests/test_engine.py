@@ -230,14 +230,53 @@ def test_other_option_is_user_interrupt_without_auto(tmp_path):
     assert len(api.calls) == n
 
 
-def test_unavailable_manuale_concludes_nothing(tmp_path):
+def test_unavailable_manuale_concludes_nothing_briefly(tmp_path):
     e, api, pub, clock, label = _started(tmp_path)
     n = len(api.calls)
     for v in ("unavailable", "unknown", None):
         api.snap["manuale"] = v
         clock["t"] += 60; e.tick_sample()
-    clock["t"] += 40 * 60; e.tick_sample()          # anche oltre la durata
     assert e.store.open_test() is not None
+    assert len(api.calls) == n
+
+
+def test_unknown_manuale_over_5_minutes_selects_auto(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    api.snap["manuale"] = "unavailable"
+    for _ in range(6):                                # 0..300 s: ancora aperta
+        clock["t"] += 60 if _ else 0
+        e.tick_sample()
+        assert e.store.open_test() is not None
+    clock["t"] += 60; e.tick_sample()
+    assert api.calls[-1][2]["option"] == "AUTO"
+    assert e.store.tests_since(0)[0]["esito"] == "stato manuale sconosciuto"
+
+
+def test_unknown_manuale_auto_failure_keeps_open(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    api.snap["manuale"] = None
+    e.tick_sample()
+    api.call_service = lambda *a: (_ for _ in ()).throw(OSError("HA 500"))
+    clock["t"] += 400; e.tick_sample()
+    assert e.store.open_test() is not None
+
+
+def test_unknown_manuale_overrun_selects_auto(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    api.snap["manuale"] = "unknown"
+    clock["t"] = e.store.open_test()["inizio"] + 30 * 60 + 181
+    e.tick_sample()
+    assert api.calls[-1][2]["option"] == "AUTO"
+    assert e.store.open_test() is None
+
+
+def test_missing_data_with_other_option_does_not_touch_09(tmp_path):
+    e, api, pub, clock, label = _started(tmp_path)
+    n = len(api.calls)
+    api.snap.update(manuale="E5 - CP ON V3 • Split OFF", t_zg=None)
+    e.tick_sample()
+    clock["t"] += 400; e.tick_sample()
+    assert e.store.tests_since(0)[0]["esito"] == "dati mancanti"
     assert len(api.calls) == n
 
 
@@ -358,12 +397,14 @@ def test_select_failure_rolls_back(tmp_path):
     assert e.auto_block_until == T0 + 900
 
 
-def test_select_failure_and_auto_failure_still_closes_row(tmp_path):
+def test_select_failure_with_auto_failure_leaves_row_open(tmp_path):
     e, api, pub, clock = mk(tmp_path, T0)
     e.tick_sample(); e.tick_learn()
     api.call_service = lambda *a: (_ for _ in ()).throw(OSError("HA giù"))
-    assert e.start_test("manuale").startswith("avvio fallito")
-    assert e.store.tests_since(0)[0]["esito"] == "avvio fallito"
+    err = e.start_test("manuale")
+    assert err.startswith("avvio fallito")
+    assert e.store.open_test() is not None
+    assert e.auto_block_until == T0 + 900
 
 
 def test_test_row_written_before_select(tmp_path):

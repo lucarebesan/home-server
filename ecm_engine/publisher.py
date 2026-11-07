@@ -72,12 +72,11 @@ class Publisher:
                 client.publish(*sensor_config(key, name, icon, unit), retain=True)
             client.publish(*button_config("avvia_prova", "Avvia prova proposta", "mdi:play"), retain=True)
             client.publish(*switch_config("prove_automatiche", "Prove automatiche", "mdi:robot"), retain=True)
-            with self._lock:
-                states, attrs = dict(self._states), dict(self._attrs)
-            for key, v in states.items():
-                client.publish(f"ecm_engine/{key}/state", v, qos=1, retain=True)
-            for key, v in attrs.items():
-                client.publish(f"ecm_engine/{key}/attr", v, qos=1, retain=True)
+            with self._lock:   # stesso lock di set_state: una cache vecchia non sovrascrive un valore nuovo
+                for key, v in self._states.items():
+                    client.publish(f"ecm_engine/{key}/state", v, qos=1, retain=True)
+                for key, v in self._attrs.items():
+                    client.publish(f"ecm_engine/{key}/attr", v, qos=1, retain=True)
             client.publish(AVAIL, "online", qos=1, retain=True)
             client.subscribe("ecm_engine/+/cmd")
             client.subscribe("ecm_engine/+/set")
@@ -98,9 +97,9 @@ class Publisher:
             self._states[key] = v
             if a is not None:
                 self._attrs[key] = a
-        self.c.publish(f"ecm_engine/{key}/state", v, qos=1, retain=True)
-        if a is not None:
-            self.c.publish(f"ecm_engine/{key}/attr", a, qos=1, retain=True)
+            self.c.publish(f"ecm_engine/{key}/state", v, qos=1, retain=True)
+            if a is not None:
+                self.c.publish(f"ecm_engine/{key}/attr", a, qos=1, retain=True)
 
     def close(self) -> None:
         try:

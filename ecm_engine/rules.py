@@ -124,19 +124,7 @@ def abort_reason(c: Ctx, tipo: str, expected_label: str) -> str | None:
     return None
 
 
-def propose(stats: dict, c: Ctx) -> Proposal | None:
-    f = fascia(c.t_ext)
-    cands = [x for x in codes_for_season(c.stagione, is_night(c))
-             if not zone_blockers(c, tipo_of(x, c.stagione))]
-    if not cands:
-        return None
-
-    def key(code):
-        tipo = tipo_of(code, c.stagione)
-        st = stats.get((code, tipo, f))
-        return (st.affidabilita if st else 0.0, tipo == "NEUTRO", code)
-
-    code = min(cands, key=key)
+def _proposal(code: int, stats: dict, c: Ctx, f: str) -> Proposal:
     tipo = tipo_of(code, c.stagione)
     st = stats.get((code, tipo, f))
     if tipo == "NEUTRO":
@@ -149,3 +137,22 @@ def propose(stats: dict, c: Ctx) -> Proposal | None:
     else:
         durata, motivo = 20, "dato da confermare"
     return Proposal(code, tipo, durata, motivo)
+
+
+def ordered_candidates(stats: dict, c: Ctx) -> list[Proposal]:
+    """Tutti i candidati nell'ordine in cui propose li sceglierebbe."""
+    f = fascia(c.t_ext)
+    cands = [x for x in codes_for_season(c.stagione, is_night(c))
+             if not zone_blockers(c, tipo_of(x, c.stagione))]
+
+    def key(code):
+        tipo = tipo_of(code, c.stagione)
+        st = stats.get((code, tipo, f))
+        return (st.affidabilita if st else 0.0, tipo == "NEUTRO", code)
+
+    return [_proposal(code, stats, c, f) for code in sorted(cands, key=key)]
+
+
+def propose(stats: dict, c: Ctx) -> Proposal | None:
+    cands = ordered_candidates(stats, c)
+    return cands[0] if cands else None

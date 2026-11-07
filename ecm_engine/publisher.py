@@ -20,6 +20,8 @@ SENSORS = [
     ("prova_in_corso", "Prova in corso", "mdi:flask", None),
     ("dettaglio", "Dettaglio combinazioni", "mdi:table", None),
     ("avvisi", "Avvisi", "mdi:alert", None),
+    ("ultime_prove", "Ultime prove", "mdi:history", None),
+    ("da_misurare", "Da misurare", "mdi:format-list-numbered", None),
 ]
 
 

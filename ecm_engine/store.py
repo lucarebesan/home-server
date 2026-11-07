@@ -92,6 +92,11 @@ class Store:
             r = self.db.execute("SELECT MAX(fine) FROM tests").fetchone()
         return r[0]
 
+    def last_tests(self, n: int) -> list[dict]:
+        with self._lock:
+            cur = self.db.execute("SELECT * FROM tests ORDER BY inizio DESC, id DESC LIMIT ?", (n,))
+            return [dict(r) for r in cur]
+
     def tests_since(self, ts: int, origine: str | None = None) -> list[dict]:
         q, a = "SELECT * FROM tests WHERE inizio >= ?", [ts]
         if origine:

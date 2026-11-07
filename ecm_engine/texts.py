@@ -1,4 +1,7 @@
 """Frasi semplici per Luca e righe della tabella di dettaglio."""
+import time as _time
+from datetime import datetime
+
 from .combo import descrizione
 from .learner import EFF_MIN, ranking
 from .rules import AUTO_MAX_PER_DAY, MARGINE, MARGINE_HEAT_START
@@ -93,3 +96,56 @@ def blocco_testo(code: str, c) -> str:
         if code == "zona troppo calda":
             return f"Una zona supera {_t(c.lim_sup)} °C."
     return code[:1].upper() + code[1:] + "."
+
+
+ESITI = {
+    "completata": "Completata",
+    "interrotta dall'utente": "Interrotta a mano",
+    "zona oltre il limite superiore": "Interrotta: casa troppo calda",
+    "zona vicina al cambio stagione": "Interrotta: casa troppo calda",
+    "zona troppo calda": "Interrotta: casa troppo calda",
+    "zona sotto il limite inferiore": "Interrotta: casa troppo fredda",
+    "batteria sotto 25%": "Interrotta: batteria sotto il 25%",
+    "dati mancanti": "Interrotta: mancavano letture dei sensori",
+    "durata superata": "Chiusa dal sistema: durata superata",
+    "stato manuale sconosciuto": "Interrotta: stato della modalità manuale non disponibile",
+    "interrotta dal riavvio del motore": "Interrotta: riavvio del sistema",
+    "avvio fallito": "Non partita: errore di comando",
+}
+
+
+def esito_testo(esito: str | None) -> str:
+    if esito is None:
+        return "In corso"
+    if esito in ESITI:
+        return ESITI[esito]
+    return esito[:1].upper() + esito[1:]
+
+
+def storico_rows(tests, stagione, now=None) -> list[dict]:
+    now = _time.time() if now is None else now
+    rows = []
+    for t in tests:
+        fine = t.get("fine")
+        rows.append({
+            "quando": datetime.fromtimestamp(t["inizio"]).strftime("%d/%m %H:%M"),
+            "combinazione": descrizione(t["code"], stagione),
+            "avvio": "A mano" if t["origine"] == "manuale" else "Automatico",
+            "durata": f"{round(((fine if fine is not None else now) - t['inizio']) / 60)} di {t['durata_min']} min",
+            "esito": esito_testo(t.get("esito")),
+        })
+    return rows
+
+
+def da_misurare_rows(proposals, stats, f, stagione) -> list[dict]:
+    rows = []
+    for p in proposals:
+        st = stats.get((p.code, p.tipo, f))
+        misure = int(st.affidabilita * 100) if st else 0
+        if misure >= 100:
+            continue
+        rows.append({"ordine": len(rows) + 1, "combinazione": descrizione(p.code, stagione),
+                     "misure": misure, "durata": f"{p.durata} min"})
+        if len(rows) == 20:
+            break
+    return rows

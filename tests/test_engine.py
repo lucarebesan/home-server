@@ -499,3 +499,16 @@ def test_proposal_error_does_not_skip_supervision(tmp_path, monkeypatch):
     api.snap["t_zg"] = 24.1
     clock["t"] += 60; e.tick_sample()
     assert e.store.tests_since(0)[0]["esito"] == "zona vicina al cambio stagione"
+
+
+def test_publish_ultime_prove_e_da_misurare(tmp_path):
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample()
+    assert pub.states["da_misurare"][0] > 0
+    assert pub.states["da_misurare"][1]["righe"][0]["ordine"] == 1
+    assert pub.states["da_misurare"][1]["fascia_esterna"]
+    assert pub.states["ultime_prove"] == (0, {"righe": []})
+    e.start_test("manuale")
+    e.tick_sample()
+    v, a = pub.states["ultime_prove"]
+    assert v == 1 and a["righe"][0]["esito"] == "In corso" and a["righe"][0]["avvio"] == "A mano"

@@ -55,3 +55,9 @@ def test_wal_and_timeout(tmp_path):
     st = mk(tmp_path)
     assert st.db.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
     assert st.db.execute("PRAGMA busy_timeout").fetchone()[0] == 5000
+
+def test_last_tests_newest_first(tmp_path):
+    st = mk(tmp_path)
+    for i in range(5):
+        st.start_test(i, 20, "auto", 1000 + i)
+    assert [t["code"] for t in st.last_tests(3)] == [4, 3, 2]

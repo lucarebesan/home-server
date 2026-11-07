@@ -7,9 +7,10 @@ from datetime import datetime, time as dtime
 from . import config
 from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
-from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, is_night, propose, start_blockers
+from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, is_night, ordered_candidates, propose, start_blockers
 from .segmenter import segment
-from .texts import best_attrs, best_line, blocco_testo, detail_rows, summary_lines
+from .texts import (best_attrs, best_line, blocco_testo, da_misurare_rows, detail_rows, storico_rows,
+                    summary_lines)
 
 log = logging.getLogger(__name__)
 REQUIRED = ["p_cp", "p_tosh", "t_zg", "t_zn", "t_ext"]
@@ -126,6 +127,10 @@ class Engine:
                 except Exception:
                     self.proposal = None
                     log.exception("calcolo proposta fallito")
+                try:
+                    self._publish_da_misurare()
+                except Exception:
+                    log.exception("pubblicazione da misurare fallita")
                 self._supervise()
                 self._auto_start()
             finally:
@@ -311,6 +316,15 @@ class Engine:
         self.pub.set_state("apprendimento_freddo", pct_c)
         rows = detail_rows(self.stats, f, c.stagione)
         self.pub.set_state("dettaglio", len(rows), {"fascia_esterna": f, "tabella": rows})
+        self._publish_da_misurare(c)
+
+    def _publish_da_misurare(self, c=None) -> None:
+        c = c or self._ctx()
+        if c is None:
+            return
+        f = fascia(c.t_ext)
+        rows = da_misurare_rows(ordered_candidates(self.stats, c), self.stats, f, c.stagione)
+        self.pub.set_state("da_misurare", len(rows), {"righe": rows, "fascia_esterna": f})
 
     def _publish_status(self) -> None:
         now = int(self.clock())
@@ -319,6 +333,9 @@ class Engine:
         if self.ha_error:
             avvisi.append(self.ha_error)
         self.pub.set_state("avvisi", len(avvisi), {"elenco": avvisi})
+        stag = (self.snap or {}).get("stagione") or "INVERNO"
+        righe = storico_rows(self.store.last_tests(10), stag, now)
+        self.pub.set_state("ultime_prove", len(righe), {"righe": righe})
         t = self.store.open_test()
         if t:
             stagione = (self.snap or {}).get("stagione") or "INVERNO"

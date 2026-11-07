@@ -87,3 +87,36 @@ def test_blocco_testo_con_numeri():
 
 def test_blocco_testo_sconosciuto():
     assert blocco_testo("qualcosa di nuovo", None) == "Qualcosa di nuovo."
+
+def test_esito_testo():
+    from ecm_engine.texts import esito_testo
+    assert esito_testo(None) == "In corso"
+    assert esito_testo("interrotta dall'utente") == "Interrotta a mano"
+    assert esito_testo("zona troppo calda") == "Interrotta: casa troppo calda"
+    assert esito_testo("zona sotto il limite inferiore") == "Interrotta: casa troppo fredda"
+    assert esito_testo("batteria sotto 25%") == "Interrotta: batteria sotto il 25%"
+    assert esito_testo("avvio fallito") == "Non partita: errore di comando"
+    assert esito_testo("boh") == "Boh"
+
+def test_storico_rows():
+    from datetime import datetime
+    from ecm_engine.texts import storico_rows
+    t0 = int(datetime(2026, 11, 7, 11, 5).timestamp())
+    tests = [{"code": 82, "durata_min": 20, "origine": "auto", "inizio": t0, "fine": t0 + 600, "esito": "completata"},
+             {"code": 5, "durata_min": 30, "origine": "manuale", "inizio": t0, "fine": None, "esito": None}]
+    r = storico_rows(tests, "INVERNO", now=t0 + 300)
+    assert r[0] == {"quando": "07/11 11:05", "combinazione": "Nilan solo ventilazione V3 + Toshiba caldo media",
+                    "avvio": "Automatico", "durata": "10 di 20 min", "esito": "Completata"}
+    assert r[1]["avvio"] == "A mano" and r[1]["durata"] == "5 di 30 min" and r[1]["esito"] == "In corso"
+
+def test_da_misurare_rows():
+    from ecm_engine.rules import Proposal
+    from ecm_engine.texts import da_misurare_rows
+    stats = aggregate([per(82)] * 5 + [per(5)] * 2)
+    props = [Proposal(6, "HEAT", 30, "x"), Proposal(5, "HEAT", 20, "x"), Proposal(82, "HEAT", 20, "x")]
+    rows = da_misurare_rows(props, stats, "5-10", "INVERNO")
+    assert [r["ordine"] for r in rows] == [1, 2]
+    assert rows[0]["misure"] == 0 and rows[0]["durata"] == "30 min"
+    assert 0 < rows[1]["misure"] < 100
+    many = [Proposal(6, "HEAT", 30, "x")] * 30
+    assert len(da_misurare_rows(many, {}, "5-10", "INVERNO")) == 20

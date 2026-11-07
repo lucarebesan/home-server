@@ -140,3 +140,12 @@ def test_neutro_winter_not_blocked_by_lim_sup():
     w = ctx(t_zg=22.5, t_zn=22.0)
     assert start_blockers(w, "NEUTRO", False, 0, None) == []
     assert abort_reason(w, "NEUTRO", "AUTO") is None
+
+def test_ordered_candidates_first_is_propose():
+    from ecm_engine.rules import ordered_candidates
+    stats = aggregate([Period(82, "HEAT", 0, 1, 20, 450.0, 0.0, 450.0, 1.0, 0.0, 1.0, 1.0, 8.0, False)] * 5)
+    cs = ordered_candidates(stats, ctx())
+    assert cs[0] == propose(stats, ctx())
+    assert len(cs) == len(codes_for_season("INVERNO", False))
+    assert cs[-1].code == 82   # il più misurato in fondo
+    assert ordered_candidates({}, ctx(t_zg=23.6, t_zn=20.0)) == [] and propose({}, ctx(t_zg=23.6, t_zn=20.0)) is None

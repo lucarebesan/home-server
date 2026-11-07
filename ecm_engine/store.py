@@ -40,12 +40,18 @@ class Store:
             self.db.commit()
 
     def add_sample(self, s: dict) -> None:
-        s = dict(s)
-        s["cp_compressore"] = _norm_onoff(s.get("cp_compressore"))
-        vals = [s.get(c) for c in SAMPLE_COLS]
+        self.add_samples([s])
+
+    def add_samples(self, samples: list[dict]) -> None:
+        """Inserimento in un'unica transazione (il backfill ne scrive migliaia)."""
+        rows = []
+        for s in samples:
+            s = dict(s)
+            s["cp_compressore"] = _norm_onoff(s.get("cp_compressore"))
+            rows.append([s.get(c) for c in SAMPLE_COLS])
         with self._lock:
-            self.db.execute(f"INSERT OR REPLACE INTO samples ({','.join(SAMPLE_COLS)}) "
-                            f"VALUES ({','.join('?' * len(SAMPLE_COLS))})", vals)
+            self.db.executemany(f"INSERT OR REPLACE INTO samples ({','.join(SAMPLE_COLS)}) "
+                                f"VALUES ({','.join('?' * len(SAMPLE_COLS))})", rows)
             self.db.commit()
 
     def samples_since(self, ts: int) -> list[dict]:

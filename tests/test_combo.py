@@ -63,3 +63,14 @@ def test_label_09():
 def test_descrizione_semplice():
     assert descrizione(84, "INVERNO") == "Nilan pompa di calore V2 + Toshiba caldo media"
     assert descrizione(2, "INVERNO") == "Nilan solo ventilazione V3 + Toshiba spento"
+
+def test_cp_compressore_invalid_unclassified():
+    c = classify(s(cp_compressore="unavailable"))
+    assert (c.code, c.motivo) == (None, "cp non classificato")
+    assert classify(s(cp_compressore=None)).motivo == "cp non classificato"
+    assert classify(s(cp_compressore="on")).code == 5
+
+def test_tosh_on_invalid_unclassified():
+    c = classify(s(tosh_on="unavailable"))
+    assert (c.code, c.motivo) == (None, "toshiba non classificato")
+    assert classify(s(tosh_on="acceso", cp_compressore="ON")).code == 5 + 10 * 6

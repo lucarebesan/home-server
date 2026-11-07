@@ -26,16 +26,19 @@ def vent_idx(u: int) -> int:
 
 def cp_unit(cp_vent: str, cp_compressore: str) -> int | None:
     v = CP_VENT.get(_u(cp_vent))
-    if v is None:
+    comp = _u(cp_compressore)
+    if v is None or comp not in ("ON", "OFF"):
         return None
-    on = _u(cp_compressore) == "ON"
+    on = comp == "ON"
     if v == 0:
         return None if on else 0
     return (v - 1) + (3 if on else 0)
 
 
 def tosh_decade(on: str, modo: str, vent: str) -> int | None:
-    if _u(on) != "ACCESO":
+    if _u(on) not in ("ACCESO", "SPENTO"):
+        return None
+    if _u(on) == "SPENTO":
         return 0
     base = TOSH_MODO_BASE.get(_u(modo))
     v = TOSH_VENT.get(_u(vent))

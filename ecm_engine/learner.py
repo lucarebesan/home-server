@@ -79,10 +79,11 @@ def _vicine(f: str) -> list[str]:
     return [NOMI[j] for j in (i - 1, i + 1) if 0 <= j < len(NOMI)]
 
 
-def ranking(stats: dict, tipo: str, f: str) -> list[Stat]:
-    sel = [s for s in stats.values() if s.tipo == tipo and s.fascia == f]
+def ranking(stats: dict, tipo: str | tuple[str, ...], f: str) -> list[Stat]:
+    tipi = (tipo,) if isinstance(tipo, str) else tuple(tipo)
+    sel = [s for s in stats.values() if s.tipo in tipi and s.fascia == f]
     if not sel:
-        sel = [s for s in stats.values() if s.tipo == tipo and s.fascia in _vicine(f)]
+        sel = [s for s in stats.values() if s.tipo in tipi and s.fascia in _vicine(f)]
     return sorted(sel, key=lambda s: (s.costo is None, s.costo or 0, s.p_tot))
 
 

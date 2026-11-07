@@ -1,8 +1,10 @@
 """Esporta lo storico di alcune entità dal recorder di HA (sola lettura).
 
 Gira DENTRO il container homeassistant, solo stdlib:
-  ENTITIES='{"k": "sensor.x"}' DAYS=7 docker exec -i -e ENTITIES -e DAYS homeassistant \
-      python3 - < scripts/export_history.py > /tmp/ecm_history.json
+  docker exec -i -e ENTITIES='{"k": "sensor.x"}' -e DAYS=7 homeassistant \
+      python3 - < scripts/export_history.py > /tmp/ecm_history.json 2>/tmp/ecm_history.err
+(-e VAR senza valore passa la variabile dell'host: se non esportata, nel container manca
+e lo script termina con KeyError. HOURS, se presente, ha la precedenza su DAYS.)
 Output su stdout: {chiave: [[ts, stato], ...]} con in testa l'ultimo stato prima dell'inizio.
 Statistiche su stderr. Nessun COUNT(*) né scansioni complete: solo query per metadata_id.
 """
@@ -14,7 +16,7 @@ import time
 
 DB = os.environ.get("HA_DB", "/config/home-assistant_v2.db")
 entities = json.loads(os.environ["ENTITIES"])
-start = time.time() - float(os.environ.get("DAYS", "7")) * 86400
+start = time.time() - float(os.environ.get("HOURS") or float(os.environ.get("DAYS", "7")) * 24) * 3600
 t_begin = time.time()
 
 db = sqlite3.connect(f"file:{DB}?mode=ro", uri=True, timeout=30)

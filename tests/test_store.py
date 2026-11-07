@@ -35,3 +35,23 @@ def test_settings(tmp_path):
     assert st.get_setting("auto", "0") == "0"
     st.set_setting("auto", "1")
     assert st.get_setting("auto", "0") == "1"
+
+def test_cp_compressore_normalised(tmp_path):
+    st = mk(tmp_path)
+    for i, v in enumerate([True, "ON", "off", 0, None, "unavailable"]):
+        st.add_sample({"ts": i, "cp_compressore": v})
+    assert [r["cp_compressore"] for r in st.samples_since(0)] == [1, 1, 0, 0, None, None]
+
+def test_iter_samples_since(tmp_path):
+    st = mk(tmp_path)
+    for ts in range(12000):
+        st.db.execute("INSERT INTO samples (ts, valido) VALUES (?, 1)", (ts,))
+    st.db.commit()
+    it = st.iter_samples_since(100)
+    assert next(it)["ts"] == 100
+    assert sum(1 for _ in it) == 11899
+
+def test_wal_and_timeout(tmp_path):
+    st = mk(tmp_path)
+    assert st.db.execute("PRAGMA journal_mode").fetchone()[0] == "wal"
+    assert st.db.execute("PRAGMA busy_timeout").fetchone()[0] == 5000

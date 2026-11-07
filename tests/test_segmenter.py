@@ -36,3 +36,35 @@ def test_duty():
     rows = [smp(60 * i, comp=1 if i % 2 else 0) for i in range(31)]
     p = segment(rows)[0]
     assert 0.4 < p.duty_cp < 0.6
+
+def test_none_values_excluded():
+    rows = [smp(60 * i) for i in range(31)]
+    for k in ("t_zg", "t_zn", "p_cp", "p_tosh", "t_ext"):
+        bad = [dict(r) for r in rows]
+        bad[10][k] = None
+        ps = segment(bad)
+        assert [p.minutes for p in ps] == [15]
+    nan = [dict(r) for r in rows]
+    nan[10]["t_zg"] = float("nan")
+    assert sum(p.minutes for p in segment(nan)) < 26
+    none_code = [dict(r) for r in rows]
+    for r in none_code:
+        r["p_cp"] = None
+    assert segment(none_code) == []
+
+def test_accepts_generator():
+    assert len(segment(smp(60 * i) for i in range(31))) == 1
+
+def test_gap_boundary():
+    a = [smp(60 * i) for i in range(20)]
+    ok = a + [smp(60 * 19 + 180 + 60 * i) for i in range(20)]
+    assert len(segment(ok)) == 1
+    split = a + [smp(60 * 19 + 181 + 60 * i) for i in range(20)]
+    assert len(segment(split)) == 2
+
+def test_p_cp_on():
+    rows = [smp(60 * i, p_cp=1000.0 if i % 2 else 100.0, comp=1 if i % 2 else 0) for i in range(31)]
+    p = segment(rows)[0]
+    assert p.p_cp_on == 1000.0
+    off = segment([smp(60 * i, comp=0) for i in range(31)])[0]
+    assert off.p_cp_on is None

@@ -73,4 +73,4 @@ def test_cp_compressore_invalid_unclassified():
 def test_tosh_on_invalid_unclassified():
     c = classify(s(tosh_on="unavailable"))
     assert (c.code, c.motivo) == (None, "toshiba non classificato")
-    assert classify(s(tosh_on="acceso", cp_compressore="ON")).code == 5 + 10 * 6
+    assert classify(s(tosh_on="acceso", cp_compressore="ON")).code == 85

@@ -1,6 +1,7 @@
 """Entità MQTT con discovery automatica per Home Assistant."""
 import json
 import logging
+import threading
 
 import paho.mqtt.client as mqtt
 
@@ -54,34 +55,52 @@ class Publisher:
             self.c.username_pw_set(user, password)
         self.c.will_set(AVAIL, "offline", retain=True)
         self.on_command = on_command
+        self._lock = threading.Lock()
+        self._states: dict[str, str] = {}    # ultimo stato per chiave, ripubblicato alla riconnessione
+        self._attrs: dict[str, str] = {}
         self.c.on_connect = self._on_connect
         self.c.on_message = self._on_message
         self.c.connect_async(host, port, keepalive=60)
         self.c.loop_start()
 
     def _on_connect(self, client, userdata, flags, rc, props=None):
-        log.info("MQTT connesso rc=%s", rc)
-        if rc.is_failure:
-            return
-        for key, name, icon, unit in SENSORS:
-            client.publish(*sensor_config(key, name, icon, unit), retain=True)
-        client.publish(*button_config("avvia_prova", "Avvia prova proposta", "mdi:play"), retain=True)
-        client.publish(*switch_config("prove_automatiche", "Prove automatiche", "mdi:robot"), retain=True)
-        client.publish(AVAIL, "online", retain=True)
-        client.subscribe("ecm_engine/+/cmd")
-        client.subscribe("ecm_engine/+/set")
+        try:
+            log.info("MQTT connesso rc=%s", rc)
+            if rc.is_failure:
+                return
+            for key, name, icon, unit in SENSORS:
+                client.publish(*sensor_config(key, name, icon, unit), retain=True)
+            client.publish(*button_config("avvia_prova", "Avvia prova proposta", "mdi:play"), retain=True)
+            client.publish(*switch_config("prove_automatiche", "Prove automatiche", "mdi:robot"), retain=True)
+            with self._lock:
+                states, attrs = dict(self._states), dict(self._attrs)
+            for key, v in states.items():
+                client.publish(f"ecm_engine/{key}/state", v, qos=1, retain=True)
+            for key, v in attrs.items():
+                client.publish(f"ecm_engine/{key}/attr", v, qos=1, retain=True)
+            client.publish(AVAIL, "online", qos=1, retain=True)
+            client.subscribe("ecm_engine/+/cmd")
+            client.subscribe("ecm_engine/+/set")
+        except Exception:
+            log.exception("errore in on_connect")
 
     def _on_message(self, client, userdata, msg):
-        if self.on_command:
-            try:
+        try:
+            if self.on_command:
                 self.on_command(msg.topic, msg.payload.decode())
-            except Exception:
-                log.exception("errore nel comando %s", msg.topic)
+        except Exception:
+            log.exception("errore nel comando %s", getattr(msg, "topic", "?"))
 
     def set_state(self, key: str, state, attrs: dict | None = None) -> None:
-        self.c.publish(f"ecm_engine/{key}/state", str(state)[:255], retain=True)
-        if attrs is not None:
-            self.c.publish(f"ecm_engine/{key}/attr", json.dumps(attrs, ensure_ascii=False), retain=True)
+        v = str(state)[:255]
+        a = json.dumps(attrs, ensure_ascii=False) if attrs is not None else None
+        with self._lock:
+            self._states[key] = v
+            if a is not None:
+                self._attrs[key] = a
+        self.c.publish(f"ecm_engine/{key}/state", v, qos=1, retain=True)
+        if a is not None:
+            self.c.publish(f"ecm_engine/{key}/attr", a, qos=1, retain=True)
 
     def close(self) -> None:
         try:

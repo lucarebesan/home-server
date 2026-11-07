@@ -53,3 +53,61 @@ def test_failing_learn_does_not_rerun_every_minute():
     for i in range(5):
         nl = m.cycle(e, 1000.0 + 60 * i, nl)
     assert e.learns == 1 and e.samples == 5
+
+
+class _RC:
+    def __init__(self, fail=False):
+        self.is_failure = fail
+
+
+class _FakeClient:
+    def __init__(self, *a, **kw):
+        self.pubs = []
+        self.subs = []
+
+    def username_pw_set(self, *a): pass
+    def will_set(self, *a, **kw): pass
+    def connect_async(self, *a, **kw): pass
+    def loop_start(self): pass
+
+    def publish(self, topic, payload=None, qos=0, retain=False):
+        self.pubs.append((topic, payload, qos, retain))
+
+    def subscribe(self, t): self.subs.append(t)
+
+
+def _pub(monkeypatch, on_command=None):
+    import ecm_engine.publisher as P
+    monkeypatch.setattr(P.mqtt, "Client", _FakeClient)
+    return P.Publisher("h", 1883, on_command=on_command)
+
+
+def test_states_qos1_and_republished_on_reconnect(monkeypatch):
+    p = _pub(monkeypatch)
+    p.set_state("stato", "online")
+    p.set_state("avvisi", 0, {"elenco": []})
+    p.set_state("avvisi", 1)                       # attributi invariati restano in cache
+    assert ("ecm_engine/stato/state", "online", 1, True) in p.c.pubs
+    fresh = _FakeClient()
+    p._on_connect(fresh, None, None, _RC())
+    topics = {t: (pl, q) for t, pl, q, r in fresh.pubs}
+    assert "homeassistant/sensor/ecm_engine/stato/config" in topics
+    assert topics["ecm_engine/stato/state"] == ("online", 1)
+    assert topics["ecm_engine/avvisi/state"] == ("1", 1)
+    assert json.loads(topics["ecm_engine/avvisi/attr"][0]) == {"elenco": []}
+
+
+def test_callbacks_do_not_raise(monkeypatch):
+    def boom(t, p):
+        raise RuntimeError("x")
+    p = _pub(monkeypatch, on_command=boom)
+
+    class Bad(_FakeClient):
+        def publish(self, *a, **kw):
+            raise OSError("socket")
+    p._on_connect(Bad(), None, None, _RC())        # non deve sollevare
+
+    class Msg:
+        topic = "ecm_engine/avvia_prova/cmd"
+        payload = b"\xff\xfe"                      # decode fallisce
+    p._on_message(p.c, None, Msg())

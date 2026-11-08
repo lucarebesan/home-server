@@ -1,0 +1,229 @@
+id,device_id,device_lbl,driver,Nome,lbl,unit,Tipo,RW,abilRec,modbus_cmdR,formato,position,gain,modbus_cmdW_present,proxied_by_api,readable_by_user
+2000920920,2000920,GWC M1,GWC-V4_M1_2DI,DI1,Forzatura manuale Split,,Bool,R,1,,,,,,,getShm 1999237.Ingresso(1999237115)
+2000920921,2000920,GWC M1,GWC-V4_M1_2DI,DI2,DI2,,Bool,R,1,,,,,,,NO
+2000920922,2000920,GWC M1,GWC-V4_M1_2DI,ALR_N,Number of active alarms,,Num,R,1,,,,1,,,NO
+2001969969,2001969,Compact P,NILAN-CTS602_it,T0,T0 Temperatura scheda controllore,°C,Num,R,0,0400C80010,int16,0,0.01,,,NO
+2001969970,2001969,Compact P,NILAN-CTS602_it,T1,T1 Temperatura aria esterna,°C,Num,R,1,0400C80010,int16,2,0.01,,1999494:Id1,sendCmd 1999494/Id1; getShm 1999690.Tdopo(1999690118)
+2001969971,2001969,Compact P,NILAN-CTS602_it,T2,T2 Temperatura immissione,°C,Num,R,1,0400C80010,int16,4,0.01,,1999494:Id4,sendCmd 1999494/Id4
+2001969972,2001969,Compact P,NILAN-CTS602_it,T3,T3 Temperatura estratta dall'ambiente,°C,Num,R,1,0400C80010,int16,6,0.01,,,NO
+2001969973,2001969,Compact P,NILAN-CTS602_it,T4,T4 Temperatura dopo scambiatore passivo,°C,Num,R,1,0400C80010,int16,8,0.01,,1999494:Id5,sendCmd 1999494/Id5
+2001969974,2001969,Compact P,NILAN-CTS602_it,T5,T5 Temperatura batteria superiore,°C,Num,R,1,0400C80010,int16,10,0.01,,1999494:Id6,sendCmd 1999494/Id6
+2001969975,2001969,Compact P,NILAN-CTS602_it,T6,T6 Temperatura batteria inferiore,°C,Num,R,1,0400C80010,int16,12,0.01,,1999494:Id7,sendCmd 1999494/Id7
+2001969976,2001969,Compact P,NILAN-CTS602_it,T7,T7 Temperatura immissione dopo postriscaldo,°C,Num,R,1,0400C80010,int16,14,0.01,,,NO
+2001969977,2001969,Compact P,NILAN-CTS602_it,T8,T8 Temperatura esterna,°C,Num,R,1,0400C80010,int16,16,0.01,,,NO
+2001969978,2001969,Compact P,NILAN-CTS602_it,T9,T9 Temperatura batteria idronica,°C,Num,R,1,0400C80010,int16,18,0.01,,,NO
+2001969979,2001969,Compact P,NILAN-CTS602_it,T10,T10 Temperatura sensore stanza,°C,Num,R,1,0400C80010,int16,20,0.01,,1999494:Id8,sendCmd 1999494/Id8
+2001969980,2001969,Compact P,NILAN-CTS602_it,T11,T11 Temperatura bollitore parte alta,°C,Num,R,1,0400C80010,int16,22,0.01,,1999494:Id9,sendCmd 1999494/Id9; getShm 1999690.Tsan(1999690106)
+2001969981,2001969,Compact P,NILAN-CTS602_it,T12,T12 Temperatura bollitore parte bassa,°C,Num,R,1,0400C80010,int16,24,0.01,,1999494:Id10,sendCmd 1999494/Id10
+2001969982,2001969,Compact P,NILAN-CTS602_it,Rh,Umidità,%,Num,R,1,0400DD0002,int16,0,0.01,,,getShm 1999690.humidity(1999690108)
+2001969983,2001969,Compact P,NILAN-CTS602_it,Input_user_function,Funzione utente,,Num,R,1,0400640001,int16,0,1,,,NO
+2001969984,2001969,Compact P,NILAN-CTS602_it,Input_defrost,Termostato sbrinamento,,Num,R,0,0400700001,int16,0,1,,,NO
+2001969985,2001969,Compact P,NILAN-CTS602_it,Input_user_function2,Funzione utente 2,,Num,R,1,0400710001,int16,0,1,,,NO
+2001969986,2001969,Compact P,NILAN-CTS602_it,Alarm_status,Stato allarme,,Num,R,1,0401900001,int16,0,1,,,getShm 1999690.alrmState(1999690113)
+2001969987,2001969,Compact P,NILAN-CTS602_it,onOff_state,Stato accensione,,Num,RW,1,0303E90001,int16,0,1,yes,1999494:Id12,sendCmd 1999494/Id12
+2001969988,2001969,Compact P,NILAN-CTS602_it,mode_act,Modo operativo,,Enum,R,1,0403E90001,int16,0,1,,,NO
+2001969989,2001969,Compact P,NILAN-CTS602_it,Control_state,Stato controllo,,Enum,R,1,0403EA0001,int16,0,1,,1999494:Id11,sendCmd 1999494/Id11; getShm 1999690.regulation(1999690117)
+2001969990,2001969,Compact P,NILAN-CTS602_it,Air_flap,Serranda aria,,Num,R,0,0300640001,int16,0,1,,1999667:Id6,sendCmd 1999667/Id6
+2001969991,2001969,Compact P,NILAN-CTS602_it,Bypass_open,Apertura bypass,,Num,R,1,0300660001,int16,0,1,,1999667:Id7,sendCmd 1999667/Id7; getShm 1999690.bypass(1999690115)
+2001969992,2001969,Compact P,NILAN-CTS602_it,Bypass_close,Chiusura bypass,,Num,R,1,0300670001,int16,0,1,,1999667:Id8,sendCmd 1999667/Id8
+2001969993,2001969,Compact P,NILAN-CTS602_it,Comp,Compressore,,Num,R,1,03006D0001,int16,0,1,,1999667:Id9,sendCmd 1999667/Id9; getShm 1999690.compressor(1999690116)
+2001969994,2001969,Compact P,NILAN-CTS602_it,Hot_water_heater,Resistenza elettrica ACS,,Num,R,1,0300740001,int16,0,1,,1999667:Id10,sendCmd 1999667/Id10; getShm 1999690.additResistance(1999690111)
+2001969995,2001969,Compact P,NILAN-CTS602_it,Exhaust_fan_speed,Velocità ventilatore estrazione,%,Num,R,1,0300C80001,int16,0,0.01,,,NO
+2001969996,2001969,Compact P,NILAN-CTS602_it,Inlet_fan_speed,Velocità ventilatore immissione,%,Num,R,1,0300C90001,int16,0,0.01,,,NO
+2001969997,2001969,Compact P,NILAN-CTS602_it,Air_heater_capacity,Postriscaldo,%,Num,R,1,0300CB0001,int16,0,0.01,,,NO
+2001969998,2001969,Compact P,NILAN-CTS602_it,mode_set,Modo funzionale selezionato,,Enum,RW,1,0303EA0001,int16,0,1,yes,1999494:Id13,sendCmd 1999494/Id13; getShm 1999690.mode(1999690104)
+2001969999,2001969,Compact P,NILAN-CTS602_it,vent_sel,Ventilazione selezionata,,Enum,RW,1,0303EB0001,int16,0,1,yes,1999494:Id14,sendCmd 1999494/Id14; getShm 1999690.setPointFan(1999690103)
+2001969000,2001969,Compact P,NILAN-CTS602_it,temp_set,Setpoint aria,°C,Num,RW,1,0303EC0001,int16,0,0.01,yes,1999494:Id15,sendCmd 1999494/Id15; getShm 1999690.setPointInt(1999690109)
+2001969001,2001969,Compact P,NILAN-CTS602_it,Permetti_condensatore,Permetti condensatore,,Num,R,0,0300720002,int16,0,1,,,NO
+2001969002,2001969,Compact P,NILAN-CTS602_it,Bypass_condensatore,Bypass condensatore,,Num,R,0,0300720002,int16,2,1,,,NO
+2001969003,2001969,Compact P,NILAN-CTS602_it,Setpoint_T11,Setpoint ACS Resistenza,°C,Num,RW,1,0306A40001,int16,0,0.01,yes,1999667:Id1,sendCmd 1999667/Id1
+2001969004,2001969,Compact P,NILAN-CTS602_it,Setpoint_T12,Setpoint ACS Compressore,°C,Num,RW,1,0306A50001,int16,0,0.01,yes,1999667:Id2,sendCmd 1999667/Id2; getShm 1999690.setPointACS(1999690102)
+2001969005,2001969,Compact P,NILAN-CTS602_it,four_way_valve,Valvola 4 vie,,Num,R,1,03006F0001,int16,0,1,,,NO
+2001969006,2001969,Compact P,NILAN-CTS602_it,T15,T15 Temperatura pannello CTS602,°C,Num,R,0,0400D70001,int16,0,0.01,,,NO
+2001969007,2001969,Compact P,NILAN-CTS602_it,CO2,Livello CO2,ppm,Num,R,1,0400DD0002,int16,2,1,,,getShm 1999690.co2(1999690107)
+2001969008,2001969,Compact P,NILAN-CTS602_it,Alarm,Allarme,,Num,RW,1,0401900001,int16,0,1,yes,,NO
+2001969009,2001969,Compact P,NILAN-CTS602_it,Cooling_Setpoint,Offset raffrescamento,,Enum,RW,1,0304B00001,int16,0,1,yes,1999667:Id3,sendCmd 1999667/Id3; getShm 1999690.setPointIntSummer(1999690114)
+2001969010,2001969,Compact P,NILAN-CTS602_it,Alarm_Lis_ID1,Lista allarmi - ID1,,Enum,R,1,0401910001,int16,0,1,yes,,NO
+2001969011,2001969,Compact P,NILAN-CTS602_it,Alarm_Lis_ID2,Lista allarmi - ID2,,Enum,R,1,0401940001,int16,0,1,yes,,NO
+2001969012,2001969,Compact P,NILAN-CTS602_it,Alarm_Lis_ID3,Lista allarmi - ID3,,Enum,R,1,0401970001,int16,0,1,yes,,NO
+2001969013,2001969,Compact P,NILAN-CTS602_it,TempRoom,Sensore di riferimento,°C,Num,R,1,0404B30001,int16,0,0.01,,,getShm 1999690.Tint(1999690101)
+2001969014,2001969,Compact P,NILAN-CTS602_it,SoftwareVersion1,Versione software1,,String,R,0,0400010001,int16,0,1,,,NO
+2001969015,2001969,Compact P,NILAN-CTS602_it,SoftwareVersion2,Versione software2,,String,R,0,0400020001,int16,0,1,,,NO
+2001969016,2001969,Compact P,NILAN-CTS602_it,SoftwareVersion3,Versione software3,,String,R,0,0400030001,int16,0,1,,,NO
+2001969017,2001969,Compact P,NILAN-CTS602_it,RHVentLo,Velocità a bassa umidità,,Num,RW,0,0307760001,int16,0,1,yes,,NO
+2001969018,2001969,Compact P,NILAN-CTS602_it,RHVentHi,Velocità ad alta umidità,,Num,RW,0,0307770001,int16,0,1,yes,,NO
+2001969019,2001969,Compact P,NILAN-CTS602_it,RHLimLo,Limite bassa umidità,%,Num,RW,0,0307780001,int16,0,0.01,yes,1999667:Id11,sendCmd 1999667/Id11
+2001969020,2001969,Compact P,NILAN-CTS602_it,RHTimeout,Tempo massimo alta umidità,min,Num,RW,0,0307790001,int16,0,1,yes,1999667:Id12,sendCmd 1999667/Id12
+2001969021,2001969,Compact P,NILAN-CTS602_it,AirHeatDelay,Ritardo attivazione postriscaldo,min,Num,RW,0,030FA60001,int16,0,1,yes,,NO
+2001969022,2001969,Compact P,NILAN-CTS602_it,AirTempRoomNZ,Isteresi NZ,°C,Num,RW,0,030FAB0001,int16,0,0.01,yes,1999667:Id13,sendCmd 1999667/Id13
+2001969023,2001969,Compact P,NILAN-CTS602_it,AirTempRoomLow,Soglia allarme RoomLow,°C,Num,RW,0,030FAC0001,int16,0,0.01,yes,,NO
+2001969024,2001969,Compact P,NILAN-CTS602_it,AirHeatType,Tipo postriscaldo,,Num,RW,0,030FA50001,int16,0,1,yes,,NO
+2001969025,2001969,Compact P,NILAN-CTS602_it,TempMinSum,Temperatura minima Estiva,°C,Num,RW,0,0304B10001,int16,0,0.01,yes,,NO
+2001969026,2001969,Compact P,NILAN-CTS602_it,TempMinWin,Temperatura minima Invernale,°C,Num,RW,0,0304B20001,int16,0,0.01,yes,,NO
+2001969027,2001969,Compact P,NILAN-CTS602_it,TempMaxSum,Temperatura massima Estiva,°C,Num,RW,0,0304B30001,int16,0,0.01,yes,,NO
+2001969028,2001969,Compact P,NILAN-CTS602_it,TempMaxWin,Temperatura massima Invernale,°C,Num,RW,0,0304B40001,int16,0,0.01,yes,,NO
+2001969029,2001969,Compact P,NILAN-CTS602_it,ResetAlarm,Reset Allarmi,,Num,RW,1,0301900001,int16,0,1,yes,,NO
+2001969030,2001969,Compact P,NILAN-CTS602_it,TempSummer,Soglia commutazione Estate/Inverno,°C,Num,RW,0,0304B50001,int16,0,0.01,yes,1999667:Id14,sendCmd 1999667/Id14
+2001969031,2001969,Compact P,NILAN-CTS602_it,CO2VelHi,Velocità con CO2 alta,,Num,RW,0,0307800001,int16,0,1,yes,,NO
+2001969032,2001969,Compact P,NILAN-CTS602_it,CO2Norm,Soglia CO2 rientro alta velocità,ppm,Num,RW,0,0307810001,int16,0,1,yes,,NO
+2001969033,2001969,Compact P,NILAN-CTS602_it,CO2Hi,Soglia CO2 attivazione alta velocità,ppm,Num,RW,0,0307820001,int16,0,1,yes,,NO
+2001969034,2001969,Compact P,NILAN-CTS602_it,SpeedInlet1,Velocità Immissione Livello1,%,Num,RW,0,0310040001,int16,0,1,yes,,NO
+2001969035,2001969,Compact P,NILAN-CTS602_it,SpeedInlet2,Velocità Immissione Livello2,%,Num,RW,0,0310050001,int16,0,1,yes,,NO
+2001969036,2001969,Compact P,NILAN-CTS602_it,SpeedInlet3,Velocità Immissione Livello3,%,Num,RW,0,0310060001,int16,0,1,yes,,NO
+2001969037,2001969,Compact P,NILAN-CTS602_it,SpeedInlet4,Velocità Immissione Livello4,%,Num,RW,0,0310070001,int16,0,1,yes,,NO
+2001969038,2001969,Compact P,NILAN-CTS602_it,SpeedExhaust1,Velocità Estrazione Livello1,%,Num,RW,0,0310080001,int16,0,1,yes,,NO
+2001969039,2001969,Compact P,NILAN-CTS602_it,SpeedExhaust2,Velocità Estrazione Livello2,%,Num,RW,0,0310090001,int16,0,1,yes,,NO
+2001969040,2001969,Compact P,NILAN-CTS602_it,SpeedExhaust3,Velocità Estrazione Livello3,%,Num,RW,0,03100A0001,int16,0,1,yes,,NO
+2001969041,2001969,Compact P,NILAN-CTS602_it,SpeedExhaust4,Velocità Estrazione Livello4,%,Num,RW,0,03100B0001,int16,0,1,yes,,NO
+2001969042,2001969,Compact P,NILAN-CTS602_it,Manual,Forzatura manuale,,Enum,RW,1,0303ED0001,int16,0,1,yes,1999667:Id4,sendCmd 1999667/Id4
+2001969043,2001969,Compact P,NILAN-CTS602_it,CentralHeatHeatExtern,CentralHeat.HeatExtern,°C,Num,RW,0,0307080001,int16,0,0.01,yes,,NO
+2001969044,2001969,Compact P,NILAN-CTS602_it,CentralHeatHeatSelect,CentralHeat.HeatSelect,,Enum,RW,0,0307090001,int16,0,1,yes,,NO
+2001969045,2001969,Compact P,NILAN-CTS602_it,CentralHeatSupplyMin,CentralHeatSupplyMin,°C,Num,RW,0,03070A0001,int16,0,0.01,yes,,NO
+2001969046,2001969,Compact P,NILAN-CTS602_it,CentralHeatSupplyMax,CentralHeatSupplyMax,°C,Num,RW,0,03070B0001,int16,0,0.01,yes,,NO
+2001969047,2001969,Compact P,NILAN-CTS602_it,CentralHeatSupplyOffset,CentralHeat.SupplyOffset,°C,Num,RW,0,03070C0001,int16,0,0.01,yes,,NO
+2001969048,2001969,Compact P,NILAN-CTS602_it,CentralHeatCurveSelect,CentralHeat.CurveSelect,,Num,RW,0,03070D0001,int16,0,1,yes,,NO
+2001969049,2001969,Compact P,NILAN-CTS602_it,CentralHeatCircPumpMode,CentralHeat.CircPumpMode,,Enum,RW,0,03070E0001,int16,0,1,yes,,NO
+2001969050,2001969,Compact P,NILAN-CTS602_it,CentralHeatHeatType,CentralHeat.HeatType,,Enum,RW,0,03070F0001,int16,0,1,yes,,NO
+2001969051,2001969,Compact P,NILAN-CTS602_it,CentralHeatRegTime,CentralHeat.RegTime,s,Num,RW,0,0307100001,int16,0,1,yes,,NO
+2001969052,2001969,Compact P,NILAN-CTS602_it,AirFlowAirExchMode,Air exchange mode,,Enum,RW,0,03044C0001,int16,0,1,yes,1999667:Id15,sendCmd 1999667/Id15
+2001969053,2001969,Compact P,NILAN-CTS602_it,HotWaterTempCprMax,Temperatura massima bollitore,°C,Num,RW,1,0306A70001,int16,0,0.01,yes,1999667:Id5,sendCmd 1999667/Id5
+2001969054,2001969,Compact P,NILAN-CTS602_it,InputT16,Temperatura relativa all'ingresso Anodo,°C,Num,R,0,0400D80001,int16,0,0.01,yes,,NO
+2001969055,2001969,Compact P,NILAN-CTS602_it,UserUserMenuOpen,Blocco Menu utente,,Enum,RW,0,0307D20001,int16,0,1,yes,,NO
+2001969056,2001969,Compact P,NILAN-CTS602_it,OutputRotorVeksler,Scambiatore rotativo,%,Num,R,0,0300CE0001,int16,0,0.01,,,NO
+2001969057,2001969,Compact P,NILAN-CTS602_it,OutputCprCap,Capacità compressore,%,Num,R,1,0300CC0001,int16,0,0.01,,,NO
+2002144144,2002144,Split,IntesisBox_Toshiba,UnitONOFF,ON/OFF unità,,Enum,RW,1,0300000001,int16,0,1,yes,1999108:Id3,sendCmd 1999108/Id3; getShm 1999237.onOffSlave(1999237111)
+2002144145,2002144,Split,IntesisBox_Toshiba,UnitMode,Modo unità,,Enum,RW,1,0300010001,int16,0,1,yes,1999108:Id4,sendCmd 1999108/Id4
+2002144146,2002144,Split,IntesisBox_Toshiba,UnitFanSpeed,Velocità Ventilatore,,Enum,RW,1,0300020001,int16,0,1,yes,1999108:Id5,sendCmd 1999108/Id5
+2002144147,2002144,Split,IntesisBox_Toshiba,UnitTemperatureSetpoint,Setpoint ,°C,Num,RW,1,0300040001,int16,0,0.1,yes,1999108:Id6,sendCmd 1999108/Id6
+2002144148,2002144,Split,IntesisBox_Toshiba,UnitAmbientTemperature,Temperatura Ambiente,°C,Num,R,1,0300050001,int16,0,0.1,yes,1999108:Id1,sendCmd 1999108/Id1
+2002144149,2002144,Split,IntesisBox_Toshiba,ModbusCommandDisablement,Disabilita Comando Modbus,,Num,RW,0,0300070001,int16,0,1,yes,,NO
+2002144150,2002144,Split,IntesisBox_Toshiba,RemoteCommandDisablement,Disabilita Comando Remoto,,Enum,RW,0,0300080001,int16,0,1,yes,,NO
+2002144151,2002144,Split,IntesisBox_Toshiba,UnitOperationTime,Ore Funzionamento Unità,,Num,RW,0,0300090001,int16,0,1,yes,,NO
+2002144152,2002144,Split,IntesisBox_Toshiba,UnitAlarmStatus,Allarme,,Enum,R,1,03000A0001,int16,0,1,yes,,NO
+2002144153,2002144,Split,IntesisBox_Toshiba,ErrorCode,Codice Allarme,,Num,R,1,03000B0001,int16,0,1,yes,1999108:Id2,sendCmd 1999108/Id2
+2002144154,2002144,Split,IntesisBox_Toshiba,IndoorUnitAmbientTemperature,Temperatura unità interna,°C,Num,RW,1,0300160001,int16,0,0.1,yes,,NO
+2002144155,2002144,Split,IntesisBox_Toshiba,CurrentSetpointIndoorUnit,Setpoint dell'unità interna,°C,Num,R,1,0300170001,int16,0,0.1,yes,,NO
+2002144156,2002144,Split,IntesisBox_Toshiba,TEtemperature,Temperatura Evaporatore,°C,Num,R,1,03113A000B,int16,0,1,yes,1999108:Id7,sendCmd 1999108/Id7
+2002144157,2002144,Split,IntesisBox_Toshiba,TOtemperature,Temperatura Esterna,°C,Num,R,1,03113A000B,int16,2,1,yes,,NO
+2002144158,2002144,Split,IntesisBox_Toshiba,Compressortemperature,Temperatura Compressore,°C,Num,R,1,03113A000B,int16,4,1,yes,1999108:Id8,sendCmd 1999108/Id8
+2002144159,2002144,Split,IntesisBox_Toshiba,SuctionTemperatureTS,Temperatura Aspirazione Compressore,°C,Num,R,1,03113A000B,int16,6,1,yes,1999108:Id9,sendCmd 1999108/Id9
+2002144160,2002144,Split,IntesisBox_Toshiba,TemperatureThrystorTHS,Temperatura Dissipatore di Calore,°C,Num,R,1,03113A000B,int16,8,1,yes,,NO
+2002144161,2002144,Split,IntesisBox_Toshiba,CompressorCurrent,Corrente Assorbita Compressore,A,Num,R,1,03113A000B,int16,10,0.1,yes,,NO
+2002144162,2002144,Split,IntesisBox_Toshiba,TemperatureliquidsideTL,Temperatura Liquido,°C,Num,R,1,03113A000B,int16,12,1,yes,,NO
+2002144163,2002144,Split,IntesisBox_Toshiba,CompressorRevolution,Velocità Compressore,rps,Num,R,0,03113A000B,int16,14,1,yes,1999108:Id10,sendCmd 1999108/Id10
+2002144164,2002144,Split,IntesisBox_Toshiba,RunningHoursCompressor,Ore Funzionamento Compressore,h,Num,R,0,03113A000B,int16,20,1,yes,,NO
+2002022022,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Temp 1,Temperatura aria esterna prima EGWK,°C,Num,R,1,0300470001,int16,0,0.1,,1999108:Id14,sendCmd 1999108/Id14; getShm 1999690.Text(1999690100)
+2002022023,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Temp 2,Ingresso temperatura 2,°C,Num,R,1,0300490001,int16,0,0.1,,,NO
+2002022024,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Temp 3,Ingresso temperatura 3,°C,Num,R,1,03004B0001,int16,0,0.1,,,NO
+2002022025,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Temp 4,Ingresso temperatura 4,°C,Num,R,1,03004D0001,int16,0,0.1,,,NO
+2002022026,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Tens 1,Ingresso 0-10V 1,V,Num,R,1,0300460001,int16,0,0.001,,,NO
+2002022027,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Tens 2,Ingresso 0-10V 2,V,Num,R,1,0300480001,int16,0,0.001,,,NO
+2002022028,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Tens 3,Ingresso 0-10V 3,V,Num,R,1,03004A0001,int16,0,0.001,,,NO
+2002022029,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Tens 4,Ingresso 0-10V 4,V,Num,R,1,03004C0001,int16,0,0.001,,,NO
+2002022030,2002022,Modulo I/O,ISMA-B-4U40-H,Conf Ing 1,Configurazione Ingresso 1,,Enum,RW,1,0400960001,int16,0,1,yes,,NO
+2002022031,2002022,Modulo I/O,ISMA-B-4U40-H,Conf Ing 2,Configurazione Ingresso 2,,Enum,RW,1,0400970001,int16,0,1,yes,,NO
+2002022032,2002022,Modulo I/O,ISMA-B-4U40-H,Conf Ing 3,Configurazione Ingresso 3,,Enum,RW,1,0400980001,int16,0,1,yes,,NO
+2002022033,2002022,Modulo I/O,ISMA-B-4U40-H,Conf Ing 4,Configurazione Ingresso 4,,Enum,RW,1,0400990001,int16,0,1,yes,,NO
+2002022034,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Dig 1,Ingresso Digitale 1,,Bool,R,1,0300100001,,1,,,,NO
+2002022035,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Dig 2,Ingresso Digitale 2,,Bool,R,1,0300100001,,1,,,,NO
+2002022036,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Dig 3,Ingresso Digitale 3,,Bool,R,1,0300100001,,1,,,,NO
+2002022037,2002022,Modulo I/O,ISMA-B-4U40-H,Ing Dig 4,Ingresso Digitale 4,,Bool,R,1,0300100001,,1,,,,NO
+2002022038,2002022,Modulo I/O,ISMA-B-4U40-H,Usc Dig,Uscite Digitali,,Num,RW,1,0400110001,int16,0,1,yes,,NO
+2002022039,2002022,Modulo I/O,ISMA-B-4U40-H,Usc Dig 1,Pompa EGWK,,Bool,RW,1,0400110001,,1,,yes,,NO
+2002022040,2002022,Modulo I/O,ISMA-B-4U40-H,Usc Dig 2,Uscita Digitale 2,,Bool,RW,1,0400110001,,1,,yes,,NO
+2002022041,2002022,Modulo I/O,ISMA-B-4U40-H,Usc Dig 3,Uscita Digitale 3,,Bool,RW,1,0400110001,,1,,yes,,NO
+2002022042,2002022,Modulo I/O,ISMA-B-4U40-H,Usc Dig 4,Uscita Digitale 4,,Bool,RW,1,0400110001,,1,,yes,,NO
+2002794794,2002794,Misuratore En.El. Compact,Eastron-SDM120,Tensione,Tensione,V,Num,R,,0400000002,float754,0,1,,,NO
+2002794795,2002794,Misuratore En.El. Compact,Eastron-SDM120,Corrente,Corrente,A,Num,R,,0400060002,float754,0,1,,1999494:Id2,sendCmd 1999494/Id2
+2002794796,2002794,Misuratore En.El. Compact,Eastron-SDM120,Potenza Attiva,Potenza Attiva,W,Num,R,,04000C0002,float754,0,1,,1999494:Id3,sendCmd 1999494/Id3
+2002794797,2002794,Misuratore En.El. Compact,Eastron-SDM120,Potenza Reattiva,Potenza Reattiva,W,Num,R,,0400180002,float754,0,1,,,NO
+2002794798,2002794,Misuratore En.El. Compact,Eastron-SDM120,Frequenza,Frequenza,Hz,Num,R,,0400460002,float754,0,1,,,NO
+2002794799,2002794,Misuratore En.El. Compact,Eastron-SDM120,Totale energia importata,Totale energia importata,kWh,Num,R,,0400480002,float754,0,1,,,NO
+2002794800,2002794,Misuratore En.El. Compact,Eastron-SDM120,Totale energia esportata,Totale energia esportata,kWh,Num,R,,04004A0002,float754,0,1,,,NO
+2002794801,2002794,Misuratore En.El. Compact,Eastron-SDM120,ID,ID,,Num,RW,,0300140002,float754,0,1,yes,,NO
+2002794802,2002794,Misuratore En.El. Compact,Eastron-SDM120,Baudrate,Baudrate,,Enum,RW,,03001C0002,float754,0,1,yes,,NO
+2002795794,2002795,Misuratore En.El. Split,Eastron-SDM120,Tensione,Tensione,V,Num,R,,0400000002,float754,0,1,,1999108:Id11,sendCmd 1999108/Id11
+2002795795,2002795,Misuratore En.El. Split,Eastron-SDM120,Corrente,Corrente,A,Num,R,,0400060002,float754,0,1,,1999108:Id12,sendCmd 1999108/Id12
+2002795796,2002795,Misuratore En.El. Split,Eastron-SDM120,Potenza Attiva,Potenza Attiva,W,Num,R,,04000C0002,float754,0,1,,1999108:Id13,sendCmd 1999108/Id13
+2002795797,2002795,Misuratore En.El. Split,Eastron-SDM120,Potenza Reattiva,Potenza Reattiva,W,Num,R,,0400180002,float754,0,1,,,NO
+2002795798,2002795,Misuratore En.El. Split,Eastron-SDM120,Frequenza,Frequenza,Hz,Num,R,,0400460002,float754,0,1,,,NO
+2002795799,2002795,Misuratore En.El. Split,Eastron-SDM120,Totale energia importata,Totale energia importata,kWh,Num,R,,0400480002,float754,0,1,,,NO
+2002795800,2002795,Misuratore En.El. Split,Eastron-SDM120,Totale energia esportata,Totale energia esportata,kWh,Num,R,,04004A0002,float754,0,1,,,NO
+2002795801,2002795,Misuratore En.El. Split,Eastron-SDM120,ID,ID,,Num,RW,,0300140002,float754,0,1,yes,,NO
+2002795802,2002795,Misuratore En.El. Split,Eastron-SDM120,Baudrate,Baudrate,,Enum,RW,,03001C0002,float754,0,1,yes,,NO
+2002111111,2002111,Sanificatore,JONIX-Sanificatore,Codice FW,Codice Firmware,,Num,R,,0300000002,int16,0,1,,,NO
+2002111112,2002111,Sanificatore,JONIX-Sanificatore,Versione FW,Versione Firmware,,Num,R,,0300000002,int16,2,1,,,NO
+2002111113,2002111,Sanificatore,JONIX-Sanificatore,Ind Modbus,Indirizzo Modbus,,Num,RW,,0300020001,int16,0,1,yes,,NO
+2002111114,2002111,Sanificatore,JONIX-Sanificatore,Configurazione,Configurazione selezionata,,Enum,R,,0300030001,int16,0,1,,,NO
+2002111115,2002111,Sanificatore,JONIX-Sanificatore,V Attuale Gen,Tensione attuale generatori,cV,Num,R,,0300060001,int16,0,1,,,NO
+2002111116,2002111,Sanificatore,JONIX-Sanificatore,Soglia V MIN,Soglia tensione minima generatori,cV,Num,R,,0300070001,int16,0,1,,,NO
+2002111117,2002111,Sanificatore,JONIX-Sanificatore,All V MIN,Allarme tensione minima generatori,,Num,RW,,0300080001,int16,0,1,yes,,NO
+2002111118,2002111,Sanificatore,JONIX-Sanificatore,Soglia V MAX,Soglia tensione massima generatori,cV,Num,R,,0300090001,int16,0,1,,,NO
+2002111119,2002111,Sanificatore,JONIX-Sanificatore,All V MAX,Allarme tensione massima generatori,,Num,RW,,03000A0001,int16,0,1,yes,,NO
+2002111120,2002111,Sanificatore,JONIX-Sanificatore,Conta ore manutenzione,Conta ore manutenzione,h,Num,R,,03000B0001,int16,0,1,,,NO
+2002111121,2002111,Sanificatore,JONIX-Sanificatore,Soglia Allarme H manutenzione,Soglia allarme conta ore manutenzione,h,Num,RW,,03000C0001,int16,0,1,yes,,NO
+2002111122,2002111,Sanificatore,JONIX-Sanificatore,All H manutenzione,Allarme conta ore manutenzione,,Num,RW,,03000D0001,int16,0,1,yes,,NO
+2002111123,2002111,Sanificatore,JONIX-Sanificatore,Conta ore sostituzione,Conta ore sostituzione,h,Num,R,,03000E0001,int16,0,1,,,NO
+2002111124,2002111,Sanificatore,JONIX-Sanificatore,Soglia Allarme H sostituzione,Soglia allarme conta ore sostituzione,h,Num,R,,03000F0001,int16,0,1,,,NO
+2002111125,2002111,Sanificatore,JONIX-Sanificatore,All H sostituzione,Allarme conta ore sostituzione,,Num,RW,,0300100001,int16,0,1,yes,,NO
+2002111126,2002111,Sanificatore,JONIX-Sanificatore,Abilitazione Modbus,Abilitazione pilotaggio On/Off Modbus,,Num,RW,,0300110001,int16,0,1,yes,,NO
+2002111127,2002111,Sanificatore,JONIX-Sanificatore,ON/Off Modbus,Pilotaggio On/Off Modbus,,Num,RW,,0300120001,int16,0,1,yes,,NO
+2002111128,2002111,Sanificatore,JONIX-Sanificatore,Soglia V manuale,Soglia manuale per allarme tensione MAX Generatori,cV,Num,RW,,0300130001,int16,0,1,yes,,NO
+2002111129,2002111,Sanificatore,JONIX-Sanificatore,Reset Contaore Manutenzione,Reset contaore manutenzione,,Num,RW,,03001B0001,int16,0,1,yes,,NO
+2002111130,2002111,Sanificatore,JONIX-Sanificatore,Reset Contaore Sostituzione,Reset contaore sostituzione,,Num,RW,,03001C0001,int16,0,1,yes,,NO
+1999204100,1999204,App,gpc-279006,Text,Temperatura Esterna,°C,Num,R,,,,,,,,no (modulo disabilitato)
+1999204101,1999204,App,gpc-279006,Tint,Temperatura Interna,°C,Num,R,,,,,,,,no (modulo disabilitato)
+1999204102,1999204,App,gpc-279006,setPointACS,Set Point Temperatura Acqua Calda Sanitaria,°C,Num,R,,,,,,,,no (modulo disabilitato)
+1999204103,1999204,App,gpc-279006,setPointFan,Set Point Ventilazione,,Num,R,,,,,,,,no (modulo disabilitato)
+1999204105,1999204,App,gpc-279006,Trad,Temperatura Caloriferi,°C,Num,R,,,,,,,,no (modulo disabilitato)
+1999204106,1999204,App,gpc-279006,Tsan,Tsan,°C,Num,R,,,,,,,,no (modulo disabilitato)
+1999204107,1999204,App,gpc-279006,co2,Sensore CO2,,Num,R,,,,,,,,no (modulo disabilitato)
+1999204108,1999204,App,gpc-279006,humidity,Sensore di Umidità,%,Num,R,,,,,,,,no (modulo disabilitato)
+1999204109,1999204,App,gpc-279006,setPointInt,Set Point Temperatura Interna,°C,Num,R,,,,,,,,no (modulo disabilitato)
+1999204110,1999204,App,gpc-279006,setPointRadiator,setPointRadiator,°C,Num,R,,,,,,,,no (modulo disabilitato)
+1999204111,1999204,App,gpc-279006,additResistance,additResistance,,Num,R,,,,,,,,no (modulo disabilitato)
+1999204112,1999204,App,gpc-279006,onoffState,onoffState,,Num,R,,,,,,,,no (modulo disabilitato)
+1999204113,1999204,App,gpc-279006,alrmState,alrmState,,Num,R,,,,,,,,no (modulo disabilitato)
+1999204114,1999204,App,gpc-279006,setPointIntSummer,setPointIntSummer,°C,Num,R,,,,,,,,no (modulo disabilitato)
+1999204104,1999204,App,gpc-279006,mode,Modo Selezionato,,Num,R,,,,,,,,no (modulo disabilitato)
+1999204115,1999204,App,gpc-279006,bypass,Bypass,,Num,R,,,,,,,,no (modulo disabilitato)
+1999204116,1999204,App,gpc-279006,compressor,Stato Compressore,,Num,R,,,,,,,,no (modulo disabilitato)
+1999204117,1999204,App,gpc-279006,regulation,Regolazione,,Num,R,,,,,,,,no (modulo disabilitato)
+1999204118,1999204,App,gpc-279006,Tdopo,Tdopo,°C,Num,R,,,,,,,,no (modulo disabilitato)
+1999224100,1999224,Gestione Sanificatore,gpc-173668,Percentuale,Percentuale,%,Num,R,,,,,,,,getShm 1999224
+1999237100,1999237,Gestione Split,gpc-712025,Uspec,Uspec,gr/Kg,Num,R,,,,,,,1999752:Id15,getShm 1999237
+1999237101,1999237,Gestione Split,gpc-712025,Log,Log,,Num,R,,,,,,,1999752:Id7,getShm 1999237
+1999237102,1999237,Gestione Split,gpc-712025,SetM,SetM,°C,Num,R,,,,,,,1999752:Id14,getShm 1999237
+1999237103,1999237,Gestione Split,gpc-712025,SetSpegni,Orario Spegnimento Notturno,,String,R,,,,,,,1999752:Id11,getShm 1999237
+1999237104,1999237,Gestione Split,gpc-712025,SetAccendi,Orario Fine Spegnimento Notturno,,String,R,,,,,,,1999752:Id10,getShm 1999237
+1999237105,1999237,Gestione Split,gpc-712025,AbilitaSpegnimento,AbilitaSpegnimento,,Num,R,,,,,,,1999752:Id1,getShm 1999237
+1999237106,1999237,Gestione Split,gpc-712025,autoMode,autoMode,,Num,R,,,,,,,1999752:Id3,getShm 1999237
+1999237107,1999237,Gestione Split,gpc-712025,currentMode,currentMode,,Num,R,,,,,,,1999752:Id4,getShm 1999237
+1999237108,1999237,Gestione Split,gpc-712025,offsetAccInv,offsetAccInv,°C,Num,R,,,,,,,1999752:Id9,getShm 1999237
+1999237109,1999237,Gestione Split,gpc-712025,offsetAccEst,offsetAccEst,°C,Num,R,,,,,,,1999752:Id8,getShm 1999237
+1999237110,1999237,Gestione Split,gpc-712025,fanControl,Velocità,,Num,R,,,,,,,,getShm 1999237
+1999237111,1999237,Gestione Split,gpc-712025,onOffSlave,Accensione Slave,,Num,R,,,,,,,1999752:Id2,getShm 1999237
+1999237112,1999237,Gestione Split,gpc-712025,SetE,SetE,°C,Num,R,,,,,,,1999752:Id12,getShm 1999237
+1999237113,1999237,Gestione Split,gpc-712025,SetI,SetI,°C,Num,R,,,,,,,1999752:Id13,getShm 1999237
+1999237114,1999237,Gestione Split,gpc-712025,DewPoint,DewPoint,°C,Num,R,,,,,,,1999752:Id5,getShm 1999237
+1999237115,1999237,Gestione Split,gpc-712025,Ingresso,Ingresso,,Num,R,,,,,,,1999752:Id6,getShm 1999237
+1999237116,1999237,Gestione Split,gpc-712025,TRif,TRif,°C,Num,R,,,,,,,,getShm 1999237
+1999690100,1999690,APP V2,gpc-exrgapp,Text,Temperatura Esterna,°C,Num,R,,,,,,,,getShm 1999690
+1999690101,1999690,APP V2,gpc-exrgapp,Tint,Temperatura Interna,°C,Num,R,,,,,,,,getShm 1999690
+1999690102,1999690,APP V2,gpc-exrgapp,setPointACS,Set Point Temperatura Acqua Calda Sanitaria,°C,Num,R,,,,,,,,getShm 1999690
+1999690103,1999690,APP V2,gpc-exrgapp,setPointFan,Set Point Ventilazione,,Num,R,,,,,,,,getShm 1999690
+1999690105,1999690,APP V2,gpc-exrgapp,Trad,Temperatura Caloriferi,°C,Num,R,,,,,,,,getShm 1999690
+1999690106,1999690,APP V2,gpc-exrgapp,Tsan,Tsan,°C,Num,R,,,,,,,,getShm 1999690
+1999690107,1999690,APP V2,gpc-exrgapp,co2,Sensore CO2,ppm,Num,R,,,,,,,,getShm 1999690
+1999690108,1999690,APP V2,gpc-exrgapp,humidity,Sensore di Umidità,%,Num,R,,,,,,,,getShm 1999690
+1999690109,1999690,APP V2,gpc-exrgapp,setPointInt,Set Point Temperatura Interna,°C,Num,R,,,,,,,,getShm 1999690
+1999690110,1999690,APP V2,gpc-exrgapp,setPointRadiator,setPointRadiator,°C,Num,R,,,,,,,,getShm 1999690
+1999690111,1999690,APP V2,gpc-exrgapp,additResistance,additResistance,,Num,R,,,,,,,,getShm 1999690
+1999690112,1999690,APP V2,gpc-exrgapp,onoffState,onoffState,,Num,R,,,,,,,,getShm 1999690
+1999690113,1999690,APP V2,gpc-exrgapp,alrmState,alrmState,,Num,R,,,,,,,,getShm 1999690
+1999690114,1999690,APP V2,gpc-exrgapp,setPointIntSummer,setPointIntSummer,°C,Num,R,,,,,,,,getShm 1999690
+1999690104,1999690,APP V2,gpc-exrgapp,mode,Modo Selezionato,,Num,R,,,,,,,,getShm 1999690
+1999690115,1999690,APP V2,gpc-exrgapp,bypass,Bypass,,Num,R,,,,,,,,getShm 1999690
+1999690116,1999690,APP V2,gpc-exrgapp,compressor,Stato Compressore,,Num,R,,,,,,,,getShm 1999690
+1999690117,1999690,APP V2,gpc-exrgapp,regulation,Regolazione,,Num,R,,,,,,,,getShm 1999690
+1999690118,1999690,APP V2,gpc-exrgapp,Tdopo,Tdopo,°C,Num,R,,,,,,,,getShm 1999690

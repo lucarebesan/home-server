@@ -1,0 +1,624 @@
+# PACKAGE NILAN - SENSORI COMMAND_LINE
+# VERSIONE OTTIMIZZATA: sensori non usati COMMENTATI, non eliminati.
+# Classificazione basata su ECM/SYNC/WRITE attuali + dashboard NILAN.
+# I blocchi commentati non effettuano polling verso Nilan.
+#
+command_line:
+
+  # TOSHIBA
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: TOSHIBA Temp.SondaAmbiente U.I.
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "TOSHIBA Temp.SondaAmbiente U.I."
+#       unique_id: 'toshiba_t_sond_amb_ui'
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id1 1999108"
+#       unit_of_measurement: "°C"
+#       device_class: temperature
+#       state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: TOSHIBA Codice Allarme U.I.
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "TOSHIBA Codice Allarme U.I."
+#       unique_id: 'toshiba_codice_allarme_ui'
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id2 1999108"
+  - sensor:
+      name: "TOSHIBA ON/OFF Unita"
+      unique_id: 'toshiba_on_off_unita'
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id3 1999108"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {0:'SPENTO', 1:'ACCESO'}.get(value | int(-1), value) }}
+  - sensor:
+      name: "TOSHIBA Modo Unita"
+      unique_id: 'toshiba_modo_unita'
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id4 1999108"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {0:'AUTOMATICO', 1:'RISCALDAMENTO', 2:'DEUMIDIFICATORE', 3:'VENTILAZIONE', 4:'RAFFRESCAMENTO'}.get(value | int(-1), value) }}
+  - sensor:
+      name: "TOSHIBA Velocita Ventilatore"
+      unique_id: 'toshiba_velocita_ventilatore'
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id5 1999108"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {0:'AUTOMATICA', 1:'BASSA', 2:'MEDIA', 3:'ALTA'}.get(value | int(-1), value) }}
+  - sensor:
+      name: "TOSHIBA Setpoint"
+      unique_id: 'toshiba_setpoint'
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id6 1999108"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: TOSHIBA Temp.Evaporatore U.E.
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "TOSHIBA Temp.Evaporatore U.E."
+#       unique_id: 'toshiba_temp_evaporatore_u_e'
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id7 1999108"
+#       unit_of_measurement: "°C"
+#       device_class: temperature
+#       state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: TOSHIBA Temp.Compressore U.E.
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "TOSHIBA Temp.Compressore U.E."
+#       unique_id: 'toshiba_temp_compressore_u_e'
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id8 1999108"
+#       unit_of_measurement: "°C"
+#       device_class: temperature
+#       state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: TOSHIBA Temp.Aspirazione Compressore U.E.
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "TOSHIBA Temp.Aspirazione Compressore U.E."
+#       unique_id: 'toshiba_temp_aspirazione_compressore_u_e'
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id9 1999108"
+#       unit_of_measurement: "°C"
+#       device_class: temperature
+#       state_class: measurement
+  - sensor:
+      name: "TOSHIBA Velocita Compressore U.E."
+      unique_id: 'toshiba_velocita_compressore_u_e'
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id10 1999108"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "rps"
+      state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: TOSHIBA Tensione
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "TOSHIBA Tensione"
+#       unique_id: 'toshiba_tensione'
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id11 1999108"
+#       unit_of_measurement: "V"
+#       device_class: voltage
+#       state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: TOSHIBA Corrente
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "TOSHIBA Corrente"
+#       unique_id: 'toshiba_corrente'
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id12 1999108"
+#       unit_of_measurement: "A"
+#       device_class: current
+#       state_class: measurement
+  - sensor:
+      name: "TOSHIBA Potenza Attiva"
+      unique_id: 'toshiba_potenza_attiva'
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id13 1999108"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "W"
+      device_class: power
+      state_class: measurement
+
+  # GESTIONE SPLIT
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: GESTIONE SPLIT Abilita Spegnimento
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "GESTIONE SPLIT Abilita Spegnimento"
+#       unique_id: "gestione_split_abilita_spegnimento"
+#       scan_interval: 15
+#       command: "/config/scripts/nilan_sensor.sh Id1 1999752"
+#       value_template: >-
+#         {{ {0:'DISABILITATO', 1:'ABILITATO'}.get(value | int(-1), value) }}
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: GESTIONE SPLIT Accensione Slave
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "GESTIONE SPLIT Accensione Slave"
+#       unique_id: "gestione_split_accensione_slave"
+#       scan_interval: 15
+#       command: "/config/scripts/nilan_sensor.sh Id2 1999752"
+  - sensor:
+      name: "GESTIONE SPLIT Auto Mode"
+      unique_id: "gestione_split_auto_mode"
+      scan_interval: 15
+      command: "/config/scripts/nilan_sensor.sh Id3 1999752"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+  - sensor:
+      name: "GESTIONE SPLIT Current Mode"
+      unique_id: "gestione_split_current_mode"
+      scan_interval: 15
+      command: "/config/scripts/nilan_sensor.sh Id4 1999752"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+  - sensor:
+      name: "GESTIONE SPLIT Dew Point"
+      unique_id: "gestione_split_dew_point"
+      scan_interval: 15
+      command: "/config/scripts/nilan_sensor.sh Id5 1999752"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: GESTIONE SPLIT Ingresso
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "GESTIONE SPLIT Ingresso"
+#       unique_id: "gestione_split_ingresso"
+#       scan_interval: 15
+#       command: "/config/scripts/nilan_sensor.sh Id6 1999752"
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: GESTIONE SPLIT Log
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "GESTIONE SPLIT Log"
+#       unique_id: "gestione_split_log"
+#       scan_interval: 15
+#       command: "/config/scripts/nilan_sensor.sh Id7 1999752"
+  - sensor:
+      name: "GESTIONE SPLIT Offset Accensione Estate"
+      unique_id: "gestione_split_offset_accensione_estate"
+      scan_interval: 15
+      command: "/config/scripts/nilan_sensor.sh Id8 1999752"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+  - sensor:
+      name: "GESTIONE SPLIT Offset Accensione Inverno"
+      unique_id: "gestione_split_offset_accensione_inverno"
+      scan_interval: 15
+      command: "/config/scripts/nilan_sensor.sh Id9 1999752"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+  - sensor:
+      name: "GESTIONE SPLIT Orario Fine Spegnimento Notturno"
+      unique_id: "gestione_split_orario_fine_spegnimento_notturno"
+      scan_interval: 15
+      command: "/config/scripts/nilan_sensor.sh Id10 1999752"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+  - sensor:
+      name: "GESTIONE SPLIT Orario Spegnimento Notturno"
+      unique_id: "gestione_split_orario_spegnimento_notturno"
+      scan_interval: 15
+      command: "/config/scripts/nilan_sensor.sh Id11 1999752"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: GESTIONE SPLIT Set E
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "GESTIONE SPLIT Set E"
+#       unique_id: "gestione_split_set_e"
+#       scan_interval: 15
+#       command: "/config/scripts/nilan_sensor.sh Id12 1999752"
+#       unit_of_measurement: "°C"
+#       device_class: temperature
+#       state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: GESTIONE SPLIT Set I
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "GESTIONE SPLIT Set I"
+#       unique_id: "gestione_split_set_i"
+#       scan_interval: 15
+#       command: "/config/scripts/nilan_sensor.sh Id13 1999752"
+#       unit_of_measurement: "°C"
+#       device_class: temperature
+#       state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: GESTIONE SPLIT Set M
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "GESTIONE SPLIT Set M"
+#       unique_id: "gestione_split_set_m"
+#       scan_interval: 15
+#       command: "/config/scripts/nilan_sensor.sh Id14 1999752"
+#       unit_of_measurement: "°C"
+#       device_class: temperature
+#       state_class: measurement
+  - sensor:
+      name: "GESTIONE SPLIT U Spec"
+      unique_id: "gestione_split_u_spec"
+      scan_interval: 15
+      command: "/config/scripts/nilan_sensor.sh Id15 1999752"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+
+  # MODULO I/O
+  - sensor:
+      name: "EGWK Temp.Aria Esterna Prima EGWK"
+      unique_id: 'egwk_temp_aria_esterna_prima_egwk'
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id14 1999108"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+
+  # COMPACT P
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: Umidità media aria interna
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "Umidità media aria interna"
+#       unique_id: 'compactp_umid_int'
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id15 1999108"
+#       unit_of_measurement: "%"
+#       state_class: measurement
+
+  # COMPACTP - API-CP1 1999494
+  - sensor:
+      name: "COMPACTP T1 Temperatura Aria Esterna Post EGWK"
+      unique_id: "compactp_t1_temperatura_aria_esterna_post_egwk"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id1 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: COMPACTP Corrente
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "COMPACTP Corrente"
+#       unique_id: "compactp_corrente"
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id2 1999494"
+#       unit_of_measurement: "A"
+#       device_class: current
+#       state_class: measurement
+  - sensor:
+      name: "COMPACTP Potenza Attiva"
+      unique_id: "compactp_potenza_attiva"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id3 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "W"
+      device_class: power
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP T2 Temperatura Immissione"
+      unique_id: "compactp_t2_temperatura_immissione"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id4 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP T4 Temperatura Dopo Scambiatore Passivo"
+      unique_id: "compactp_t4_temperatura_dopo_scambiatore_passivo"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id5 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP T5 Temperatura Batteria Superiore"
+      unique_id: "compactp_t5_temperatura_batteria_superiore"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id6 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP T6 Temperatura Batteria Inferiore"
+      unique_id: "compactp_t6_temperatura_batteria_inferiore"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id7 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP T10 Temperatura Sensore Stanza"
+      unique_id: "compactp_t10_temperatura_sensore_stanza"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id8 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP T11 Temperatura Bollitore Parte Alta"
+      unique_id: "compactp_t11_temperatura_bollitore_parte_alta"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id9 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP T12 Temperatura Bollitore Parte Bassa"
+      unique_id: "compactp_t12_temperatura_bollitore_parte_bassa"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id10 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP Stato Controllo"
+      unique_id: "compactp_stato_controllo"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id11 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {
+          0:'OFF',
+          1:'SHIFT',
+          2:'STOP',
+          3:'START',
+          4:'STANDBY',
+          5:'STOP VENTILAZIONE',
+          6:'VENTILAZIONE',
+          7:'RISCALDAMENTO',
+          8:'RAFFRESCAMENTO',
+          9:'ACS',
+          10:'ANTILEGIONELLA',
+          11:'RAFFRESCAMENTO + ACS',
+          12:'RISCALDAMENTO CENTRALE',
+          13:'SBRINAMENTO',
+          14:'PROTEZIONE ANTIGELO',
+          15:'SERVICE',
+          16:'ALLARME',
+          17:'RISCALDAMENTO + ACS'
+        }.get(value | int(-1), value) }}
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: COMPACTP Stato Accensione
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "COMPACTP Stato Accensione"
+#       unique_id: "compactp_stato_accensione"
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id12 1999494"
+#       value_template: >-
+#         {{ {0:'OFF', 1:'ON'}.get(value | int(-1), value) }}
+  - sensor:
+      name: "COMPACTP Modo Funzionale Selezionato"
+      unique_id: "compactp_modo_funzionale_selezionato"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id13 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {
+          0:'OFF',
+          1:'RISCALDAMENTO',
+          2:'RAFFRESCAMENTO',
+          3:'AUTO',
+          4:'SERVICE'
+        }.get(value | int(-1), value) }}
+  - sensor:
+      name: "COMPACTP Ventilazione Selezionata"
+      unique_id: "compactp_ventilazione_selezionata"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id14 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {
+          0:'OFF',
+          1:'STEP 1',
+          2:'STEP 2',
+          3:'STEP 3',
+          4:'STEP 4'
+        }.get(value | int(-1), value) }}
+  - sensor:
+      name: "COMPACTP Setpoint Aria"
+      unique_id: "compactp_setpoint_aria"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id15 1999494"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+
+  # COMPACTP - API-CP2 1999667
+  - sensor:
+      name: "COMPACTP Setpoint ACS Resistenza"
+      unique_id: "compactp_setpoint_acs_resistenza"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id1 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP Setpoint ACS Compressore"
+      unique_id: "compactp_setpoint_acs_compressore"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id2 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP Offset Raffrescamento"
+      unique_id: "compactp_offset_raffrescamento"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id3 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {
+          0:'OFF',
+          1:'+0',
+          2:'+1',
+          3:'+2',
+          4:'+3',
+          5:'+4',
+          6:'+5',
+          7:'+7',
+          8:'+10'
+        }.get(value | int(-1), value) }}
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: COMPACTP Forzatura Manuale
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "COMPACTP Forzatura Manuale"
+#       unique_id: "compactp_forzatura_manuale"
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id4 1999667"
+#       value_template: >-
+#         {{ {
+#           0:'OFF',
+#           1:'SBRINAMENTO',
+#           2:'FLAPS',
+#           3:'IMMISSIONE',
+#           4:'ESTRAZIONE',
+#           5:'COMPRESSORE',
+#           6:'RISCALDAMENTO',
+#           7:'ACQUA CALDA',
+#           8:'RISCALDAMENTO CENTRALE'
+#         }.get(value | int(-1), value) }}
+  - sensor:
+      name: "COMPACTP Temperatura Massima Bollitore"
+      unique_id: "compactp_temperatura_massima_bollitore"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id5 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP Serranda Aria"
+      unique_id: "compactp_serranda_aria"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id6 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {0:'OFF', 1:'ON'}.get(value | int(-1), value) }}
+  - sensor:
+      name: "COMPACTP Apertura Bypass"
+      unique_id: "compactp_apertura_bypass"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id7 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {0:'OFF', 1:'ON'}.get(value | int(-1), value) }}
+  - sensor:
+      name: "COMPACTP Chiusura Bypass"
+      unique_id: "compactp_chiusura_bypass"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id8 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {0:'OFF', 1:'ON'}.get(value | int(-1), value) }}
+  - sensor:
+      name: "COMPACTP Compressore"
+      unique_id: "compactp_compressore"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id9 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {0:'OFF', 1:'ON'}.get(value | int(-1), value) }}
+  - sensor:
+      name: "COMPACTP Resistenza Elettrica ACS"
+      unique_id: "compactp_resistenza_elettrica_acs"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id10 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      value_template: >-
+        {{ {0:'OFF', 1:'ON'}.get(value | int(-1), value) }}
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: COMPACTP Limite Bassa Umidita
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "COMPACTP Limite Bassa Umidita"
+#       unique_id: "compactp_limite_bassa_umidita"
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id11 1999667"
+#       unit_of_measurement: "%"
+#       device_class: humidity
+#       state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: COMPACTP Tempo Massimo Alta Umidita
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "COMPACTP Tempo Massimo Alta Umidita"
+#       unique_id: "compactp_tempo_massimo_alta_umidita"
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id12 1999667"
+#       unit_of_measurement: "min"
+#       state_class: measurement
+  - sensor:
+      name: "COMPACTP Isteresi NZ"
+      unique_id: "compactp_isteresi_nz"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id13 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  - sensor:
+      name: "COMPACTP Soglia Commutazione Estate Inverno"
+      unique_id: "compactp_soglia_commutazione_estate_inverno"
+      scan_interval: 60
+      command: "/config/scripts/nilan_sensor.sh Id14 1999667"
+      availability: "{{ value != 'NILAN_UNAVAILABLE' }}"
+      unit_of_measurement: "°C"
+      device_class: temperature
+      state_class: measurement
+  # -------------------------------------------------------------------------
+  # NON USATO ATTUALMENTE - COMMENTATO: COMPACTP Air Exchange Mode
+  # Non genera più polling verso Nilan; blocco conservato per ripristino.
+  # -------------------------------------------------------------------------
+#   - sensor:
+#       name: "COMPACTP Air Exchange Mode"
+#       unique_id: "compactp_air_exchange_mode"
+#       scan_interval: 60
+#       command: "/config/scripts/nilan_sensor.sh Id15 1999667"
+#       value_template: >-
+#         {{ {
+#           0:'ENERGY',
+#           1:'COMFORT'
+#         }.get(value | int(-1), value) }}
+

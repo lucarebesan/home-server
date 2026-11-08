@@ -1,0 +1,61 @@
+plugin	cmd	name	active	unit
+1999108	Id1	TOSHIBA Temp.SondaAmbiente U.I.	no	°C
+1999108	Id2	TOSHIBA Codice Allarme U.I.	no	
+1999108	Id3	TOSHIBA ON/OFF Unita	yes	
+1999108	Id4	TOSHIBA Modo Unita	yes	
+1999108	Id5	TOSHIBA Velocita Ventilatore	yes	
+1999108	Id6	TOSHIBA Setpoint	yes	°C
+1999108	Id7	TOSHIBA Temp.Evaporatore U.E.	no	°C
+1999108	Id8	TOSHIBA Temp.Compressore U.E.	no	°C
+1999108	Id9	TOSHIBA Temp.Aspirazione Compressore U.E.	no	°C
+1999108	Id10	TOSHIBA Velocita Compressore U.E.	yes	rps
+1999108	Id11	TOSHIBA Tensione	no	V
+1999108	Id12	TOSHIBA Corrente	no	A
+1999108	Id13	TOSHIBA Potenza Attiva	yes	W
+1999752	Id1	GESTIONE SPLIT Abilita Spegnimento	no	
+1999752	Id2	GESTIONE SPLIT Accensione Slave	no	
+1999752	Id3	GESTIONE SPLIT Auto Mode	yes	
+1999752	Id4	GESTIONE SPLIT Current Mode	yes	
+1999752	Id5	GESTIONE SPLIT Dew Point	yes	°C
+1999752	Id6	GESTIONE SPLIT Ingresso	no	
+1999752	Id7	GESTIONE SPLIT Log	no	
+1999752	Id8	GESTIONE SPLIT Offset Accensione Estate	yes	
+1999752	Id9	GESTIONE SPLIT Offset Accensione Inverno	yes	
+1999752	Id10	GESTIONE SPLIT Orario Fine Spegnimento Notturno	yes	
+1999752	Id11	GESTIONE SPLIT Orario Spegnimento Notturno	yes	
+1999752	Id12	GESTIONE SPLIT Set E	no	°C
+1999752	Id13	GESTIONE SPLIT Set I	no	°C
+1999752	Id14	GESTIONE SPLIT Set M	no	°C
+1999752	Id15	GESTIONE SPLIT U Spec	yes	
+1999108	Id14	EGWK Temp.Aria Esterna Prima EGWK	yes	°C
+1999108	Id15	Umidità media aria interna	no	%
+1999494	Id1	COMPACTP T1 Temperatura Aria Esterna Post EGWK	yes	°C
+1999494	Id2	COMPACTP Corrente	no	A
+1999494	Id3	COMPACTP Potenza Attiva	yes	W
+1999494	Id4	COMPACTP T2 Temperatura Immissione	yes	°C
+1999494	Id5	COMPACTP T4 Temperatura Dopo Scambiatore Passivo	yes	°C
+1999494	Id6	COMPACTP T5 Temperatura Batteria Superiore	yes	°C
+1999494	Id7	COMPACTP T6 Temperatura Batteria Inferiore	yes	°C
+1999494	Id8	COMPACTP T10 Temperatura Sensore Stanza	yes	°C
+1999494	Id9	COMPACTP T11 Temperatura Bollitore Parte Alta	yes	°C
+1999494	Id10	COMPACTP T12 Temperatura Bollitore Parte Bassa	yes	°C
+1999494	Id11	COMPACTP Stato Controllo	yes	
+1999494	Id12	COMPACTP Stato Accensione	no	
+1999494	Id13	COMPACTP Modo Funzionale Selezionato	yes	
+1999494	Id14	COMPACTP Ventilazione Selezionata	yes	
+1999494	Id15	COMPACTP Setpoint Aria	yes	°C
+1999667	Id1	COMPACTP Setpoint ACS Resistenza	yes	°C
+1999667	Id2	COMPACTP Setpoint ACS Compressore	yes	°C
+1999667	Id3	COMPACTP Offset Raffrescamento	yes	
+1999667	Id4	COMPACTP Forzatura Manuale	no	
+1999667	Id5	COMPACTP Temperatura Massima Bollitore	yes	°C
+1999667	Id6	COMPACTP Serranda Aria	yes	
+1999667	Id7	COMPACTP Apertura Bypass	yes	
+1999667	Id8	COMPACTP Chiusura Bypass	yes	
+1999667	Id9	COMPACTP Compressore	yes	
+1999667	Id10	COMPACTP Resistenza Elettrica ACS	yes	
+1999667	Id11	COMPACTP Limite Bassa Umidita	no	%
+1999667	Id12	COMPACTP Tempo Massimo Alta Umidita	no	min
+1999667	Id13	COMPACTP Isteresi NZ	yes	°C
+1999667	Id14	COMPACTP Soglia Commutazione Estate Inverno	yes	°C
+1999667	Id15	COMPACTP Air Exchange Mode	no	

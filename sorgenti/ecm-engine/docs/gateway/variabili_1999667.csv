@@ -1,0 +1,17 @@
+command,value,response_ms,err,maps_to_grandezza,device,grandezza_nome,grandezza_lbl,unit,RW,modbus_cmdR,HA_name,used_in_HA
+Id1,38,356,0,2001969003,Compact P,Setpoint_T11,Setpoint ACS Resistenza,°C,RW,0306A40001,COMPACTP Setpoint ACS Resistenza,yes
+Id2,20,318,0,2001969004,Compact P,Setpoint_T12,Setpoint ACS Compressore,°C,RW,0306A50001,COMPACTP Setpoint ACS Compressore,yes
+Id3,5,309,0,2001969009,Compact P,Cooling_Setpoint,Offset raffrescamento,,RW,0304B00001,COMPACTP Offset Raffrescamento,yes
+Id4,0,330,0,2001969042,Compact P,Manual,Forzatura manuale,,RW,0303ED0001,COMPACTP Forzatura Manuale,commented
+Id5,80,446,0,2001969053,Compact P,HotWaterTempCprMax,Temperatura massima bollitore,°C,RW,0306A70001,COMPACTP Temperatura Massima Bollitore,yes
+Id6,0.0,822,0,2001969990,Compact P,Air_flap,Serranda aria,,R,0300640001,COMPACTP Serranda Aria,yes
+Id7,0.0,607,0,2001969991,Compact P,Bypass_open,Apertura bypass,,R,0300660001,COMPACTP Apertura Bypass,yes
+Id8,0.0,313,0,2001969992,Compact P,Bypass_close,Chiusura bypass,,R,0300670001,COMPACTP Chiusura Bypass,yes
+Id9,0,595,0,2001969993,Compact P,Comp,Compressore,,R,03006D0001,COMPACTP Compressore,yes
+Id10,0,301,0,2001969994,Compact P,Hot_water_heater,Resistenza elettrica ACS,,R,0300740001,COMPACTP Resistenza Elettrica ACS,yes
+Id11,40.0,296,0,2001969019,Compact P,RHLimLo,Limite bassa umidità,%,RW,0307780001,COMPACTP Limite Bassa Umidita,commented
+Id12,60.0,295,0,2001969020,Compact P,RHTimeout,Tempo massimo alta umidità,min,RW,0307790001,COMPACTP Tempo Massimo Alta Umidita,commented
+Id13,0.8,300,0,2001969022,Compact P,AirTempRoomNZ,Isteresi NZ,°C,RW,030FAB0001,COMPACTP Isteresi NZ,yes
+Id14,16.0,286,0,2001969030,Compact P,TempSummer,Soglia commutazione Estate/Inverno,°C,RW,0304B50001,COMPACTP Soglia Commutazione Estate Inverno,yes
+Id15,1,305,0,2001969052,Compact P,AirFlowAirExchMode,Air exchange mode,,RW,03044C0001,COMPACTP Air Exchange Mode,commented
+Id16,"[""No Action""]",313,1,,,,,,,,,no

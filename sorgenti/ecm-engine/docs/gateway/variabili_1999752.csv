@@ -1,0 +1,17 @@
+command,value,response_ms,err,maps_to_grandezza,device,grandezza_nome,grandezza_lbl,unit,RW,modbus_cmdR,HA_name,used_in_HA
+Id1,0,715,0,1999237105,Gestione Split,AbilitaSpegnimento,AbilitaSpegnimento,,R,,GESTIONE SPLIT Abilita Spegnimento,commented
+Id2,0,1034,0,1999237111,Gestione Split,onOffSlave,Accensione Slave,,R,,GESTIONE SPLIT Accensione Slave,commented
+Id3,0,300,0,1999237106,Gestione Split,autoMode,autoMode,,R,,GESTIONE SPLIT Auto Mode,yes
+Id4,1,301,0,1999237107,Gestione Split,currentMode,currentMode,,R,,GESTIONE SPLIT Current Mode,yes
+Id5,17.89,597,0,1999237114,Gestione Split,DewPoint,DewPoint,°C,R,,GESTIONE SPLIT Dew Point,yes
+Id6,0.0,512,0,1999237115,Gestione Split,Ingresso,Ingresso,,R,,GESTIONE SPLIT Ingresso,commented
+Id7,3,282,0,1999237101,Gestione Split,Log,Log,,R,,GESTIONE SPLIT Log,commented
+Id8,1.0,313,0,1999237109,Gestione Split,offsetAccEst,offsetAccEst,°C,R,,GESTIONE SPLIT Offset Accensione Estate,yes
+Id9,-3.0,315,0,1999237108,Gestione Split,offsetAccInv,offsetAccInv,°C,R,,GESTIONE SPLIT Offset Accensione Inverno,yes
+Id10,8.5,342,0,1999237104,Gestione Split,SetAccendi,Orario Fine Spegnimento Notturno,,R,,GESTIONE SPLIT Orario Fine Spegnimento Notturno,yes
+Id11,20.5,303,0,1999237103,Gestione Split,SetSpegni,Orario Spegnimento Notturno,,R,,GESTIONE SPLIT Orario Spegnimento Notturno,yes
+Id12,"[""done""]",285,0,1999237112,Gestione Split,SetE,SetE,°C,R,,GESTIONE SPLIT Set E,commented
+Id13,"[""done""]",355,0,1999237113,Gestione Split,SetI,SetI,°C,R,,GESTIONE SPLIT Set I,commented
+Id14,28.0,586,0,1999237102,Gestione Split,SetM,SetM,°C,R,,GESTIONE SPLIT Set M,commented
+Id15,12.79,298,0,1999237100,Gestione Split,Uspec,Uspec,gr/Kg,R,,GESTIONE SPLIT U Spec,yes
+Id16,"[""No Action""]",302,1,,,,,,,,,no

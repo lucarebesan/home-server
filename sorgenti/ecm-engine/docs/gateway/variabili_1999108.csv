@@ -1,0 +1,17 @@
+command,value,response_ms,err,maps_to_grandezza,device,grandezza_nome,grandezza_lbl,unit,RW,modbus_cmdR,HA_name,used_in_HA
+Id1,23.0,293,0,2002144148,Split,UnitAmbientTemperature,Temperatura Ambiente,°C,R,0300050001,TOSHIBA Temp.SondaAmbiente U.I.,commented
+Id2,0.0,517,0,2002144153,Split,ErrorCode,Codice Allarme,,R,03000B0001,TOSHIBA Codice Allarme U.I.,commented
+Id3,0,344,0,2002144144,Split,UnitONOFF,ON/OFF unità,,RW,0300000001,TOSHIBA ON/OFF Unita,yes
+Id4,1,303,0,2002144145,Split,UnitMode,Modo unità,,RW,0300010001,TOSHIBA Modo Unita,yes
+Id5,2,297,0,2002144146,Split,UnitFanSpeed,Velocità Ventilatore,,RW,0300020001,TOSHIBA Velocita Ventilatore,yes
+Id6,28.0,323,0,2002144147,Split,UnitTemperatureSetpoint,Setpoint ,°C,RW,0300040001,TOSHIBA Setpoint,yes
+Id7,8.0,296,0,2002144156,Split,TEtemperature,Temperatura Evaporatore,°C,R,03113A000B,TOSHIBA Temp.Evaporatore U.E.,commented
+Id8,14.0,819,0,2002144158,Split,Compressortemperature,Temperatura Compressore,°C,R,03113A000B,TOSHIBA Temp.Compressore U.E.,commented
+Id9,9.0,1209,0,2002144159,Split,SuctionTemperatureTS,Temperatura Aspirazione Compressore,°C,R,03113A000B,TOSHIBA Temp.Aspirazione Compressore U.E.,commented
+Id10,0.0,953,0,2002144163,Split,CompressorRevolution,Velocità Compressore,rps,R,03113A000B,TOSHIBA Velocita Compressore U.E.,yes
+Id11,222.9,6139,0,2002795794,Misuratore En.El. Split,Tensione,Tensione,V,R,0400000002,TOSHIBA Tensione,commented
+Id12,0.15,1045,0,2002795795,Misuratore En.El. Split,Corrente,Corrente,A,R,0400060002,TOSHIBA Corrente,commented
+Id13,9,1026,0,2002795796,Misuratore En.El. Split,Potenza Attiva,Potenza Attiva,W,R,04000C0002,TOSHIBA Potenza Attiva,yes
+Id14,12.8,637,0,2002022022,Modulo I/O,Ing Temp 1,Temperatura aria esterna prima EGWK,°C,R,0300470001,EGWK Temp.Aria Esterna Prima EGWK,yes
+Id15,"[""done""]",281,0,,,,,,,,Umidità media aria interna,commented
+Id16,"[""No Action""]",351,1,,,,,,,,,no

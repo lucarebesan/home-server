@@ -295,8 +295,18 @@ class Engine:
         # e non devono ritardare comandi e supervisione
         now = int(self.clock())
         since = now - config.RETENTION_DAYS * 86400
+        t0 = time.monotonic()
         self.store.purge(since)
-        stats = aggregate(segment(self.store.iter_samples_since(since)))
+        n = [0]
+
+        def counted(rows):
+            for r in rows:
+                n[0] += 1
+                yield r
+        periods = segment(counted(self.store.iter_samples_since(since)))
+        stats = aggregate(periods)
+        log.info("apprendimento: %d campioni, %d periodi, %d statistiche in %.1f s",
+                 n[0], len(periods), len(stats), time.monotonic() - t0)
         with self.lock:
             self.stats = stats
             self._update_proposal()

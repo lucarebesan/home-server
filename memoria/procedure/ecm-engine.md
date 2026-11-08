@@ -14,7 +14,8 @@ Sorgente, spec e piani: repository locale `Misc/ecm-engine/` sul PC di Mattia (`
 - Ogni 15 minuti ricalcola l'apprendimento (circa 3,5 s su 180 mila campioni) e aggiorna le entità.
 - Pubblica in HA via MQTT discovery: `sensor.ecm_engine_*` (stato, in breve, migliore caldo/freddo, apprendimento, prova proposta, prova in corso, ultime prove, da misurare, dettaglio, avvisi), `binary_sensor.ecm_engine_prova_avviabile`, `button.ecm_engine_avvia_prova`, `switch.ecm_engine_prove_automatiche`.
 - Le entità sono mostrate nella tab "Apprendimento" della dashboard ECM v2.
-- "Da misurare" (`sensor.ecm_engine_da_misurare`, max 20 righe) elenca solo i candidati ammessi **adesso**: stagione, fascia di temperatura esterna, zone compatibili, meno di 100 misure. Di notte (fuori `input_datetime.nilan_mattina`–`nilan_serale`, oggi 08:30–20:30) esclude Nilan V4 e Toshiba velocità alta, quindi "Toshiba caldo alta" compare solo di giorno (verificato 08/11/2026 alle 21:00, 14 righe senza velocità alta). Etichetta: "alta", non "alto".
+- "Da misurare" (`sensor.ecm_engine_da_misurare`) elenca **tutte** le combinazioni della stagione (inverno 28, estate 49; V1 esclusa) in tre sezioni, attributo `sezione` di ogni riga: "Provabili adesso" (nell'ordine in cui il motore le proporrebbe), "Non provabili adesso" (con `motivo`), "Già misurate" (100%). Lo stato è il numero di combinazioni ancora da misurare. Di notte (fuori `input_datetime.nilan_mattina`–`nilan_serale`, oggi 08:30–20:30) le prove con Nilan V4 o Toshiba velocità alta non si possono fare: finiscono in "Non provabili adesso". Le etichette dicono "caldo alta", non "alto".
+- `apprendimento_caldo`/`apprendimento_freddo` (%) contano tutte le combinazioni della stagione, giorno o notte (fino all'08/11 la percentuale cambiava tra giorno e notte).
 - Token HA in `~/.config/ecm/ha_token` (montato in sola lettura nel container). Mosquitto locale senza autenticazione.
 
 ## Prove

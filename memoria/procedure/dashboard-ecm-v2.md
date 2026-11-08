@@ -16,6 +16,8 @@ Dashboard storage separata dalla Overview, `url_path` `ecm-v2`. Tab: Stato, Impo
 
 Le istruzioni d'uso sono nell'intestazione dello script. In sintesi: copiare JSON e script sul server, poi `docker exec -i -e TOKEN="$(cat ~/.config/ecm/ha_token)" homeassistant python3 - ... < deploy_ws.py`.
 
+Prima di salvare, confrontare la build con il backup appena fatto (vista per vista): se il live è stato modificato a mano dopo l'ultima build, il salvataggio lo sovrascrive. Se differiscono parti che non si stanno toccando, allineare prima il sorgente, oppure partire dal backup e sostituire solo le card cambiate.
+
 ## Verifica
 
 Aprire `/ecm-v2/apprendimento` e controllare che le altre tab mostrino ancora le loro card. Il risultato del salvataggio deve essere `"success": true`.
@@ -25,6 +27,8 @@ Aprire `/ecm-v2/apprendimento` e controllare che le altre tab mostrino ancora le
 Salvare via WebSocket il JSON di backup più recente.
 
 ## Note
+
+- La card "Da misurare" (tab Apprendimento) divide le righe per l'attributo `sezione` pubblicato da `ecm-engine` (vedi `ecm-engine.md`).
 
 - Nei blocchi markdown con tabelle usare `|-` in YAML: con `>-` le righe si uniscono e la tabella si rompe.
 - In HA una card si può nascondere solo in base allo stato di un'entità, non a un attributo: per questo il motore pubblica `binary_sensor.ecm_engine_prova_avviabile`.

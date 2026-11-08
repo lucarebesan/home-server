@@ -30,10 +30,22 @@ ssh home@192.168.1.100 'cd ~/ecm-engine && docker compose down'
 - `sensor.ecm_engine_apprendimento_caldo`, `sensor.ecm_engine_apprendimento_freddo` (%)
 - `sensor.ecm_engine_prova_proposta`: attributi `codice`, `durata`, `motivo`, `avviabile`, `motivo_blocco`
 - `sensor.ecm_engine_prova_in_corso`
-- `sensor.ecm_engine_dettaglio`: attributo `tabella` con una riga per combinazione
+- `sensor.ecm_engine_dettaglio`: attributo `tabella` con una riga per combinazione (fascia esterna attuale)
+- `sensor.ecm_engine_da_misurare`: tutte le combinazioni della stagione, attributo `righe` con `sezione` (provabili adesso, non provabili adesso con `motivo`, già misurate)
+- `sensor.ecm_engine_ultime_prove`, `binary_sensor.ecm_engine_prova_avviabile`
 - `sensor.ecm_engine_avvisi`: attributo `elenco`
 - `button.ecm_engine_avvia_prova`: avvia la prova proposta
 - `switch.ecm_engine_prove_automatiche`: prove automatiche (10-17, massimo 3 al giorno)
+
+## Correzioni sui dati
+
+Applicate dal segmenter a ogni ricalcolo, quindi anche allo storico:
+
+- **Resistenza ACS** (`correct_acs`): il minuto resta valido con la combinazione dell'aria e la resistenza (circa 1,3 kW) viene tolta dal contatore Nilan.
+- **Temperatura esterna** (`fix_text`): la sonda nel condotto della Compact vale solo dopo 10 minuti di ventilazione; negli altri minuti si interpola tra le letture buone vicine.
+- **Stati illeggibili per poco** (`hold_states` nel campionamento live): ultimo valore valido per al più 3 minuti.
+
+Per riparare lo storico dal datalogger del gateway (stati mancanti, consumo Compact dai kWh): `python -m ecm_engine.gw_repair --help`. Procedura completa in `memoria/procedure/ecm-engine.md` del repository home-server.
 
 ## Specifica
 

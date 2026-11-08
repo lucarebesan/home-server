@@ -44,6 +44,7 @@ Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo de
 - Dal browser con la sessione admin aperta, la richiesta si fa con `fetch("/cgi-bin/dataLogCgi", {method: "POST", body: "query=" + encodeURIComponent(JSON.stringify(q))})`: la password non passa mai dall'agente.
 - **Il campo `utc` non è UTC**: è l'ora locale scritta come epoch (+2 h in estate, +1 h in inverno). Il 25/10 il gateway ha cambiato ora alle 07:52, non alle 03:00.
 - Export eseguito l'8/11 dalla sessione admin nel browser; file in `sorgenti/ecm-engine/data_gw/` sul PC di Mattia (circa 92 MB, fuori da git).
+- Scaricati in seguito, sempre in `data_gw/`: `e90_20261108*.json` (17:00–19:30 dell'8/11), `repair_20261107_08.json` (Compact P e Split dal 07/11 18:00 all'08/11 23:00, usato da `gw_repair`), `getConf_20261108_prima.json` (configurazione completa letta con l'admin prima del tentativo di mappare i kWh; può contenere dati di rete, per questo non è in git).
 
 ## Contatori di energia (kWh)
 

@@ -86,3 +86,9 @@ Solo i minuti precedenti il primo campione già presente nel DB (`INSERT OR IGNO
 ts < il limite e SOSTITUISCE solo i campioni già nel DB non validi con motivo "dato mancante t_zg" o "cp non
 classificato" (`REPLACE_MOTIVI`): serve a recuperare i minuti scartati dalla prima importazione grazie al ripiego T10 e
 a V1. Tutti gli altri campioni, e i minuti assenti dal DB, restano intatti. Stampa i conteggi per motivo precedente.
+
+## Correzioni successive all'import (08/11/2026)
+
+- `t_ext` resta la sonda "Ing Temp 1" grezza nel database; il segmenter (`fix_text`) la sostituisce nei minuti con la Compact ferma o appena ripartita, interpolando tra le letture dopo 10 minuti di ventilazione.
+- `p_cp` fino al 31/10 21:00 è stato sostituito con la media dal contatore "Totale energia importata" (`gw_repair --energia-cp`): la potenza istantanea registrata ogni 600 s perdeva i cicli del compressore.
+- I minuti con resistenza ACS e quelli con stati non classificabili sono stati riclassificati con `gw_repair` usando gli stati del datalogger.

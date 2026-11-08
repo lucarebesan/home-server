@@ -5,6 +5,8 @@ Uso (dentro il container ecm-engine):
 La cartella contiene gli export del datalogger (vedi FILES) e ha_zone_stats.json con le
 medie orarie delle temperature di zona prese dalle statistiche a lungo termine di HA.
 Inserisce solo minuti PRIMA del primo campione già presente: non sovrascrive nulla.
+Con --replace-before <ts> (epoch, o data locale AAAA-MM-GG[THH:MM]) invece SOSTITUISCE i campioni con
+ts < <ts> oggi non validi per uno dei motivi in REPLACE_MOTIVI, lasciando intatto tutto il resto.
 Mappatura e regole: docs/gateway/import_mapping.md.
 """
 import bisect
@@ -55,6 +57,9 @@ TOSH_VENT = {0: "AUTOMATICA", 1: "BASSA", 2: "MEDIA", 3: "ALTA"}
 
 
 GW_TZ = ZoneInfo("Europe/Rome")
+
+# motivi di scarto recuperabili con --replace-before (ripiego T10 su zone, V1 osservabile)
+REPLACE_MOTIVI = ("dato mancante t_zg", "cp non classificato")
 
 
 # ---------- parsing
@@ -222,6 +227,8 @@ def build_samples(cp: dict, split: dict, io: dict, m_cp, m_tosh, zones: dict, en
     pc = StepLookup(m_cp, METER_MAX_AGE_S)
     pt = StepLookup(m_tosh, METER_MAX_AGE_S)
     empty_split = {"tosh_on": None, "tosh_modo": None, "tosh_vent": None}
+    # prima della prima statistica di zona di HA le zone mancano: ripiego sulla sonda ambiente Nilan T10
+    zone_start = min((z.ts[0] - 1800 if z.ts else float("inf")) for z in zones.values())
     out, stagione = [], None
     for ts in sorted(cp):
         if ts >= end_ts:
@@ -232,6 +239,8 @@ def build_samples(cp: dict, split: dict, io: dict, m_cp, m_tosh, zones: dict, en
                 **(sp(ts) or empty_split),
                 "t_ext": te(ts), "p_cp": pc(ts), "p_tosh": pt(ts),
                 "t_zg": zones["t_zg"](ts), "t_zn": zones["t_zn"](ts)}
+        if snap["t_zg"] is None and snap["t_zn"] is None and ts < zone_start:
+            snap["t_zg"] = snap["t_zn"] = snap["t10"]
         out.append(build_sample(snap, ts, None))
     return out
 
@@ -254,7 +263,37 @@ def _fmt(ts) -> str:
     return time.strftime("%d/%m/%Y %H:%M", time.localtime(ts))
 
 
-def import_dir(d: str, db_path: str) -> int:
+def parse_ts(s: str) -> int:
+    """Epoch oppure data/ora locale (Europe/Rome) AAAA-MM-GG[THH:MM[:SS]]."""
+    if s.strip().isdigit():
+        return int(s)
+    return int(datetime.fromisoformat(s).replace(tzinfo=GW_TZ).timestamp())
+
+
+def replace_invalid(store, samples: list[dict], before: int, motivi=REPLACE_MOTIVI) -> tuple[Counter, list[dict]]:
+    """Sostituisce i campioni esistenti con ts < before, non validi per uno dei motivi dati,
+    con quelli ricostruiti. Gli altri campioni (e i minuti assenti dal DB) restano intatti.
+    Ritorna ({(motivo precedente, nuovo esito): n}, campioni scritti)."""
+    done: Counter = Counter()
+    written = []
+    with store._lock:
+        old = {r[0]: r[1] for r in store.db.execute(
+            f"SELECT ts, motivo FROM samples WHERE ts < ? AND valido = 0 AND motivo IN ({','.join('?' * len(motivi))})",
+            (before, *motivi))}
+        rows = []
+        for s in samples:
+            if s["ts"] in old and s["ts"] < before:
+                done[(old[s["ts"]], "valido" if s["valido"] else s["motivo"])] += 1
+                written.append(s)
+                s = dict(s, cp_compressore=_norm_onoff(s.get("cp_compressore")))
+                rows.append([s.get(c) for c in SAMPLE_COLS])
+        store.db.executemany(f"INSERT OR REPLACE INTO samples ({','.join(SAMPLE_COLS)}) "
+                             f"VALUES ({','.join('?' * len(SAMPLE_COLS))})", rows)
+        store.db.commit()
+    return done, written
+
+
+def import_dir(d: str, db_path: str, replace_before: int | None = None) -> int:
     t0 = time.time()
     cp = parse_chunks(_load(d, FILES["cp"]), CP_COLS)
     split = parse_chunks(_load(d, FILES["split"]), SPLIT_COLS)
@@ -269,6 +308,19 @@ def import_dir(d: str, db_path: str) -> int:
     with store._lock:
         first = store.db.execute("SELECT MIN(ts) FROM samples").fetchone()[0]
     end = first if first is not None else int(time.time())
+    if replace_before is not None:
+        samples = build_samples(cp, split, io, m_cp, m_tosh, zones, replace_before)
+        done, written = replace_invalid(store, samples, replace_before)
+        n = sum(done.values())
+        print(f"sostituiti {n} campioni con ts < {_fmt(replace_before)}")
+        for (old, new), k in sorted(done.items(), key=lambda x: -x[1]):
+            print(f"  {old} -> {new}: {k}")
+        v = [s for s in written if s["valido"]]
+        print("codici dei sostituiti validi (top 20): " + ", ".join(
+            f"E{c}={k}" for c, k in Counter(s["code"] for s in v).most_common(20)))
+        print("codici V1 (u=7/8): " + ", ".join(
+            f"E{c}={k}" for c, k in sorted(Counter(s["code"] for s in v if s["code"] % 10 >= 7).items())))
+        return n
     samples = build_samples(cp, split, io, m_cp, m_tosh, zones, end)
     if not samples:
         print("nessun campione da inserire")
@@ -299,10 +351,18 @@ def import_dir(d: str, db_path: str) -> int:
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 1:
-        print("uso: python -m ecm_engine.gw_import <cartella>")
+    args, before = list(argv), None
+    if "--replace-before" in args:
+        i = args.index("--replace-before")
+        if i + 1 >= len(args):
+            print("--replace-before richiede un valore")
+            return 2
+        before = parse_ts(args[i + 1])
+        del args[i:i + 2]
+    if len(args) != 1:
+        print("uso: python -m ecm_engine.gw_import <cartella> [--replace-before <epoch|AAAA-MM-GGTHH:MM>]")
         return 2
-    import_dir(argv[0], config.DB_PATH)
+    import_dir(args[0], config.DB_PATH, before)
     return 0
 
 

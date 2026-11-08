@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 
 import pytest
 
@@ -216,3 +217,51 @@ def test_import_dir_only_before_first_sample(tmp_path, capsys, no_tz):
     assert sorted(rows) == [600, 660, 720]
     assert rows[720]["code"] == 99 and rows[600]["code"] == 1 and rows[600]["valido"] == 1
     assert "inseriti 2" in capsys.readouterr().out
+
+
+# ---------- ripiego T10 e sostituzione
+
+def test_t10_fallback_only_before_first_zone_stat():
+    cp = dict([_cp(600, T10="22.5"), _cp(7200, T10="22.5")])
+    split = dict([_split(600), _split(7200)])
+    io = {600: {"Ing Temp 1": "30"}, 7200: {"Ing Temp 1": "30"}}
+    # statistiche di zona solo da 6000 s (centro 7800)
+    zones = {"t_zg": g.HourlyInterp([(6000, 24.0)]), "t_zn": g.HourlyInterp([(6000, 23.0)])}
+    out = g.build_samples(cp, split, io, [(0, 35.0)], [(0, 9.0)], zones, end_ts=10_000)
+    a, b = out
+    assert a["t_zg"] == a["t_zn"] == 22.5 and a["valido"] == 1
+    assert b["t_zg"] == 24.0 and b["t_zn"] == 23.0          # zone vere, niente T10
+
+
+def test_no_t10_fallback_after_zone_stats_end():
+    cp = dict([_cp(20_000, T10="22.5")])
+    zones = {"t_zg": g.HourlyInterp([(0, 24.0)]), "t_zn": g.HourlyInterp([(0, 23.0)])}
+    out = g.build_samples(cp, dict([_split(20_000)]), {20_000: {"Ing Temp 1": "30"}}, [(19_900, 35.0)],
+                          [(19_900, 9.0)], zones, end_ts=30_000)
+    assert out[0]["t_zg"] is None and out[0]["motivo"] == "dato mancante t_zg"
+
+
+def test_parse_ts():
+    assert g.parse_ts("1700000000") == 1700000000
+    assert g.parse_ts("2026-08-27T14:00") == int(datetime(2026, 8, 27, 12, 0, tzinfo=timezone.utc).timestamp())
+
+
+def test_replace_invalid_only_touches_listed_motivi(tmp_path):
+    from ecm_engine.store import Store
+    st = Store(str(tmp_path / "e.db"))
+    base = {"valido": 0, "tipo": None, "code": None}
+    st.add_samples([
+        dict(base, ts=600, motivo="dato mancante t_zg"), dict(base, ts=660, motivo="cp non classificato"),
+        dict(base, ts=720, motivo="cp_stato ACS"), dict(base, ts=780, motivo="dato mancante t_zg"),
+        {"ts": 840, "valido": 1, "code": 99, "tipo": "HEAT", "motivo": None}])
+    new = lambda ts, v=1: {"ts": ts, "valido": v, "code": 7, "tipo": "NEUTRO", "motivo": None if v else "x",
+                          "cp_compressore": "OFF"}
+    done, written = g.replace_invalid(st, [new(600), new(660), new(720), new(780), new(840), new(900)], 780)
+    rows = {r["ts"]: r for r in st.samples_since(0)}
+    assert sorted(rows) == [600, 660, 720, 780, 840]      # 900 assente: non inserito
+    assert rows[600]["valido"] == 1 and rows[660]["code"] == 7
+    assert rows[720]["valido"] == 0 and rows[720]["motivo"] == "cp_stato ACS"   # altro motivo: intatto
+    assert rows[780]["valido"] == 0                                              # ts >= before: intatto
+    assert rows[840]["code"] == 99
+    assert done == {("dato mancante t_zg", "valido"): 1, ("cp non classificato", "valido"): 1}
+    assert len(written) == 2

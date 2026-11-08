@@ -10,6 +10,9 @@ from .combo import RESISTENZA_ACS
 R_ACS_DEFAULT = 1320.0   # W, resistenza ACS misurata sul contatore Nilan (03-08/11: 1260-1390)
 ACS_LAG_S = 180          # il contatore segue il flag della resistenza con 1-2 minuti di ritardo
 ACS_CTX_S = 600          # minuti senza resistenza prima e dopo, per la base del consumo Nilan
+TEXT_ASSEST_S = 600      # la sonda esterna (condotto Compact) è affidabile dopo 10 min di ventilazione
+TEXT_MAX_GAP_S = 12 * 3600   # interpolazione tra due letture buone distanti al più 12 ore
+TEXT_HOLD_S = 6 * 3600       # senza lettura buona dopo: ultima buona per al più 6 ore
 
 
 @dataclass
@@ -171,6 +174,55 @@ def _flush(pre, buf, last_acs):
     yield from post
 
 
+def _ventila(r: dict) -> bool:
+    c = r.get("code")
+    return c is not None and c % 10 != 0
+
+
+def _fill_text(buf: list[dict], prima, dopo) -> list[dict]:
+    """Minuti senza lettura affidabile: interpolati tra prima e dopo (ts, °C), oppure l'ultima
+    buona entro TEXT_HOLD_S, altrimenti il valore grezzo."""
+    out = []
+    for r in buf:
+        if prima and dopo and dopo[0] - prima[0] <= TEXT_MAX_GAP_S:
+            v = prima[1] + (dopo[1] - prima[1]) * (r["ts"] - prima[0]) / (dopo[0] - prima[0])
+        elif prima and r["ts"] - prima[0] <= TEXT_HOLD_S:
+            v = prima[1]
+        else:
+            out.append(r)
+            continue
+        out.append(dict(r, t_ext=round(v, 2), t_ext_stimata=True))
+    return out
+
+
+def fix_text(samples):
+    """Generatore: la temperatura esterna vale solo dopo TEXT_ASSEST_S di ventilazione Compact
+    continua (con la Compact ferma la sonda legge aria ferma, in media +2,2 °C). Gli altri
+    minuti la ricevono interpolata tra le letture buone vicine (vedi _fill_text)."""
+    prima = None          # ultima lettura buona (ts, °C)
+    on_since = None
+    buf: list[dict] = []
+    for r in samples:
+        if _ventila(r):
+            on_since = r["ts"] if on_since is None else on_since
+        else:
+            on_since = None
+        buona = on_since is not None and r["ts"] - on_since >= TEXT_ASSEST_S and r.get("t_ext") is not None
+        if buona:
+            dopo = (r["ts"], r["t_ext"])
+            yield from _fill_text(buf, prima, dopo)
+            buf = []
+            prima = dopo
+            yield r
+            continue
+        buf.append(r)
+        if r["ts"] - buf[0]["ts"] > TEXT_MAX_GAP_S:
+            # nessuna lettura buona da troppo: questi minuti non avranno una "dopo" utile
+            yield from _fill_text(buf, prima, None)
+            buf = []
+    yield from _fill_text(buf, prima, None)
+
+
 def _usable(r: dict) -> bool:
     if not r.get("valido") or r.get("code") is None:
         return False
@@ -184,7 +236,7 @@ def _usable(r: dict) -> bool:
 def segment(samples, gap_s: int = 180, settle_s: int = 300,
             min_useful_s: int = 600) -> list[Period]:
     out, group = [], []
-    for r in correct_acs(samples):
+    for r in correct_acs(fix_text(samples)):
         ok = _usable(r)
         if group and ok and r["code"] == group[-1]["code"] \
                 and r.get("test_id") == group[-1].get("test_id") \

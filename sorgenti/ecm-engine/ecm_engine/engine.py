@@ -108,7 +108,7 @@ class Engine:
                    soc=s["soc"], pv=s.get("pv") or 0.0, load=s.get("load") or 0.0,
                    t_zg=s["t_zg"], t_zn=s["t_zn"], lim_inf=s["lim_inf"], lim_sup=s["lim_sup"],
                    mattina=_t(s.get("mattina"), dtime(8, 30)), serale=_t(s.get("serale"), dtime(22, 0)),
-                   t_ext=s["t_ext"] if s.get("t_ext") is not None else 10.0,
+                   t_ext=next((s[k] for k in ("t_ext_aff", "t_ext") if s.get(k) is not None), 10.0),
                    soglia_estate=soglia, write_on=s.get("write") == "on")
 
     def _day_start(self) -> float:

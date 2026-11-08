@@ -41,6 +41,8 @@ ENTITIES = {
     "t10": "sensor.compactp_t10_temperatura_sensore_stanza",
     "t2": "sensor.compactp_t2_temperatura_immissione",
     "t_ext": "sensor.egwk_temp_aria_esterna_prima_egwk",
+    # stessa sonda, ma solo dopo 10 min di ventilazione Compact (package HA ecm_temperatura_esterna)
+    "t_ext_aff": "sensor.ecm_temperatura_esterna_affidabile",
     "soc": "sensor.growatt_inverter_growatt_battery_soc",
     "pv": "sensor.growatt_inverter_growatt_pv_power_total",
     "load": "sensor.growatt_inverter_growatt_total_load_power",
@@ -50,6 +52,6 @@ ENTITIES = {
     "write": "automation.nilan_write",
 }
 
-NUMERIC_KEYS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext",
+NUMERIC_KEYS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext", "t_ext_aff",
                 "soc", "pv", "load", "imp", "discharge", "charge", "lim_inf", "lim_sup",
                 "commutazione", "isteresi_comm"]

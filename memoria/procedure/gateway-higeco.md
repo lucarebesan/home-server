@@ -21,6 +21,20 @@ Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo de
 - `getShm {"idPlugin":1999690}` restituisce in 0,4 s i valori del modulo APP, compresa l'**umidità vera** (il sensore HA su 1999108 Id15 legge un registro non mappato).
 - **Solo comandi di lettura**: mai comandi `W*`, né set/save/reset/reboot.
 
+## Lettura da Home Assistant (dall'8/11)
+
+- `/config/scripts/nilan_batch.py`: una login con cookie proprio (`/config/tmp/gwc_batch_cookie.txt`, separato da quello di `nilan_write.sh`), poi una sola richiesta con 30 `sendCommand` e due `getShm` (1999237 per lo split, 1999690 per l'umidità). Stampa un JSON con un valore per unique_id, oppure null.
+- In `packages/nilan_sensori.yaml`: il command_line "Nilan Batch" (ogni 60 s, timeout 55 s; stato = numero di valori validi) e 39 sensori template con gli stessi nomi, unique_id e `entity_id` dei vecchi command_line. `sensor.nilan_batch` è escluso dal recorder (vale dal prossimo riavvio di HA).
+- `sensor.compactp_offset_raffrescamento` resta un command_line separato: passando da un template il valore "+4" diventerebbe il numero 4, mentre WRITE si aspetta la stringa.
+- I sensori dello split ora si aggiornano ogni 60 s invece che ogni 15 s (sono usati solo nelle dashboard).
+- Verifica: `sensor.nilan_batch` si aggiorna ogni minuto con 39 valori su 39; nessun errore di command_line o template in `docker logs homeassistant`.
+- **Rollback senza fermare HA** (backup in `/config/tmp/backup_nilan_batch/`):
+  1. `docker exec homeassistant cp /config/tmp/backup_nilan_batch/nilan_sensori.yaml.bak /config/packages/nilan_sensori.yaml`;
+  2. `template.reload`;
+  3. togliere dal registro le 39 voci template di quei unique_id con `config/entity_registry/remove` via WebSocket;
+  4. `command_line.reload`: i vecchi sensori riprendono gli `entity_id` originali;
+  5. se serve, `git revert 9b22cc2` sul repo HA e cancellare `scripts/nilan_batch.py`.
+
 ## Storico (datalogger)
 
 - Inizia il 2026-07-04 06:03. Compact P, Split e modulo I/O ogni 60 s; contatori ogni 600 s.

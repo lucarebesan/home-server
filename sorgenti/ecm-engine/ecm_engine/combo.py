@@ -10,6 +10,7 @@ TOSH_VENT = {"BASSA": 1, "MEDIA": 2, "ALTA": 3}
 TOSH_MODO_BASE = {"DEUMIDIFICATORE": 0, "RAFFRESCAMENTO": 3, "RISCALDAMENTO": 6}
 CP_STATI_ESCLUSI = {"ACS", "ANTILEGIONELLA", "SBRINAMENTO", "ALLARME", "SERVICE", "PROTEZIONE ANTIGELO"}
 SPEED_NAME = {1: "bassa", 2: "media", 3: "alta"}
+RESISTENZA_ACS = "resistenza ACS"
 
 
 @dataclass(frozen=True)
@@ -72,8 +73,6 @@ def classify(s: dict) -> Combo:
     stato = _u(s.get("cp_stato"))
     if stato in CP_STATI_ESCLUSI:
         return Combo(None, None, f"cp_stato {stato}")
-    if _u(s.get("cp_resistenza")) == "ON":
-        return Combo(None, None, "resistenza ACS")
     if _u(s.get("free_cooling")) in ("ATTIVATO", "PREPARAZIONE"):
         return Combo(None, None, "free cooling")
     u = cp_unit(s.get("cp_vent"), s.get("cp_compressore"))
@@ -83,7 +82,10 @@ def classify(s: dict) -> Combo:
     if d is None:
         return Combo(None, None, "toshiba non classificato")
     code = 10 * d + u
-    return Combo(code, tipo_of(code, s.get("stagione")), None)
+    # resistenza ACS: la combinazione resta quella dell'aria; il suo consumo (contatore Nilan)
+    # viene tolto dal segmenter (correct_acs). Il motivo resta sul campione come marcatore.
+    acs = RESISTENZA_ACS if _u(s.get("cp_resistenza")) == "ON" else None
+    return Combo(code, tipo_of(code, s.get("stagione")), acs)
 
 
 def _vnum(u: int) -> int:

@@ -16,6 +16,9 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 - Le entità sono mostrate nella tab "Apprendimento" della dashboard ECM v2.
 - "Da misurare" (`sensor.ecm_engine_da_misurare`) elenca **tutte** le combinazioni della stagione (inverno 28, estate 49; V1 esclusa) in tre sezioni, attributo `sezione` di ogni riga: "Provabili adesso" (nell'ordine in cui il motore le proporrebbe), "Non provabili adesso" (con `motivo`), "Già misurate" (100%). Lo stato è il numero di combinazioni ancora da misurare. Di notte (fuori `input_datetime.nilan_mattina`–`nilan_serale`, oggi 08:30–20:30) le prove con Nilan V4 o Toshiba velocità alta non si possono fare: finiscono in "Non provabili adesso". Le etichette dicono "caldo alta", non "alto".
 - `apprendimento_caldo`/`apprendimento_freddo` (%) contano tutte le combinazioni della stagione, giorno o notte (fino all'08/11 la percentuale cambiava tra giorno e notte).
+- **Resistenza ACS (dall'8/11):** il minuto resta valido con la combinazione dell'aria (motivo `resistenza ACS` come marcatore). Il segmenter (`correct_acs`) toglie la resistenza dal contatore Nilan: base = consumo dei 10 minuti vicini senza resistenza, separata per compressore acceso/spento; resistenza dell'episodio = mediana dell'eccesso (≈ 1310–1370 W misurati); copre anche i 3 minuti di ritardo del contatore. Verificato su E4 il 05/11: 1840 W → circa 470 W, come prima della resistenza. L'ACS col compressore (`cp_stato ACS`) resta esclusa.
+- **Stati tenuti 3 minuti:** se un sensore di stato (Nilan o Toshiba) è `unavailable`, il motore usa l'ultimo valore noto fino a 180 s (`hold_states`), così un buco di lettura non spezza la misura.
+- Le statistiche sono per **fascia di temperatura esterna** (<5, 5–10, 10–15, 15–20, …): "Da misurare" e "Dettaglio" mostrano la fascia attuale. Una prova fatta con 15,3 °C esterni conta in 15–20, non in 10–15.
 - Token HA in `~/.config/ecm/ha_token` (montato in sola lettura nel container). Mosquitto locale senza autenticazione.
 
 ## Prove
@@ -30,7 +33,8 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 - Campioni live dal 07/11/2026 19:49.
 - Storico dal recorder di HA (31/10–07/11).
 - Storico del datalogger del gateway Higeco (04/07–31/10), con zone ricavate dalle statistiche orarie di HA dal 27/08 e da T10 prima. Dettagli in `sorgenti/ecm-engine/docs/gateway/import_mapping.md`.
-- Backup del database prima dell'ultima sostituzione: `~/engine_pre_replace.db` (da cancellare quando non serve più).
+- 08/11: riparati con `gw_repair` 4548 campioni scartati (stati illeggibili o resistenza ACS) usando gli stati del datalogger e le misure già salvate. Risultato: validi da 169 040 a 171 184, minuti utili nei periodi da 141 281 a 144 364. Non recuperabili: 04–05/07 (lo Split nel datalogger parte dal 05/07 alle 09:11).
+- Backup del database: `~/engine_pre_replace.db` (sostituzione precedente) e `~/ecm-engine/data/engine_pre_repair_20261108.db` (prima della riparazione dell'8/11). Da cancellare quando non servono più.
 
 ## Gestione
 
@@ -44,6 +48,16 @@ ssh hp 'docker ps --filter name=ecm-engine; docker logs --tail 20 ecm-engine'
 # fermare
 ssh hp 'cd ~/ecm-engine && docker compose down'
 ```
+
+## Riparare campioni dal datalogger
+
+Quando HA ha perso letture di stato (minuti `cp non classificato` / `toshiba non classificato`) o le regole di classificazione cambiano:
+
+1. Scaricare dal datalogger Compact P (2001969) e Split (2002144) per il periodo, con la sessione admin aperta a mano nel browser (vedi `gateway-higeco.md`). Salvare in `sorgenti/ecm-engine/data_gw/` come lista di `{dev, s, e, body}`.
+2. Backup del DB nel container (`sqlite3` `backup` verso `/data/engine_pre_<motivo>.db`).
+3. Copiare i file nel container e lanciare a secco: `docker exec -w /tmp/gwrep -e PYTHONPATH=/app ecm-engine python3 -m ecm_engine.gw_repair <file>...` (opzioni `--from`/`--to`). Mostra quanti campioni cambierebbero e come.
+4. Se il riepilogo torna, ripetere con `--apply`, poi `docker restart ecm-engine` per ricalcolare subito (oppure attendere il ricalcolo dei 15 minuti).
+5. Prima, provarlo su una copia locale del DB con `DB_PATH=<copia> .venv/bin/python -m ecm_engine.gw_repair ...`.
 
 ## Verifica
 

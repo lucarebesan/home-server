@@ -40,6 +40,8 @@ Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo de
 - Inizia il 2026-07-04 06:03. Compact P, Split e modulo I/O ogni 60 s; contatori ogni 600 s.
 - Richiesta: `POST /cgi-bin/dataLogCgi` con `query=[{"act":"getDataLog","sn":"UG7G8G3CUG7G","DATI":{"idLog":<id dispositivo>,"start":s,"stop":s,"maxNumRecord":100000,"period":60,"zeroTimeOffset":0,"items":[<id grandezze>]}}]`.
 - Una settimana di Compact P (28 colonne registrate) richiede circa 17 s e pesa 2,2 MB. Fare una richiesta alla volta, con pause di qualche secondo: HA usa lo stesso gateway.
+- Anche `start` e `stop` della richiesta vanno espressi come ora locale scritta come epoch: per le 17:00 italiane si passa `Date.UTC(…, 17, 0)`. Verificato l'8/11: con l'epoch vero la finestra arriva un'ora prima.
+- Dal browser con la sessione admin aperta, la richiesta si fa con `fetch("/cgi-bin/dataLogCgi", {method: "POST", body: "query=" + encodeURIComponent(JSON.stringify(q))})`: la password non passa mai dall'agente.
 - **Il campo `utc` non è UTC**: è l'ora locale scritta come epoch (+2 h in estate, +1 h in inverno). Il 25/10 il gateway ha cambiato ora alle 07:52, non alle 03:00.
 - Export eseguito l'8/11 dalla sessione admin nel browser; file in `sorgenti/ecm-engine/data_gw/` sul PC di Mattia (circa 92 MB, fuori da git).
 

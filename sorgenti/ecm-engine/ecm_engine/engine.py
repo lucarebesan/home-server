@@ -14,6 +14,23 @@ from .texts import (SEZ_FATTE, best_attrs, best_line, blocco_testo, da_misurare_
 
 log = logging.getLogger(__name__)
 REQUIRED = ["p_cp", "p_tosh", "t_zg", "t_zn", "t_ext"]
+# stati delle macchine: se HA li dà unavailable per poco, vale l'ultimo valore noto
+STATE_KEYS = ("cp_vent", "cp_compressore", "cp_stato", "cp_resistenza", "tosh_on", "tosh_modo", "tosh_vent")
+STATE_HOLD_S = 180
+_NON_VALIDO = (None, "", "unavailable", "unknown")
+
+
+def hold_states(snap: dict, last: dict, now: int) -> dict:
+    """Sostituisce gli stati non validi con l'ultimo valido se ha al più STATE_HOLD_S secondi;
+    aggiorna last {chiave: (ts, valore)}."""
+    out = dict(snap)
+    for k in STATE_KEYS:
+        v = snap.get(k)
+        if v not in _NON_VALIDO:
+            last[k] = (now, v)
+        elif k in last and now - last[k][0] <= STATE_HOLD_S:
+            out[k] = last[k][1]
+    return out
 SAMPLE_FIELDS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext", "soc", "pv",
                  "load", "imp", "discharge", "charge"]
 SOGLIA_ESTATE_DEFAULT = 24.5
@@ -76,6 +93,7 @@ class Engine:
         self.write_off_count = 0
         self.snap_ts: float | None = None
         self.auto_block_until: float = 0.0
+        self.last_states: dict = {}
 
     # ---------- contesto
     def _ctx(self) -> Ctx | None:
@@ -106,7 +124,8 @@ class Engine:
         with self.lock:
             now = int(self.clock())
             try:
-                self.snap = self.api.snapshot(config.ENTITIES, config.NUMERIC_KEYS)
+                self.snap = hold_states(self.api.snapshot(config.ENTITIES, config.NUMERIC_KEYS),
+                                        self.last_states, now)
                 self.snap_ts = now
                 self.ha_error = None
             except Exception as ex:  # rete o HA giù

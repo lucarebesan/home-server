@@ -14,6 +14,7 @@ Sorgente, spec e piani: repository locale `Misc/ecm-engine/` sul PC di Mattia (`
 - Ogni 15 minuti ricalcola l'apprendimento (circa 3,5 s su 180 mila campioni) e aggiorna le entità.
 - Pubblica in HA via MQTT discovery: `sensor.ecm_engine_*` (stato, in breve, migliore caldo/freddo, apprendimento, prova proposta, prova in corso, ultime prove, da misurare, dettaglio, avvisi), `binary_sensor.ecm_engine_prova_avviabile`, `button.ecm_engine_avvia_prova`, `switch.ecm_engine_prove_automatiche`.
 - Le entità sono mostrate nella tab "Apprendimento" della dashboard ECM v2.
+- "Da misurare" (`sensor.ecm_engine_da_misurare`, max 20 righe) elenca solo i candidati ammessi **adesso**: stagione, fascia di temperatura esterna, zone compatibili, meno di 100 misure. Di notte (fuori `input_datetime.nilan_mattina`–`nilan_serale`, oggi 08:30–20:30) esclude Nilan V4 e Toshiba velocità alta, quindi "Toshiba caldo alta" compare solo di giorno (verificato 08/11/2026 alle 21:00, 14 righe senza velocità alta). Etichetta: "alta", non "alto".
 - Token HA in `~/.config/ecm/ha_token` (montato in sola lettura nel container). Mosquitto locale senza autenticazione.
 
 ## Prove

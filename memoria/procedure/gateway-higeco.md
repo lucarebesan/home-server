@@ -45,6 +45,12 @@ Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo de
 - **Il campo `utc` non è UTC**: è l'ora locale scritta come epoch (+2 h in estate, +1 h in inverno). Il 25/10 il gateway ha cambiato ora alle 07:52, non alle 03:00.
 - Export eseguito l'8/11 dalla sessione admin nel browser; file in `sorgenti/ecm-engine/data_gw/` sul PC di Mattia (circa 92 MB, fuori da git).
 
+## Contatori di energia (kWh)
+
+- I misuratori SDM120 hanno "Totale energia importata" (Compact `2002794799`, Split `2002795799`), registrato dal datalogger (Compact ogni 600 s, Split ogni 60 s; risoluzione 1 Wh). Verificato l'8/11: nessun modulo API lo espone, quindi HA non lo legge (`sensor.compactp_potenza_attiva` e `sensor.toshiba_potenza_attiva` sono la potenza istantanea, API-CP1 Id3 e API-T Id13).
+- Per esporlo andrebbe mappato in uno slot dei moduli API (libero: API-T Grandezza 15). **Il gateway accetta il salvataggio di un modulo solo da spento** ("Prima di salvare le modifiche spegnere il GWC"): acquisizione, plugin e datalogger fermi per qualche minuto. L'8/11 Mattia ha deciso di non farlo: il motore usa i kWh solo per lo storico.
+- Nel pannello admin le voci si aprono cliccando l'icona, non l'etichetta.
+
 ## Osservazioni
 
 - Allarme Nilan attivo il 15–17/07 e dal 15/10 al 27/10 (dal datalogger); lo stato di controllo non è mai passato ad ALLARME.

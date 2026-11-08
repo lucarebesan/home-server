@@ -1,4 +1,4 @@
-from ecm_engine.gw_repair import _dev, is_target, rebuild
+from ecm_engine.gw_repair import _dev, energy_power, is_target, rebuild
 
 ROW = {"ts": 600, "valido": 0, "motivo": "toshiba non classificato", "stagione": "INVERNO", "test_id": None,
        "p_cp": 6.0, "p_tosh": 1270.0, "t_zg": 21.2, "t_zn": 21.0, "t_ext": 15.0, "t10": 21.3, "t2": 25.0,
@@ -27,3 +27,10 @@ def test_dev_dal_corpo():
     assert _dev({"dev": 2002144}) == 2002144
     assert _dev({"body": '{"DATI":[{"DATI":{"id":"2001969"}}]}'}) == 2001969
     assert _dev({"body": "x"}) is None
+
+
+def test_energy_power():
+    m = {0: {"Totale energia importata": "100.000"}, 600: {"Totale energia importata": "100.050"},
+         1200: {"Totale energia importata": "100.050"}, 4000: {"Totale energia importata": "101.000"},
+         4600: {"Totale energia importata": "100.900"}, 5200: {"Totale energia importata": None}}
+    assert energy_power(m) == [(0, 600, 300.0), (600, 1200, 0.0)]

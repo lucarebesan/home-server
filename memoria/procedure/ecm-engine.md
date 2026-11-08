@@ -34,7 +34,8 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 - Storico dal recorder di HA (31/10–07/11).
 - Storico del datalogger del gateway Higeco (04/07–31/10), con zone ricavate dalle statistiche orarie di HA dal 27/08 e da T10 prima. Dettagli in `sorgenti/ecm-engine/docs/gateway/import_mapping.md`.
 - 08/11: riparati con `gw_repair` 4548 campioni scartati (stati illeggibili o resistenza ACS) usando gli stati del datalogger e le misure già salvate. Risultato: validi da 169 040 a 171 184, minuti utili nei periodi da 141 281 a 144 364. Non recuperabili: 04–05/07 (lo Split nel datalogger parte dal 05/07 alle 09:11).
-- Backup del database: `~/engine_pre_replace.db` (sostituzione precedente) e `~/ecm-engine/data/engine_pre_repair_20261108.db` (prima della riparazione dell'8/11). Da cancellare quando non servono più.
+- 08/11: consumo Compact dello storico da datalogger (fino al 31/10 21:00, dove il contatore era registrato solo ogni 10 minuti) ricalcolato con `gw_repair --energia-cp` dalla differenza del contatore di energia importata (risoluzione 1 Wh): 167 533 campioni (differenza media +1,7 W, p90 68 W, dove il compressore ciclava) e 1331 minuti "dato mancante p_cp" recuperati. Periodi da 2354 a 2223 (più lunghi), minuti utili da 144 364 a 147 057.
+- Backup del database: `~/engine_pre_replace.db` (sostituzione precedente) `~/ecm-engine/data/engine_pre_repair_20261108.db` (prima della riparazione dell'8/11) e `~/ecm-engine/data/engine_pre_energia_20261108.db` (prima dei consumi da kWh). Da cancellare quando non servono più.
 
 ## Gestione
 
@@ -57,7 +58,8 @@ Quando HA ha perso letture di stato (minuti `cp non classificato` / `toshiba non
 2. Backup del DB nel container (`sqlite3` `backup` verso `/data/engine_pre_<motivo>.db`).
 3. Copiare i file nel container e lanciare a secco: `docker exec -w /tmp/gwrep -e PYTHONPATH=/app ecm-engine python3 -m ecm_engine.gw_repair <file>...` (opzioni `--from`/`--to`). Mostra quanti campioni cambierebbero e come.
 4. Se il riepilogo torna, ripetere con `--apply`, poi `docker restart ecm-engine` per ricalcolare subito (oppure attendere il ricalcolo dei 15 minuti).
-5. Prima, provarlo su una copia locale del DB con `DB_PATH=<copia> .venv/bin/python -m ecm_engine.gw_repair ...`.
+5. Consumo Compact dai kWh: aggiungere i file del Misuratore Compact (`dev_2002794.json`) e l'opzione `--energia-cp` (con `--to` al confine dei dati da datalogger). Tocca solo i campioni il cui `p_cp` coincide con la potenza registrata dal datalogger.
+6. Prima, provarlo su una copia locale del DB con `DB_PATH=<copia> .venv/bin/python -m ecm_engine.gw_repair ...`.
 
 ## Verifica
 

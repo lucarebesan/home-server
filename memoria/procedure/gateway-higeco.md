@@ -24,9 +24,9 @@ Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo de
 ## Lettura da Home Assistant (dall'8/11)
 
 - `/config/scripts/nilan_batch.py`: una login con cookie proprio (`/config/tmp/gwc_batch_cookie.txt`, separato da quello di `nilan_write.sh`), poi una sola richiesta con 30 `sendCommand` e due `getShm` (1999237 per lo split, 1999690 per l'umidità). Stampa un JSON con un valore per unique_id, oppure null.
-- In `packages/nilan_sensori.yaml`: il command_line "Nilan Batch" (ogni 60 s, timeout 55 s; stato = numero di valori validi) e 39 sensori template con gli stessi nomi, unique_id e `entity_id` dei vecchi command_line. `sensor.nilan_batch` è escluso dal recorder (vale dal prossimo riavvio di HA).
+- In `packages/nilan_sensori.yaml`: il command_line "Nilan Batch" (ogni 20 s, timeout 18 s, dal commit `126230e`; stato = numero di valori validi) e 39 sensori template con gli stessi nomi, unique_id e `entity_id` dei vecchi command_line. `sensor.nilan_batch` è escluso dal recorder (vale dal prossimo riavvio di HA).
 - `sensor.compactp_offset_raffrescamento` resta un command_line separato: passando da un template il valore "+4" diventerebbe il numero 4, mentre WRITE si aspetta la stringa.
-- I sensori dello split ora si aggiornano ogni 60 s invece che ogni 15 s (sono usati solo nelle dashboard).
+- Cadenza: il driver del gateway interroga la Nilan ogni 15 s e i valori cambiano entro 10–20 s; la lettura dura 6–9,5 s. Con 20 s il gateway resta libero più di metà del tempo, anche per le scritture di WRITE. Sotto i 15 s il margine non basta.
 - Verifica: `sensor.nilan_batch` si aggiorna ogni minuto con 39 valori su 39; nessun errore di command_line o template in `docker logs homeassistant`.
 - **Rollback senza fermare HA** (backup in `/config/tmp/backup_nilan_batch/`):
   1. `docker exec homeassistant cp /config/tmp/backup_nilan_batch/nilan_sensori.yaml.bak /config/packages/nilan_sensori.yaml`;

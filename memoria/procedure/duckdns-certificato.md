@@ -35,6 +35,11 @@ dell'immagine usa ancora. Il problema è comparso con l'aggiornamento delle imma
 ```
 
 - Prova: `docker exec letsencrypt certbot renew --dry-run` (riuscita il 2026-11-07).
+- Verifica rapida dal PC:
+  ```sh
+  ssh hp 'crontab -l; cat ~/certbot-renew.log; docker exec letsencrypt certbot renew --dry-run'
+  ssh hp 'docker logs --tail 5 duckdns'   # deve rispondere successful/OK, non KO
+  ```
 - Il certificato in uso scadeva il 2027-01-03; certbot lo rinnova a 30 giorni dalla
   scadenza.
 - Prima non esisteva nessun hook che ricaricasse nginx dopo il rinnovo: ora lo fa la

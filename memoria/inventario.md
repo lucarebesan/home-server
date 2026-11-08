@@ -42,6 +42,7 @@ Ultima verifica: 2026-11-08.
 - Crontab di `home`: rinnovo del certificato alle 04:17 (vedi `procedure/duckdns-certificato.md`).
 - `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti, prove automatiche spente.
 - HA: `00-NILAN WRITE` ogni 5 minuti (spenta dal 7/11); `07` ricambio aria con finestre 01/09/17.
+- HA: `10 - ECM INVERNO` ogni 5 minuti, solo in INVERNO (creata e spenta l'8/11, in attesa dell'ok di Luca).
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.
 
 ## Segreti (solo posizione)

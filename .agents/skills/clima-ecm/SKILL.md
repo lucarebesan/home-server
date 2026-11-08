@@ -17,6 +17,8 @@ Contesto recente in `memoria/diario/2026-11-03_08-interventi.md`, sezione clima.
 
 - **`00-NILAN WRITE` è spenta da un utente** (dal 7/11): senza WRITE nessun comando
   arriva alle macchine. Non riaccenderla senza l'ok esplicito di Luca.
+- **`10 - ECM INVERNO`** (riscaldamento invernale semplice, dall'8/11) è spenta in attesa
+  di Luca: stessa regola. Logica nella descrizione dell'automazione, storia nel diario.
 - Il gateway Higeco si usa in sola lettura con l'utente predefinito. Le credenziali admin
   le inserisce a mano l'utente nella pagina: mai in chat, nei file o negli script.
 - Le prove di `ecm-engine` cambiano davvero il clima: "Prove automatiche" è spento di

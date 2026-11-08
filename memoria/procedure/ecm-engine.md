@@ -6,7 +6,7 @@ Ultima verifica: 2026-11-08.
 
 Servizio Python nel container `ecm-engine` sul server. Misura quanto consuma e quanto scalda o raffresca ogni combinazione di Nilan CompactP e Toshiba (codici E della numerazione di HA), per scegliere la più economica. Propone ed esegue brevi prove tramite l'automazione `09 - ECM MANUALE`. Fase 1: non comanda il clima, salvo le prove.
 
-Sorgente, spec e piani: repository locale `Misc/ecm-engine/` sul PC di Mattia (`docs/specs/`, `docs/plans/`, `docs/gateway/`).
+Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs/`, `docs/plans/`, `docs/gateway/`), fonte di verità. Importato l'8/11 con `git subtree` insieme ai 43 commit del vecchio repository locale. `.venv/`, `data/` e `data_gw/` restano fuori da git (`.gitignore` della cartella).
 
 ## Funzionamento
 
@@ -29,13 +29,15 @@ Sorgente, spec e piani: repository locale `Misc/ecm-engine/` sul PC di Mattia (`
 
 - Campioni live dal 07/11/2026 19:49.
 - Storico dal recorder di HA (31/10–07/11).
-- Storico del datalogger del gateway Higeco (04/07–31/10), con zone ricavate dalle statistiche orarie di HA dal 27/08 e da T10 prima. Dettagli in `Misc/ecm-engine/docs/gateway/import_mapping.md`.
+- Storico del datalogger del gateway Higeco (04/07–31/10), con zone ricavate dalle statistiche orarie di HA dal 27/08 e da T10 prima. Dettagli in `sorgenti/ecm-engine/docs/gateway/import_mapping.md`.
 - Backup del database prima dell'ultima sostituzione: `~/engine_pre_replace.db` (da cancellare quando non serve più).
 
 ## Gestione
 
 ```sh
-# deploy (dal PC di Mattia, nella cartella ecm-engine): test + rsync + rebuild
+# primo uso su una macchina nuova (il venv non è nel repository)
+cd sorgenti/ecm-engine && python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
+# deploy (da sorgenti/ecm-engine): test + rsync + rebuild. Prima committare le modifiche.
 ./deploy.sh
 # stato e log
 ssh hp 'docker ps --filter name=ecm-engine; docker logs --tail 20 ecm-engine'

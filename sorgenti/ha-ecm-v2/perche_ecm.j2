@@ -1,0 +1,132 @@
+{%- set stagione = states('input_select.stagione') -%}
+{%- set manuale = states('input_select.ecm_manuale') -%}
+{%- set fc = states('input_select.free_cooling') -%}
+{%- set write_on = is_state('automation.nilan_write', 'on') -%}
+{%- set t10_raw = states('sensor.compactp_t10_temperatura_sensore_stanza') -%}
+{%- set t10 = t10_raw | float(0) -%}
+{%- set soglia = states('input_number.commutazione_estate_inverno') | float(22.5) -%}
+{%- set ist_st = states('input_number.isteresi_commutazione_estate_inverno') | float(2) -%}
+{%- set fascia = states('sensor.ecm_fascia_climatica_attiva') -%}
+{%- set tz_raw = states('sensor.ecm_temperatura_zona_attiva') -%}
+{%- set tz = tz_raw | float(0) -%}
+{%- set tmin = states('sensor.ecm_limite_inferiore') | float(0) -%}
+{%- set tacc = states('sensor.ecm_target_accumulo') | float(0) -%}
+{%- set tcom = states('sensor.ecm_target_comfort') | float(0) -%}
+{%- set tmax = states('sensor.ecm_limite_superiore') | float(0) -%}
+{%- set v_req = states('input_number.ventilatore_compactp') | int(0) -%}
+{%- set v_real = states('sensor.compactp_ventilazione_selezionata') -%}
+{%- set stato_ctrl = states('sensor.compactp_stato_controllo') -%}
+{%- set modo_nilan = states('sensor.compactp_modo_funzionale_selezionato') -%}
+{%- set cp = states('sensor.compactp_compressore') -%}
+{%- set setp = states('input_number.t_estate') | float(0) -%}
+{%- set ist = states('input_number.isteresi') | float(0) -%}
+{%- set e_req = states('sensor.ecm_livello_descrizione') -%}
+{%- set e_real = states('sensor.ecm_configurazione_reale') -%}
+{%- set v_ric = states('input_number.emc_ventilazione_minima_ricambio') | int(0) -%}
+{%- set u_raw = states('sensor.ble_humidity_mija_lavanderia') -%}
+{%- set u = u_raw | float(0) -%}
+{%- set batt_raw = states('sensor.ble_battery_mija_lavanderia') -%}
+{%- set lav_on = is_state('input_boolean.emc_richiesta_ventilazione_umidita', 'on') -%}
+{%- set lav_esaurito = is_state('input_boolean.ecm_umidita_ciclo_lungo_esaurito', 'on') -%}
+{%- set v_lav = states('input_number.ecm_ventilazione_umidita_lavanderia') | int(0) -%}
+{%- set t11 = states('sensor.compactp_t11_temperatura_bollitore_parte_alta') | float(0) -%}
+{%- set t12 = states('sensor.compactp_t12_temperatura_bollitore_parte_bassa') | float(0) -%}
+{%- set acs_set = states('input_number.acs_set') | float(0) -%}
+{%- set acs_r = states('input_number.acs_r_set') | float(0) -%}
+{%- set gestore = 'MANUALE' if manuale not in ['AUTO', 'FREE COOLING']
+    else ('FC' if stagione == 'ESTATE' and fc in ['ATTIVATO', 'PREPARAZIONE']
+    else ('ECM_GIORNO' if stagione == 'ESTATE' and fascia == 'GIORNO'
+    else ('ECM_N' if stagione == 'ESTATE' else 'NESSUNO'))) -%}
+
+### 1 · Chi comanda
+{% if not write_on -%}
+⛔ **00-NILAN WRITE è spenta**: nessun comando (ventilazione, setpoint, ACS, Toshiba) arriva alle macchine. Quello che vedi lo decide il Nilan da solo.
+{% endif -%}
+{% if gestore == 'MANUALE' -%}
+✋ **Manuale {{ manuale }}** (torna AUTO dopo 60 min).
+⚠️ Bug noto: il manuale non sospende davvero ECM_Giorno/ECM_N, che possono sovrascriverlo entro 5 min.
+{% elif gestore == 'FC' -%}
+🌬️ **Free cooling {{ fc }}**: aria esterna più fresca della zona di almeno {{ states('input_number.delta_freecooling') }} °C. CP tenuto spento (isteresi 10).
+{% elif gestore == 'ECM_GIORNO' -%}
+☀️ **ECM_Giorno** (estate, {{ states('input_datetime.nilan_mattina')[:5] }}–{{ states('input_datetime.nilan_serale')[:5] }}): sceglie il livello E da temperatura zona, trend e SOC, ogni 5 min.
+{% elif gestore == 'ECM_N' -%}
+🌙 **ECM_N** (estate, sera/notte{{ ', anticipo dalle 18 per batteria' if is_state('input_boolean.ecm_notturna_anticipo_attivo','on') }}): livello E da temperatura, umidità e SOC previsto.
+{% else -%}
+❄️ **Inverno: nessuna logica ECM sul clima.** Il Nilan è in {{ modo_nilan | lower }} con setpoint aria **{{ setp }} °C** (t_estate) e decide da solo compressore e bypass.
+{% endif %}
+**Stagione {{ stagione }}** perché T10 = {{ t10_raw }} °C
+{%- if stagione == 'INVERNO' %}: per tornare in ESTATE serve T10 > {{ (soglia + ist_st) | round(1) }} °C.
+{%- else %}: si passa a INVERNO sotto {{ soglia }} °C.{% endif %}
+
+### 2 · Ventilazione
+Richiesta **V{{ v_req }}** · Nilan **{{ v_real }}** ({{ stato_ctrl | lower }})
+{% if gestore == 'NESSUNO' -%}
+{% if v_ric > 0 or lav_on -%}
+⚠️ {{ 'Ricambio e lavanderia chiedono' if lav_on and v_ric > 0 else ('La lavanderia chiede' if lav_on else 'Il ricambio chiede') }} aria, ma **in inverno nessuno applica la richiesta**: la velocità la scrivono solo ECM_Giorno/ECM_N/FC, che d'inverno non girano, e il 07 non subentra perché li vede attivi.
+{% else -%}
+In inverno nessuna automazione cambia la ventilazione.
+{% endif -%}
+{% else -%}
+La velocità finale è il **massimo** tra clima, ricambio, lavanderia e ACS (V2 minimo se CP acceso).
+{% endif -%}
+· Ricambio minimo (07): {{ 'chiede **V' ~ v_ric ~ '**' if v_ric > 0 else 'nessuna richiesta' }}
+· Lavanderia (06):
+{%- if not is_number(u_raw) or not is_number(batt_raw) or batt_raw | float(0) < 10 %} ⚠️ sensore non valido (umidità {{ u_raw }}, batteria {{ batt_raw }}%)
+{%- elif lav_esaurito and lav_on %} 💧 richiamo orario **V{{ v_lav }}** ({{ u | round(1) }}%), fino al minuto 15
+{%- elif lav_esaurito and u > 70 %} ⏸️ {{ u | round(1) }}% ma **ciclo da 90 min già usato**: solo richiami di 15 min a inizio ora fino al reset delle 17:30{{ ' (prossimo alle ' ~ (now() + timedelta(hours=1)).strftime('%H') ~ ':00)' if now().minute >= 15 }}
+{%- elif lav_on %} 💧 **V{{ v_lav }}** con {{ u | round(1) }}%
+{%- if v_lav == 4 %} (≥ 85%, o dopo 40 min sopra 75%){% elif v_lav == 3 %} (≥ 80%, o dopo 20 min sopra 75%){% else %} (si spegne a ≤ 70%){% endif %}
+{%- else %} spenta, {{ u | round(1) }}% (parte sopra 75% per 1 min)
+{%- endif %}
+{%- if acs_set >= 40 and t12 <= acs_set - 0.5 and gestore != 'NESSUNO' %}
+· ACS in carica: chiede almeno V2{% endif %}
+
+### 3 · Compressore e bypass
+CP **{{ cp }}** · bypass apre **{{ states('sensor.compactp_apertura_bypass') }}** / chiude **{{ states('sensor.compactp_chiusura_bypass') }}** · Toshiba **{{ states('input_boolean.toshiba_climatizzatore') }}**{{ ' (' ~ states('input_select.toshiba_modo') | lower ~ ')' if is_state('input_boolean.toshiba_climatizzatore','on') }}
+{% if stagione == 'ESTATE' -%}
+ECM non comanda il CP direttamente: sposta il setpoint ({{ setp }} °C) rispetto a T10 ({{ t10 }} °C) e alla banda {{ ist }} °C. CP si accende sopra {{ states('sensor.ecm_compact_on') }} °C e si spegne sotto {{ states('sensor.ecm_compact_off') }} °C.
+{% else -%}
+In riscaldamento il CP parte quando T10 < setpoint − banda/2 = **{{ (setp - ist / 2) | round(1) }} °C**. Ora T10 = {{ t10 }} °C → {{ 'sotto: dovrebbe scaldare' if t10 < setp - ist / 2 else 'sopra: niente riscaldamento' }}.
+{% if v_real == 'OFF' and cp == 'OFF' %}🛑 Con la ventilazione ferma il CP non lavora: la Compact P prende calore dall'aria di ripresa.
+{% endif -%}
+{% endif -%}
+Il bypass lo gestisce sempre il Nilan, in base a setpoint e temperature: ECM non lo comanda.
+{% if is_state('input_boolean.emc_cpon_inefficace','on') %}⚠️ CP acceso giudicato inefficace: riprova dopo 60 min.
+{% endif -%}
+{% if is_state('input_boolean.emc_cpoff_inefficace','on') %}⚠️ Ventilazione senza CP giudicata inefficace: riprova dopo 60 min.
+{% endif -%}
+{% if is_state('input_boolean.emc_cp_blocco_bollitore','on') %}🔒 CP riservato al bollitore.
+{% endif %}
+{%- if stagione == 'ESTATE' %}
+### 4 · Zona {{ fascia | lower }}: {{ tz_raw }} °C
+{% if tz <= tmin -%}🧊 sotto il minimo ({{ tmin }} °C): niente raffrescamento
+{%- elif tz <= tacc -%}🟦 accumulo raggiunto ({{ tmin }}–{{ tacc }} °C)
+{%- elif tz <= tcom -%}🟩 zona di accumulo ({{ tacc }}–{{ tcom }} °C)
+{%- elif tz < tmax - 1 -%}🟨 sopra il comfort ({{ tcom }} °C)
+{%- elif tz < tmax - 0.5 -%}🟧 media, vicino al massimo
+{%- elif tz < tmax -%}🟥 alta, a meno di 0,5 °C dal massimo
+{%- else -%}🚨 emergenza: sopra il massimo ({{ tmax }} °C){% endif %}
+{% if is_state('input_boolean.ecm_protezione_freddo_attiva','on') %}🧊 Protezione freddo: solo ricambio, lavanderia e ACS.
+{% endif -%}
+{% if is_state('input_boolean.ecm_riscaldamento_ordinario_attivo','on') %}🔥 Recupero termico attivo (zone sotto il minimo).
+{% endif -%}
+{% if is_state('input_boolean.ecm_eg_deficit_persistente','on') %}🔋 Deficit energetico: livello ridotto.
+{% endif -%}
+{% if is_state('input_boolean.ecm_en_mantenimento_v1','on') %}🌙 Mantenimento V1 (fresco e secco).
+{% endif -%}
+Livello richiesto **{{ e_req }}** · reale **{{ e_real }}**
+{%- endif %}
+
+### {{ '5' if stagione == 'ESTATE' else '4' }} · Acqua calda (ACS)
+T11 {{ t11 }} °C · T12 {{ t12 }} °C · set CP {{ acs_set | int }} · resistenza {{ acs_r | int }}
+{% if acs_set | int == 47 -%}
+🚿 **Emergenza ACS**: T11 è sceso sotto 42 °C, il CP carica il bollitore fino a 47 °C.{{ ' Ma il CP è fermo: il Nilan non sta eseguendo.' if cp == 'OFF' }}
+{%- elif acs_set >= 40 -%}
+🚿 Carica ACS col CP fino a {{ acs_set | int }} °C.
+{%- else -%}
+CP escluso dall'ACS: scalda solo la resistenza fino a {{ acs_r | int }} °C.
+{%- endif %}
+{%- if write_on and e_real != 'NON_RICONOSCIUTA' and stagione == 'ESTATE' and e_req[:3] | trim != e_real %}
+
+⚠️ Il livello richiesto e quello reale non coincidono: il Nilan non ha ancora applicato il comando (o WRITE non l'ha inviato).
+{%- endif %}

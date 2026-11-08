@@ -12,6 +12,7 @@ Quando modifichi questo repository, crea un commit delle modifiche relative al l
 - `memoria/procedure/`: come fare le cose, passo per passo, con verifica e ripristino. È la fonte dei dettagli.
 - `memoria/diario/`: cosa è successo e cosa si è deciso, per data, con le questioni aperte.
 - `.agents/skills/`: flussi di lavoro per gli agenti. Dicono quando e come intervenire e rimandano alle procedure, senza copiarle.
+- `sorgenti/`: codice di `ecm-engine` e della dashboard ECM v2. È la fonte di verità: si modifica e si fa il deploy da qui.
 
 Ogni fatto sta in un solo posto: aggiorna quel file invece di crearne uno nuovo (vedi la skill `aggiorna-memoria`).
 

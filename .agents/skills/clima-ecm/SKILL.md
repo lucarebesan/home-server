@@ -22,10 +22,10 @@ Contesto recente in `memoria/diario/2026-11-03_08-interventi.md`, sezione clima.
 - Le prove di `ecm-engine` cambiano davvero il clima: "Prove automatiche" è spento di
   default. Non accenderlo e non avviare prove senza ok.
 - Per la numerazione delle combinazioni fa fede HA, non il sito ECM.
-- I sorgenti di `ecm-engine` e della dashboard (`Misc/ecm-engine/`, `Misc/ha-ecm-v2/`)
-  stanno **sul PC di Mattia**, non in questo repository. Per modificarli bisogna
-  chiederli a Mattia. Il container sul server (`~/ecm-engine`) si può comunque
-  osservare: `docker logs ecm-engine`, entità in HA.
+- I sorgenti di `ecm-engine` e della dashboard stanno in questo repository
+  (`sorgenti/ecm-engine/`, `sorgenti/ha-ecm-v2/`) e sono la fonte di verità. Ogni
+  modifica va committata qui; il deploy parte da queste cartelle (vedi le procedure).
+  Sul server `~/ecm-engine` è solo la copia distribuita da `deploy.sh`.
 
 ## Diagnosi tipica
 

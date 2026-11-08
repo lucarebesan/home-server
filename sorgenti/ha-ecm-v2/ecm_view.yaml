@@ -1,0 +1,1539 @@
+type: sections
+max_columns: 2
+title: ECM
+path: ecm
+icon: mdi:home-thermometer-outline
+sections:
+- type: grid
+  cards:
+  - type: markdown
+    content: '# 🏠 ECM'
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: input_select.stagione
+      icon: mdi:sun-thermometer
+      show_name: false
+      styles:
+        card:
+        - box-shadow: none
+        - padding: 0
+        - margin: 0
+        - background: transparent
+        icon:
+        - width: 40px
+        - height: 40px
+      tap_action:
+        action: call-service
+        service: input_select.select_option
+        service_data:
+          entity_id: input_select.stagione
+          option: ESTATE
+      state:
+      - value: ESTATE
+        styles:
+          icon:
+          - color: orange
+      - value: INVERNO
+        styles:
+          icon:
+          - color: gray
+    - type: custom:button-card
+      entity: input_select.stagione
+      icon: mdi:snowflake-thermometer
+      show_name: false
+      styles:
+        card:
+        - box-shadow: none
+        - padding: 0
+        - margin: 0
+        - background: transparent
+        icon:
+        - width: 40px
+        - height: 40px
+      tap_action:
+        action: call-service
+        service: input_select.select_option
+        service_data:
+          entity_id: input_select.stagione
+          option: INVERNO
+      state:
+      - value: INVERNO
+        styles:
+          icon:
+          - color: deepskyblue
+      - value: ESTATE
+        styles:
+          icon:
+          - color: gray
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: sensor.ecm_fascia_climatica_attiva
+      show_name: false
+      show_state: true
+      size: 40px
+      triggers_update:
+      - sensor.ecm_fascia_climatica_attiva
+      - input_select.free_cooling
+      - input_select.ecm_manuale
+      - input_boolean.ecm_notturna_anticipo_attivo
+      icon: "[[[\n  const fc = states['input_select.free_cooling']?.state;\n  const manuale = states['input_select.ecm_manuale']?.state;\n  const anticipo = states['input_boolean.ecm_notturna_anticipo_attivo']?.state;\n\
+        \  const fascia = states['sensor.ecm_fascia_climatica_attiva']?.state;\n\n  if (fc === 'ATTIVATO') return 'mdi:snowflake';\n  if (manuale && manuale !== 'AUTO') return 'mdi:hand-back-right';\n \
+        \ if (anticipo === 'on' || fascia === 'NOTTE') return 'mdi:weather-night';\n  return 'mdi:white-balance-sunny';\n]]]\n"
+      state_display: "[[[\n  const fc = states['input_select.free_cooling']?.state;\n  const manuale = states['input_select.ecm_manuale']?.state;\n  const anticipo = states['input_boolean.ecm_notturna_anticipo_attivo']?.state;\n\
+        \  const fascia = states['sensor.ecm_fascia_climatica_attiva']?.state;\n\n  if (fc === 'ATTIVATO') return 'FC';\n  if (manuale && manuale !== 'AUTO') return 'MAN';\n  if (anticipo === 'on' || fascia\
+        \ === 'NOTTE') return 'EN';\n  return 'EG';\n]]]\n"
+      tap_action:
+        action: more-info
+      styles:
+        icon:
+        - color: "[[[\n  const fc = states['input_select.free_cooling']?.state;\n  const manuale = states['input_select.ecm_manuale']?.state;\n  const anticipo = states['input_boolean.ecm_notturna_anticipo_attivo']?.state;\n\
+            \  const fascia = states['sensor.ecm_fascia_climatica_attiva']?.state;\n\n  if (fc === 'ATTIVATO') return '#26c6da';\n  if (manuale && manuale !== 'AUTO') return '#ab47bc';\n  if (anticipo ===\
+            \ 'on' || fascia === 'NOTTE') return '#42a5f5';\n  return '#f9a825';\n]]]\n"
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: sensor.ecm_configurazione_reale
+      name: ECM REALE
+      icon: mdi:home-thermometer
+      show_icon: true
+      show_name: true
+      show_state: true
+      triggers_update:
+      - sensor.ecm_configurazione_reale
+      - input_number.livello_emc
+      - sensor.compactp_compressore
+      - sensor.compactp_ventilazione_selezionata
+      - sensor.toshiba_on_off_unita
+      - sensor.toshiba_modo_unita
+      - sensor.toshiba_velocita_ventilatore
+      tap_action:
+        action: more-info
+      state_display: "[[[\n  const statoCompressore =\n    states['sensor.compactp_compressore'];\n\n  const statoVentilazione =\n    states['sensor.compactp_ventilazione_selezionata'];\n\n  const compressore\
+        \ = String(\n    statoCompressore ? statoCompressore.state : ''\n  ).toUpperCase().trim();\n\n  const ventilazione = String(\n    statoVentilazione ? statoVentilazione.state : ''\n  ).toUpperCase().trim();\n\
+        \n  let cpOnOff = 'N/D';\n  let cpVelocita = 'N/D';\n\n  if (['ON', 'ACCESO', '1', 'TRUE'].includes(compressore))\n    cpOnOff = 'ON';\n  else if (['OFF', 'SPENTO', '0', 'FALSE'].includes(compressore))\n\
+        \    cpOnOff = 'OFF';\n\n  if (ventilazione === 'OFF')\n    cpVelocita = 'V0';\n  else if (ventilazione === 'STEP 2')\n    cpVelocita = 'V2';\n  else if (ventilazione === 'STEP 3')\n    cpVelocita\
+        \ = 'V3';\n  else if (ventilazione === 'STEP 4')\n    cpVelocita = 'V4';\n\n  const statoSplitOnOff =\n    states['sensor.toshiba_on_off_unita'];\n\n  const statoSplitModo =\n    states['sensor.toshiba_modo_unita'];\n\
+        \n  const statoSplitVentilatore =\n    states['sensor.toshiba_velocita_ventilatore'];\n\n  const splitOnOff = String(\n    statoSplitOnOff ? statoSplitOnOff.state : ''\n  ).toUpperCase().trim();\n\
+        \n  const splitModo = String(\n    statoSplitModo ? statoSplitModo.state : ''\n  ).toUpperCase().trim();\n\n  const splitVentilatore = String(\n    statoSplitVentilatore ? statoSplitVentilatore.state\
+        \ : ''\n  ).toUpperCase().trim();\n\n  let splitDescrizione = 'SPLIT N/D';\n\n  if (['OFF', 'SPENTO', '0'].includes(splitOnOff)) {\n    splitDescrizione = 'SPLIT OFF';\n  } else {\n    let modo\
+        \ = 'N/D';\n    let velocita = 'N/D';\n\n    if (\n      [\n        'DEUMIDIFICATORE',\n        'DEUMIDIFICAZIONE',\n        'DRY',\n        '2'\n      ].includes(splitModo)\n    )\n      modo =\
+        \ 'DRY';\n    else if (\n      [\n        'RAFFRESCAMENTO',\n        'COOL',\n        '4'\n      ].includes(splitModo)\n    )\n      modo = 'COOL';\n\n    if (\n      ['BASSA', 'LOW', '1'].includes(splitVentilatore)\n\
+        \    )\n      velocita = 'V1';\n    else if (\n      ['MEDIA', 'MID', '2'].includes(splitVentilatore)\n    )\n      velocita = 'V2';\n    else if (\n      ['ALTA', 'HIGH', 'HIGT', '3'].includes(splitVentilatore)\n\
+        \    )\n      velocita = 'V3';\n\n    splitDescrizione = `SPLIT ${modo} ${velocita}`;\n  }\n\n  return `CP ${cpOnOff} ${cpVelocita} + ${splitDescrizione}`;\n]]]\n"
+      styles:
+        grid:
+        - grid-template-areas: '"i n" "s s"'
+        - grid-template-columns: 28px 1fr
+        - grid-template-rows: auto auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - font-weight: bold
+        - justify-self: start
+        - color: "[[[\n  return (\n    !states['sensor.ecm_configurazione_reale'] ||\n    !states['input_number.livello_emc'] ||\n    !/^E\\d+$/.test(states['sensor.ecm_configurazione_reale'].state) ||\n\
+            \    isNaN(Number(states['input_number.livello_emc'].state))\n  )\n    ? '#ef5350'\n    : Number(\n        states['sensor.ecm_configurazione_reale'].state\n        .replace('E', '')\n      )\
+            \ === Math.round(\n        Number(states['input_number.livello_emc'].state)\n      )\n        ? '#66bb6a'\n        : '#ffa726';\n]]]\n"
+        state:
+        - font-size: 12px
+        - font-weight: bold
+        - color: white
+        - justify-self: center
+        - padding-top: 6px
+        - white-space: normal
+        - text-align: center
+    - type: custom:button-card
+      entity: input_number.livello_emc
+      name: ECM OBIETTIVO
+      icon: mdi:target
+      show_icon: true
+      show_name: true
+      show_state: true
+      triggers_update:
+      - sensor.ecm_configurazione_reale
+      - input_number.livello_emc
+      tap_action:
+        action: more-info
+      state_display: "[[[\n  const codice = Math.round(Number(entity.state));\n\n  if (isNaN(codice))\n    return 'CP N/D + SPLIT N/D';\n\n  const splitId = Math.floor(codice / 10);\n  const cpId = codice\
+        \ % 10;\n\n  const cp = {\n    0: 'CP OFF V0',\n    1: 'CP OFF V2',\n    2: 'CP OFF V3',\n    3: 'CP OFF V4',\n    4: 'CP ON V2',\n    5: 'CP ON V3',\n    6: 'CP ON V4'\n  };\n\n  const split =\
+        \ {\n    0: 'SPLIT OFF',\n    1: 'SPLIT DRY V1',\n    2: 'SPLIT DRY V2',\n    3: 'SPLIT DRY V3',\n    4: 'SPLIT COOL V1',\n    5: 'SPLIT COOL V2',\n    6: 'SPLIT COOL V3'\n  };\n\n  return `${cp[cpId]\
+        \ || 'CP N/D'} + ${split[splitId] || 'SPLIT N/D'}`;\n]]]\n"
+      styles:
+        grid:
+        - grid-template-areas: '"i n" "s s"'
+        - grid-template-columns: 28px 1fr
+        - grid-template-rows: auto auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - font-weight: bold
+        - justify-self: start
+        - color: "[[[\n  return (\n    !states['sensor.ecm_configurazione_reale'] ||\n    !states['input_number.livello_emc'] ||\n    !/^E\\d+$/.test(states['sensor.ecm_configurazione_reale'].state) ||\n\
+            \    isNaN(Number(states['input_number.livello_emc'].state))\n  )\n    ? '#ef5350'\n    : Number(\n        states['sensor.ecm_configurazione_reale'].state\n        .replace('E', '')\n      )\
+            \ === Math.round(\n        Number(states['input_number.livello_emc'].state)\n      )\n        ? '#66bb6a'\n        : '#ffa726';\n]]]\n"
+        state:
+        - font-size: 12px
+        - font-weight: bold
+        - color: white
+        - justify-self: center
+        - padding-top: 6px
+        - white-space: normal
+        - text-align: center
+  - type: heading
+    heading_style: subtitle
+    heading: CASA
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: sensor.egwk_temp_aria_esterna_prima_egwk
+      name: ESTERNA
+      icon: mdi:home-thermometer-outline
+      show_state: true
+      size: 28px
+      styles:
+        icon:
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 10px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: sensor.compactp_t10_temperatura_sensore_stanza
+      name: Sond.AMB
+      icon: mdi:thermometer-auto
+      show_state: true
+      size: 28px
+      styles:
+        icon:
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 10px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: sensor.ecm_temperatura_zona_attiva
+      name: ZONA
+      icon: mdi:home-thermometer
+      show_state: true
+      size: 28px
+      styles:
+        icon:
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 10px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: sensor.ecm_umidita_zona_attiva
+      name: UMIDITÀ
+      icon: mdi:water-percent
+      show_state: true
+      size: 28px
+      styles:
+        icon:
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 10px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: sensor.ecm_zona_giorno_temperatura_media
+      name: Tmed GIORNO
+      icon: mdi:weather-sunny
+      show_icon: true
+      show_name: true
+      show_state: true
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+    - type: custom:button-card
+      entity: sensor.ecm_zona_notte_temperatura_media
+      name: Tmed NOTTE
+      icon: mdi:weather-night
+      show_icon: true
+      show_name: true
+      show_state: true
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: sensor.ecm_trend_zona_attiva_20m
+      name: 20m
+      icon: mdi:chart-line
+      show_icon: true
+      show_name: true
+      show_state: true
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 20px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+    - type: custom:button-card
+      entity: sensor.ecm_trend_zona_attiva_30m
+      name: 30m
+      icon: mdi:chart-line
+      show_icon: true
+      show_name: true
+      show_state: true
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 20px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+    - type: custom:button-card
+      entity: sensor.ecm_trend_zona_attiva_60m
+      name: 60m
+      icon: mdi:chart-line
+      show_icon: true
+      show_name: true
+      show_state: true
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 20px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+  - type: horizontal-stack
+    cards:
+    - type: custom:mushroom-number-card
+      entity: input_number.t_inverno
+      name: INVERNO
+      icon: mdi:snowflake
+      icon_color: light-blue
+      display_mode: buttons
+      fill_container: false
+      secondary_info: none
+    - type: custom:mushroom-number-card
+      entity: input_number.t_estate
+      name: ESTATE
+      icon: mdi:white-balance-sunny
+      icon_color: deep-orange
+      display_mode: buttons
+      secondary_info: none
+  - type: heading
+    heading_style: subtitle
+    heading: NILAN COMPACT-P
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: sensor.compactp_t1_temperatura_aria_esterna_post_egwk
+      name: Post GEOT
+      icon: mdi:home-thermometer
+      show_state: true
+      size: 28px
+      color: var(--state-icon-color)
+      styles:
+        name:
+        - font-size: 11px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: sensor.compactp_apertura_bypass
+      show_name: false
+      icon: mdi:call-split
+      show_state: true
+      size: 40px
+      color: '#6f8fa8'
+      state:
+      - value: 'ON'
+        color: green
+      styles:
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: sensor.compactp_compressore
+      show_name: false
+      icon: mdi:heat-pump
+      show_state: true
+      size: 40px
+      color: '#6f8fa8'
+      state:
+      - value: 'ON'
+        color: green
+      styles:
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: input_number.ventilatore_compactp
+      show_name: false
+      icon: mdi:fan
+      show_state: true
+      size: 40px
+      color: var(--state-icon-color)
+      styles:
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: sensor.compactp_t2_temperatura_immissione
+      name: Imm.CP
+      icon: mdi:air-filter
+      show_state: true
+      size: 28px
+      color: var(--state-icon-color)
+      styles:
+        name:
+        - font-size: 11px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: input_number.isteresi
+      name: ISTERESI HELPER
+      icon: mdi:tune-variant
+      show_icon: true
+      show_name: true
+      show_state: true
+      tap_action:
+        action: more-info
+      state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(1)} °C`;\n]]]\n"
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+    - type: custom:button-card
+      entity: sensor.compactp_isteresi_nz
+      name: ISTERESI REALE
+      icon: mdi:thermometer-lines
+      show_icon: true
+      show_name: true
+      show_state: true
+      tap_action:
+        action: more-info
+      state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(1)} °C`;\n]]]\n"
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+  - type: heading
+    heading_style: subtitle
+    heading: SPLIT TOSHIBA
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: input_boolean.toshiba_climatizzatore
+      show_name: false
+      icon: mdi:air-conditioner
+      show_state: true
+      size: 40px
+      color: var(--state-icon-color)
+      tap_action:
+        action: toggle
+      state:
+      - value: 'on'
+        color: green
+      styles:
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: input_select.toshiba_modo
+      show_name: false
+      icon: mdi:sun-snowflake
+      show_state: true
+      size: 40px
+      color: var(--state-icon-color)
+      tap_action:
+        action: more-info
+      state:
+      - value: RAFFRESCAMENTO
+        color: '#42a5f5'
+      - value: RISCALDAMENTO
+        color: '#ef5350'
+      styles:
+        name:
+        - font-size: 11px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: input_number.toshiba_ventilatore
+      show_name: false
+      icon: mdi:fan
+      show_state: true
+      size: 40px
+      color: var(--state-icon-color)
+      styles:
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: sensor.ecm_compactp_potenza_media_5m
+      name: Potenza CP
+      icon: mdi:flash
+      show_icon: true
+      show_name: true
+      show_state: true
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+    - type: custom:button-card
+      entity: sensor.ecm_toshiba_potenza_media_5m
+      name: Potenza SPLIT
+      icon: mdi:flash
+      show_icon: true
+      show_name: true
+      show_state: true
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: var(--state-icon-color)
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+  - type: heading
+    heading_style: subtitle
+    heading: NILAN ACS
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: sensor.compactp_t11_temperatura_bollitore_parte_alta
+      name: ALTA
+      icon: mdi:thermometer-high
+      show_state: true
+      size: 28px
+      tap_action:
+        action: more-info
+      state:
+      - operator: <
+        value: 42
+        color: '#42a5f5'
+      - operator: <=
+        value: 60
+        color: var(--state-icon-color)
+      - operator: '>'
+        value: 60
+        color: '#ef5350'
+      styles:
+        name:
+        - font-size: 10px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: sensor.compactp_t12_temperatura_bollitore_parte_bassa
+      name: BASSA
+      icon: mdi:thermometer-low
+      show_state: true
+      size: 28px
+      tap_action:
+        action: more-info
+      state:
+      - operator: <
+        value: 35
+        color: '#42a5f5'
+      - operator: <=
+        value: 55
+        color: var(--state-icon-color)
+      - operator: '>'
+        value: 55
+        color: '#ef5350'
+      styles:
+        name:
+        - font-size: 10px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: sensor.compactp_temperatura_massima_bollitore
+      name: MAX
+      icon: mdi:thermometer-chevron-up
+      show_state: true
+      size: 28px
+      tap_action:
+        action: more-info
+      styles:
+        icon:
+        - color: "[[[\n  const blocco = states['input_boolean.emc_cp_blocco_bollitore'];\n  if (blocco && blocco.state === 'on') {\n    return '#ef5350';\n  }\n  return 'var(--state-icon-color)';\n]]]\n"
+        name:
+        - font-size: 10px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+    - type: custom:button-card
+      entity: sensor.compactp_resistenza_elettrica_acs
+      name: RESISTENZA
+      icon: mdi:heating-coil
+      show_state: true
+      size: 28px
+      tap_action:
+        action: more-info
+      state:
+      - value: 'ON'
+        color: '#ef5350'
+      - value: 'on'
+        color: '#ef5350'
+      - value: 'OFF'
+        color: var(--state-icon-color)
+      - value: 'off'
+        color: var(--state-icon-color)
+      styles:
+        name:
+        - font-size: 10px
+        - color: var(--state-icon-color)
+        state:
+        - font-size: 14px
+        - font-weight: bold
+        - color: white
+  - type: horizontal-stack
+    cards:
+    - type: custom:button-card
+      entity: input_number.acs_set
+      name: Set ACS
+      icon: mdi:water-thermometer
+      show_icon: true
+      show_name: true
+      show_state: true
+      tap_action:
+        action: more-info
+      state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(1)} °C`;\n]]]\n"
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: orange
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+    - type: custom:button-card
+      entity: input_number.acs_r_set
+      name: Set ACS RESIST.
+      icon: mdi:heating-coil
+      show_icon: true
+      show_name: true
+      show_state: true
+      tap_action:
+        action: more-info
+      state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(1)} °C`;\n]]]\n"
+      styles:
+        grid:
+        - grid-template-areas: '"i n s"'
+        - grid-template-columns: 28px 1fr auto
+        - align-items: center
+        card:
+        - padding: 8px 10px
+        icon:
+        - width: 24px
+        - color: red
+        name:
+        - font-size: 12px
+        - color: var(--state-icon-color)
+        - justify-self: start
+        state:
+        - font-size: 15px
+        - font-weight: bold
+        - color: white
+        - justify-self: end
+  - type: heading
+    heading_style: subtitle
+    heading: RICAMBIO ARIA MINIMO
+  - type: vertical-stack
+    cards:
+    - type: horizontal-stack
+      cards:
+      - type: custom:button-card
+        entity: sensor.ecm_volumi_aria_finestra
+        name: RICAMBIO
+        icon: mdi:weather-windy
+        show_icon: true
+        show_name: true
+        show_state: true
+        size: 26px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(2)} / 2.0 vol`;\n]]]\n"
+        state:
+        - operator: <
+          value: 2
+          color: '#ffa726'
+        - operator: '>='
+          value: 2
+          color: '#66bb6a'
+        styles:
+          grid:
+          - grid-template-areas: '"i n s"'
+          - grid-template-columns: 30px 1fr auto
+          - align-items: center
+          card:
+          - padding: 8px 10px
+          icon:
+          - width: 24px
+          name:
+          - font-size: 12px
+          - color: var(--state-icon-color)
+          - justify-self: start
+          state:
+          - font-size: 14px
+          - font-weight: bold
+          - color: white
+          - justify-self: end
+      - type: custom:button-card
+        entity: sensor.ecm_ore_residue_finestra_aria
+        name: FINE FINESTRA
+        icon: mdi:timer-outline
+        show_icon: true
+        show_name: true
+        show_state: true
+        size: 26px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(1)} h`;\n]]]\n"
+        styles:
+          grid:
+          - grid-template-areas: '"i n s"'
+          - grid-template-columns: 30px 1fr auto
+          - align-items: center
+          card:
+          - padding: 8px 10px
+          icon:
+          - width: 24px
+          - color: '#42a5f5'
+          name:
+          - font-size: 12px
+          - color: var(--state-icon-color)
+          - justify-self: start
+          state:
+          - font-size: 14px
+          - font-weight: bold
+          - color: white
+          - justify-self: end
+    - type: horizontal-stack
+      cards:
+      - type: custom:button-card
+        entity: input_number.emc_ventilazione_minima_ricambio
+        name: MINIMO
+        icon: mdi:fan-auto
+        show_icon: true
+        show_name: true
+        show_state: true
+        size: 22px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Math.round(Number(entity.state));\n  if (isNaN(valore)) return 'N/D';\n  return valore === 0 ? 'OFF' : `V${valore}`;\n]]]\n"
+        styles:
+          grid:
+          - grid-template-areas: '"i" "n" "s"'
+          - grid-template-rows: 24px auto auto
+          card:
+          - padding: 6px
+          icon:
+          - width: 22px
+          - color: var(--state-icon-color)
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 13px
+          - font-weight: bold
+          - color: white
+      - type: custom:button-card
+        entity: sensor.ecm_ore_v2_finestra
+        name: V2
+        icon: mdi:fan-speed-1
+        show_icon: true
+        show_name: true
+        show_state: true
+        size: 22px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(1)} h`;\n]]]\n"
+        styles:
+          grid:
+          - grid-template-areas: '"i" "n" "s"'
+          - grid-template-rows: 24px auto auto
+          card:
+          - padding: 6px
+          icon:
+          - width: 22px
+          - color: var(--state-icon-color)
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 13px
+          - font-weight: bold
+          - color: white
+      - type: custom:button-card
+        entity: sensor.ecm_ore_v3_finestra
+        name: V3
+        icon: mdi:fan-speed-2
+        show_icon: true
+        show_name: true
+        show_state: true
+        size: 22px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(1)} h`;\n]]]\n"
+        styles:
+          grid:
+          - grid-template-areas: '"i" "n" "s"'
+          - grid-template-rows: 24px auto auto
+          card:
+          - padding: 6px
+          icon:
+          - width: 22px
+          - color: var(--state-icon-color)
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 13px
+          - font-weight: bold
+          - color: white
+      - type: custom:button-card
+        entity: sensor.ecm_ore_v4_finestra
+        name: V4
+        icon: mdi:fan-speed-3
+        show_icon: true
+        show_name: true
+        show_state: true
+        size: 22px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(1)} h`;\n]]]\n"
+        styles:
+          grid:
+          - grid-template-areas: '"i" "n" "s"'
+          - grid-template-rows: 24px auto auto
+          card:
+          - padding: 6px
+          icon:
+          - width: 22px
+          - color: var(--state-icon-color)
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 13px
+          - font-weight: bold
+          - color: white
+  - type: entities
+    title: 🎛️ Controllo
+    show_header_toggle: false
+    entities:
+    - entity: input_select.ecm_manuale
+      name: Gestione ECM
+    - entity: input_select.free_cooling
+      name: Free Cooling
+  - type: horizontal-stack
+    cards:
+    - type: custom:mushroom-number-card
+      entity: input_number.t_min_inverno
+      name: MIN INVERNO
+      icon: mdi:thermometer-chevron-down
+      icon_color: light-blue
+      display_mode: buttons
+      primary_info: name
+      secondary_info: state
+    - type: custom:mushroom-number-card
+      entity: input_number.t_max_estate
+      name: MAX ESTATE
+      icon: mdi:thermometer-chevron-up
+      icon_color: deep-orange
+      display_mode: buttons
+      primary_info: name
+      secondary_info: state
+  - type: horizontal-stack
+    cards:
+    - type: custom:mushroom-number-card
+      entity: input_number.delta_confort
+      name: Δ COMFORT
+      icon: mdi:thermometer-lines
+      icon_color: amber
+      display_mode: buttons
+      primary_info: name
+      secondary_info: state
+    - type: custom:mushroom-number-card
+      entity: input_number.delta_freecooling
+      name: Δ FREE COOLING
+      icon: mdi:weather-windy
+      icon_color: teal
+      display_mode: buttons
+      primary_info: name
+      secondary_info: state
+  - type: markdown
+    content: '## 🕒 Orari
+
+      '
+  - type: custom:time-picker-card
+    entity: input_datetime.nilan_mattina
+    name: MATTINA
+    hour_mode: 24
+    hour_step: 1
+    minute_step: 5
+    link_values: true
+    hide:
+      seconds: true
+      icon: true
+    layout:
+      hour_mode: double
+      align_controls: center
+      name: header
+      embedded: false
+      thin: true
+    grid_options:
+      columns: 6
+      rows: auto
+  - type: custom:time-picker-card
+    entity: input_datetime.nilan_serale
+    name: SERA
+    hour_mode: 24
+    hour_step: 1
+    minute_step: 5
+    link_values: true
+    hide:
+      seconds: true
+      icon: true
+    layout:
+      hour_mode: double
+      align_controls: center
+      name: header
+      embedded: false
+      thin: true
+    grid_options:
+      columns: 6
+      rows: auto
+  - type: custom:time-picker-card
+    entity: input_datetime.nilan_notturna
+    name: NOTTE
+    hour_mode: 24
+    hour_step: 1
+    minute_step: 5
+    link_values: true
+    hide:
+      seconds: true
+      icon: true
+    layout:
+      hour_mode: double
+      align_controls: center
+      name: header
+      embedded: false
+      thin: true
+    grid_options:
+      columns: 6
+      rows: auto
+  - type: custom:time-picker-card
+    entity: input_datetime.doccia_time
+    name: DOCCIA
+    hour_mode: 24
+    hour_step: 1
+    minute_step: 5
+    link_values: true
+    hide:
+      seconds: true
+      icon: true
+    layout:
+      hour_mode: double
+      align_controls: center
+      name: header
+      embedded: false
+      thin: true
+    grid_options:
+      columns: 6
+      rows: auto
+  - type: entities
+    title: Soglie climatiche ECM
+    show_header_toggle: false
+    entities:
+    - entity: input_number.ecm_coefficiente_comfort
+      name: Coefficiente Comfort
+      icon: mdi:tune-variant
+    - entity: sensor.ecm_target_comfort
+      name: Temperatura Comfort
+      icon: mdi:thermometer
+    - entity: input_number.ecm_coefficiente_accumulo
+      name: Coefficiente Accumulo
+      icon: mdi:tune-variant
+    - entity: sensor.ecm_target_accumulo
+      name: Temperatura Accumulo
+      icon: mdi:thermometer
+    - entity: input_number.ecm_coefficiente_tmin
+      name: Coefficiente T limite
+      icon: mdi:tune-variant
+    - entity: sensor.ecm_limite_superiore
+    - entity: sensor.ecm_limite_inferiore
+    - entity: input_number.commutazione_estate_inverno
+    - entity: input_number.isteresi_commutazione_estate_inverno
+- type: grid
+  cards:
+  - type: tile
+    grid_options:
+      columns: 6
+      rows: 2
+    entity: input_button.github_deploy
+    name: →HA da GH
+    vertical: false
+    features:
+    - type: button
+    features_position: bottom
+  - type: tile
+    entity: input_button.github_sync_now
+    name: SINC HA su GH
+    vertical: false
+    features:
+    - type: button
+    features_position: bottom
+  - type: markdown
+    content: '# 🔎 DIAGNOSTICA
+
+      '
+  - type: custom:auto-entities
+    card:
+      type: entities
+      title: Nilan - Sensori con problemi
+      state_color: true
+      show_header_toggle: false
+    filter:
+      template: "{% set nilan = [\n  'sensor.toshiba_on_off_unita',\n  'sensor.toshiba_modo_unita',\n  'sensor.toshiba_velocita_ventilatore',\n  'sensor.toshiba_setpoint',\n  'sensor.toshiba_velocita_compressore_u_e',\n\
+        \  'sensor.toshiba_potenza_attiva',\n\n  'sensor.gestione_split_auto_mode',\n  'sensor.gestione_split_current_mode',\n  'sensor.gestione_split_dew_point',\n  'sensor.gestione_split_offset_accensione_estate',\n\
+        \  'sensor.gestione_split_offset_accensione_inverno',\n  'sensor.gestione_split_orario_fine_spegnimento_notturno',\n  'sensor.gestione_split_orario_spegnimento_notturno',\n  'sensor.gestione_split_u_spec',\n\
+        \n  'sensor.egwk_temp_aria_esterna_prima_egwk',\n\n  'sensor.compactp_potenza_attiva',\n  'sensor.compactp_t2_temperatura_immissione',\n  'sensor.compactp_t4_temperatura_dopo_scambiatore_passivo',\n\
+        \  'sensor.compactp_t5_temperatura_batteria_superiore',\n  'sensor.compactp_t6_temperatura_batteria_inferiore',\n  'sensor.compactp_t10_temperatura_sensore_stanza',\n  'sensor.compactp_t11_temperatura_bollitore_parte_alta',\n\
+        \  'sensor.compactp_t12_temperatura_bollitore_parte_bassa',\n  'sensor.compactp_stato_controllo',\n  'sensor.compactp_ventilazione_selezionata',\n  'sensor.compactp_setpoint_aria',\n  'sensor.compactp_setpoint_acs_resistenza',\n\
+        \  'sensor.compactp_setpoint_acs_compressore',\n  'sensor.compactp_offset_raffrescamento',\n  'sensor.compactp_temperatura_massima_bollitore',\n  'sensor.compactp_serranda_aria',\n  'sensor.compactp_apertura_bypass',\n\
+        \  'sensor.compactp_chiusura_bypass',\n  'sensor.compactp_compressore',\n  'sensor.compactp_resistenza_elettrica_acs',\n  'sensor.compactp_isteresi_nz',\n  'sensor.compactp_soglia_commutazione_estate_inverno'\n\
+        ] %}\n\n{% set ns = namespace(problemi=[]) %}\n{% for e in nilan %}\n  {% if states(e) in ['unknown', 'unavailable'] %}\n    {% set ns.problemi = ns.problemi + [e] %}\n  {% endif %}\n{% endfor %}\n\
+        {{ ns.problemi }}\n"
+    sort:
+      method: name
+      reverse: false
+    show_empty: false
+    grid_options:
+      columns: full
+  - type: horizontal-stack
+    cards:
+    - show_name: true
+      show_icon: true
+      type: button
+      entity: automation.01_ecm_eg_estate_fascia_giorno
+      icon: mdi:white-balance-sunny
+      show_state: false
+    - show_name: true
+      show_icon: true
+      type: button
+      entity: automation.01_ecm_fc_estate
+      name: FC
+      icon: mdi:weather-windy
+      show_state: false
+    - show_name: true
+      show_icon: true
+      type: button
+      entity: automation.01_ecm_en_estate_fascia_notturna
+      icon: mdi:weather-night
+      show_state: false
+  - type: horizontal-stack
+    cards:
+    - show_name: true
+      show_icon: true
+      type: button
+      entity: automation.nilan_write
+      name: WRITE
+      icon: mdi:database-arrow-up
+      show_state: false
+    - show_name: true
+      show_icon: true
+      type: button
+      entity: automation.02_ecm_safety_guard
+      name: SAFETY
+      icon: mdi:shield-check
+      show_state: false
+    - show_name: true
+      show_icon: true
+      type: button
+      entity: automation.06_ecm_humidity_override
+      name: HUMIDITY
+      icon: mdi:water-percent
+      show_state: false
+  - type: vertical-stack
+    cards:
+    - type: horizontal-stack
+      cards:
+      - type: custom:button-card
+        entity: sensor.growatt_inverter_growatt_pv_power_total
+        name: FV
+        icon: mdi:solar-power
+        show_name: true
+        show_icon: true
+        show_state: true
+        size: 28px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${Math.round(valore)} W`;\n]]]\n"
+        state:
+        - operator: <=
+          value: 10
+          color: grey
+        - operator: <
+          value: 1000
+          color: '#f9a825'
+        - operator: <
+          value: 3000
+          color: '#fdd835'
+        - operator: '>='
+          value: 3000
+          color: '#66bb6a'
+        styles:
+          card:
+          - padding: 6px 3px
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 12px
+          - font-weight: bold
+          - color: white
+      - type: custom:button-card
+        entity: sensor.growatt_inverter_growatt_total_load_power
+        name: CASA
+        icon: mdi:home-lightning-bolt
+        show_name: true
+        show_icon: true
+        show_state: true
+        size: 28px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${Math.round(valore)} W`;\n]]]\n"
+        state:
+        - operator: <
+          value: 1000
+          color: '#66bb6a'
+        - operator: <
+          value: 3000
+          color: '#ffa726'
+        - operator: '>='
+          value: 3000
+          color: '#ef5350'
+        styles:
+          card:
+          - padding: 6px 3px
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 12px
+          - font-weight: bold
+          - color: white
+      - type: custom:button-card
+        entity: sensor.growatt_inverter_growatt_total_import_power
+        name: RETE
+        icon: mdi:transmission-tower-import
+        show_name: true
+        show_icon: true
+        show_state: true
+        size: 28px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${Math.round(valore)} W`;\n]]]\n"
+        state:
+        - operator: <=
+          value: 10
+          color: '#66bb6a'
+        - operator: <
+          value: 1000
+          color: '#ffa726'
+        - operator: '>='
+          value: 1000
+          color: '#ef5350'
+        styles:
+          card:
+          - padding: 6px 3px
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 12px
+          - font-weight: bold
+          - color: white
+      - type: custom:button-card
+        entity: sensor.growatt_inverter_growatt_battery_soc
+        name: BATTERIA
+        icon: mdi:battery-charging
+        show_name: true
+        show_icon: true
+        show_state: true
+        size: 28px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const soc = Number(entity.state);\n\n  const caricaEntity =\n    states['sensor.growatt_inverter_growatt_battery_charge_power'];\n  const scaricaEntity =\n    states['sensor.growatt_inverter_growatt_battery_discharge_power'];\n\
+          \n  const carica = caricaEntity\n    ? Number(caricaEntity.state)\n    : 0;\n\n  const scarica = scaricaEntity\n    ? Number(scaricaEntity.state)\n    : 0;\n\n  if (isNaN(soc)) return 'N/D';\n\
+          \n  if (carica > 10) {\n    return `${Math.round(soc)}% ↑${Math.round(carica)}W`;\n  }\n\n  if (scarica > 10) {\n    return `${Math.round(soc)}% ↓${Math.round(scarica)}W`;\n  }\n\n  return `${Math.round(soc)}%\
+          \ · 0W`;\n]]]\n"
+        state:
+        - operator: <=
+          value: 20
+          color: '#ef5350'
+        - operator: <=
+          value: 50
+          color: '#ff9800'
+        - operator: <=
+          value: 80
+          color: '#fdd835'
+        - operator: '>'
+          value: 80
+          color: '#66bb6a'
+        styles:
+          card:
+          - padding: 6px 2px
+          name:
+          - font-size: 9px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 11px
+          - font-weight: bold
+          - color: white
+          - white-space: nowrap
+    - type: horizontal-stack
+      cards:
+      - type: custom:button-card
+        entity: sensor.ecm_consumo_climatico_stimato
+        name: CLIMA
+        icon: mdi:hvac
+        show_name: true
+        show_icon: true
+        show_state: true
+        size: 28px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${Math.round(valore)} W`;\n]]]\n"
+        styles:
+          card:
+          - padding: 6px 3px
+          icon:
+          - color: var(--state-icon-color)
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 12px
+          - font-weight: bold
+          - color: white
+      - type: custom:button-card
+        entity: sensor.ecm_potenza_appresa_configurazione_reale
+        name: APPRESO
+        icon: mdi:brain
+        show_name: true
+        show_icon: true
+        show_state: true
+        size: 28px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${Math.round(valore)} W`;\n]]]\n"
+        styles:
+          card:
+          - padding: 6px 3px
+          icon:
+          - color: var(--state-icon-color)
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 12px
+          - font-weight: bold
+          - color: white
+      - type: custom:button-card
+        entity: sensor.ecm_consumo_base_casa
+        name: BUDGET
+        icon: mdi:calculator-variant
+        show_name: true
+        show_icon: true
+        show_state: true
+        size: 28px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const fvEntity =\n    states['sensor.growatt_inverter_growatt_pv_power_total'];\n  const baseEntity =\n    states['sensor.ecm_consumo_base_casa'];\n\n  const fv = fvEntity\
+          \ ? Number(fvEntity.state) : NaN;\n  const base = baseEntity ? Number(baseEntity.state) : NaN;\n\n  if (isNaN(fv) || isNaN(base)) return 'N/D';\n\n  const budget = Math.max(fv - base, 0);\n  return\
+          \ `${Math.round(budget)} W`;\n]]]\n"
+        styles:
+          card:
+          - padding: 6px 3px
+          icon:
+          - color: "[[[\n  const fvEntity =\n    states['sensor.growatt_inverter_growatt_pv_power_total'];\n  const baseEntity =\n    states['sensor.ecm_consumo_base_casa'];\n  const appresoEntity =\n \
+              \   states['sensor.ecm_potenza_appresa_configurazione_reale'];\n\n  const fv = fvEntity\n    ? Number(fvEntity.state)\n    : NaN;\n  const base = baseEntity\n    ? Number(baseEntity.state)\n\
+              \    : NaN;\n  const appreso = appresoEntity\n    ? Number(appresoEntity.state)\n    : NaN;\n\n  if (\n    isNaN(fv) ||\n    isNaN(base) ||\n    isNaN(appreso)\n  ) {\n    return 'grey';\n\
+              \  }\n\n  const budget = Math.max(fv - base, 0);\n  const margine = budget - appreso;\n\n  if (margine >= 250) return '#66bb6a';\n  if (margine < -250) return '#ef5350';\n  return 'var(--state-icon-color)';\n\
+              ]]]\n"
+          name:
+          - font-size: 10px
+          - color: var(--state-icon-color)
+          state:
+          - font-size: 12px
+          - font-weight: bold
+          - color: white
+      - type: custom:button-card
+        entity: sensor.soc_previsione_mattina
+        name: PREV. MATTINA
+        icon: mdi:weather-sunset-up
+        show_name: true
+        show_icon: true
+        show_state: true
+        size: 28px
+        tap_action:
+          action: more-info
+        state_display: "[[[\n  const valore = Number(entity.state);\n  if (isNaN(valore)) return 'N/D';\n  return `${valore.toFixed(1)}%`;\n]]]\n"
+        state:
+        - operator: <=
+          value: 20
+          color: '#ef5350'
+        - operator: <=
+          value: 50
+          color: '#ff9800'
+        - operator: <=
+          value: 80
+          color: '#fdd835'
+        - operator: '>'
+          value: 80
+          color: '#66bb6a'
+        styles:
+          card:
+          - padding: 6px 2px
+          name:
+          - font-size: 8px
+          - color: var(--state-icon-color)
+          - white-space: nowrap
+          state:
+          - font-size: 12px
+          - font-weight: bold
+          - color: white
+  - type: history-graph
+    entities:
+    - entity: sensor.compactp_t11_temperatura_bollitore_parte_alta
+      name: Alta
+    - entity: sensor.compactp_t12_temperatura_bollitore_parte_bassa
+      name: Bassa
+    title: BOLLITORE · 24 ORE
+    hours_to_show: 12
+    logarithmic_scale: false
+  - type: history-graph
+    entities:
+    - entity: sensor.ecm_temperatura_zona_attiva
+      name: Zona
+    - entity: sensor.egwk_temp_aria_esterna_prima_egwk
+      name: Esterna
+    - entity: sensor.nilan_text_post_temperamento
+      name: Post geotermico
+    - entity: sensor.compactp_t2_temperatura_immissione
+      name: Imm.CP
+    - entity: sensor.compactp_t10_temperatura_sensore_stanza
+      name: T.sonda
+    - entity: sensor.ble_temperature_mija_garage
+      name: Imm.SPLIT
+    - entity: sensor.compactp_t1_temperatura_aria_esterna_post_egwk
+      name: T.Post GEOT
+    title: TEMPERATURE · 12 ORE
+    hours_to_show: 12
+    logarithmic_scale: false
+  - type: markdown
+    title: Perché ECM sta facendo questo?
+    content: "{% set u_raw = states('sensor.ble_humidity_mija_lavanderia') %} {% set u = u_raw | float(0) %} {% set batt_raw = states('sensor.ble_battery_mija_lavanderia') %} {% set batt = batt_raw | float(0)\
+      \ %} {% set attivo =\n  is_state('input_boolean.emc_richiesta_ventilazione_umidita', 'on') %}\n{% set v =\n  states('input_number.ecm_ventilazione_umidita_lavanderia') | int(0) %}\n{% set v_reale\
+      \ =\n  states('sensor.compactp_ventilazione_selezionata') %}\n{% set minuti = ((as_timestamp(now()) -\n  as_timestamp(states.input_boolean.emc_richiesta_ventilazione_umidita.last_changed))\n  / 60)\
+      \ | round(0) | int if attivo else 0 %}\n{% set tz_raw = states('sensor.ecm_temperatura_zona_attiva') %} {% set lim_raw = states('sensor.ecm_limite_inferiore') %} {% set tz = tz_raw | float(0) %} {%\
+      \ set lim = lim_raw | float(0) %}\n{% if not is_number(u_raw) or not is_number(batt_raw) or batt < 10 %} ## ⚠️ Override lavanderia non disponibile Il dato non è valido: umidità **{{ u_raw }}**, batteria\
+      \ sensore **{{ batt_raw }}%**.\n{% elif not attivo %} ## ✅ Gestione climatica ordinaria L'override lavanderia è **spento**. Umidità attuale: **{{ u | round(1) }}%**. Si attiva da **70%** e termina\
+      \ a **65% o meno per 2 minuti**.\n{% else %} ## \U0001F4A7 Override lavanderia attivo — richiesta V{{ v }} Umidità **{{ u | round(1) }}%** · ciclo attivo da circa **{{ minuti }} minuti** · CompactP\
+      \ reale **{{ v_reale }}**.\n{% if v == 4 and u >= 80 %} **Motivo:** umidità almeno all'80%, quindi viene richiesta subito V4.\n{% elif v == 4 and u >= 70 and minuti >= 40 %} **Motivo:** l'umidità\
+      \ è ancora almeno al 70% dopo 40 minuti; la ventilazione è stata aumentata a V4.\n{% elif v == 3 and u >= 75 %} **Motivo:** umidità nella fascia 75–79%, quindi viene richiesta V3.\n{% elif v == 3\
+      \ and u >= 70 and minuti >= 20 %} **Motivo:** l'umidità è ancora almeno al 70% dopo 20 minuti; la ventilazione è stata aumentata da V2 a V3.\n{% elif v == 2 and u < 70 %} **Motivo:** l'umidità è scesa\
+      \ sotto il 70%; V2 completa il ricambio fino al termine dell'override a 65%.\n{% else %} **Motivo:** umidità nella fascia 70–74%; viene richiesta V2. {% endif %} {% endif %}\n---\n**Temperatura zona:**\
+      \ {{ tz_raw }} °C · **limite inferiore:** {{ lim_raw }} °C\n{% if is_number(tz_raw) and is_number(lim_raw) and tz <= lim %} \U0001F9CA La zona è al limite o sotto: il bypass deve restare **chiuso**\
+      \ per limitare il raffreddamento.\n{% else %} \U0001F321️ La zona è sopra il limite inferiore: resta valida la normale gestione termica. {% endif %}\n**Bypass apertura:** {{ states('sensor.compactp_apertura_bypass')\
+      \ }} · **chiusura:** {{ states('sensor.compactp_chiusura_bypass') }}\n**Compressore CompactP:** {{ states('sensor.compactp_compressore') }} · **Toshiba:** {{ states('input_boolean.toshiba_climatizzatore')\
+      \ }}\nL'override lavanderia modifica soltanto la ventilazione richiesta: non accende direttamente compressore o DRY."
+cards: []

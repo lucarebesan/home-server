@@ -1,0 +1,8 @@
+# Generati da build.py
+lovelace.ecm_v2
+entities_v2.txt
+entities.txt
+# Backup e dump locali (contengono l'intera configurazione Lovelace)
+*.bak*
+lovelace.lovelace.orig.json
+ecm_view.json

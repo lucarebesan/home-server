@@ -1,6 +1,6 @@
 # Gateway Higeco (Nilan, Toshiba, contatori)
 
-Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `Misc/ecm-engine/docs/gateway/` sul PC di Mattia (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
+Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
 
 ## Cos'è
 
@@ -41,7 +41,7 @@ Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo de
 - Richiesta: `POST /cgi-bin/dataLogCgi` con `query=[{"act":"getDataLog","sn":"UG7G8G3CUG7G","DATI":{"idLog":<id dispositivo>,"start":s,"stop":s,"maxNumRecord":100000,"period":60,"zeroTimeOffset":0,"items":[<id grandezze>]}}]`.
 - Una settimana di Compact P (28 colonne registrate) richiede circa 17 s e pesa 2,2 MB. Fare una richiesta alla volta, con pause di qualche secondo: HA usa lo stesso gateway.
 - **Il campo `utc` non è UTC**: è l'ora locale scritta come epoch (+2 h in estate, +1 h in inverno). Il 25/10 il gateway ha cambiato ora alle 07:52, non alle 03:00.
-- Export eseguito l'8/11 dalla sessione admin nel browser; file in `Misc/ecm-engine/data_gw/` (circa 92 MB, fuori da git).
+- Export eseguito l'8/11 dalla sessione admin nel browser; file in `sorgenti/ecm-engine/data_gw/` sul PC di Mattia (circa 92 MB, fuori da git).
 
 ## Osservazioni
 

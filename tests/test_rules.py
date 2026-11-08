@@ -165,3 +165,15 @@ def test_v1_codes_never_proposed():
             assert all(c % 10 < 7 for c in codes_for_season(st, night))
     stats = aggregate([Period(88, "HEAT", 0, 1, 20, 300.0, 0.0, 300.0, 1.0, 0.0, 1.0, 1.0, 8.0, False)] * 5)
     assert all(p.code % 10 < 7 for p in ordered_candidates(stats, ctx()))
+
+
+def test_excluded_candidates_cover_season():
+    from ecm_engine.rules import excluded_candidates, ordered_candidates
+    from datetime import time
+    for now_h in (12, 23):
+        c = ctx(now=datetime(2026, 11, 8, now_h, 0), mattina=time(8, 30), serale=time(20, 30))
+        ora = {p.code for p in ordered_candidates({}, c)}
+        esc = dict(excluded_candidates(c))
+        assert ora.isdisjoint(esc) and ora | set(esc) == set(codes_for_season(c.stagione, False))
+    assert esc[90] == "di notte niente Toshiba velocità alta" and esc[3] == "di notte niente Nilan V4"
+    assert esc[93] == "di notte niente Nilan V4 né Toshiba velocità alta"

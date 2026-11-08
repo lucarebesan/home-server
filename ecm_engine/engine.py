@@ -7,9 +7,9 @@ from datetime import datetime, time as dtime
 from . import config
 from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
-from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, is_night, ordered_candidates, propose, start_blockers
+from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, excluded_candidates, ordered_candidates, propose, start_blockers
 from .segmenter import segment
-from .texts import (best_attrs, best_line, blocco_testo, da_misurare_rows, detail_rows, storico_rows,
+from .texts import (SEZ_FATTE, best_attrs, best_line, blocco_testo, da_misurare_rows, detail_rows, storico_rows,
                     summary_lines)
 
 log = logging.getLogger(__name__)
@@ -318,9 +318,9 @@ class Engine:
         if c is None:
             return
         f = fascia(c.t_ext)
-        night = is_night(c)
-        heat = [x for x in codes_for_season("INVERNO", night) if tipo_of(x, "INVERNO") == "HEAT"]
-        cool = [x for x in codes_for_season("ESTATE", night) if tipo_of(x, "ESTATE") in ("COOL", "DRY")]
+        # percentuale su tutte le combinazioni della stagione, giorno o notte
+        heat = [x for x in codes_for_season("INVERNO", False) if tipo_of(x, "INVERNO") == "HEAT"]
+        cool = [x for x in codes_for_season("ESTATE", False) if tipo_of(x, "ESTATE") in ("COOL", "DRY")]
         pct_h = learning_pct(self.stats, heat, f, "INVERNO")
         pct_c = learning_pct(self.stats, cool, f, "ESTATE")
         lines = summary_lines(self.stats, c.stagione, f)
@@ -340,8 +340,10 @@ class Engine:
         if c is None:
             return
         f = fascia(c.t_ext)
-        rows = da_misurare_rows(ordered_candidates(self.stats, c), self.stats, f, c.stagione)
-        self.pub.set_state("da_misurare", len(rows), {"righe": rows, "fascia_esterna": f})
+        rows = da_misurare_rows(ordered_candidates(self.stats, c), excluded_candidates(c),
+                                self.stats, f, c.stagione, c)
+        da_fare = sum(1 for r in rows if r["sezione"] != SEZ_FATTE)
+        self.pub.set_state("da_misurare", da_fare, {"righe": rows, "fascia_esterna": f})
 
     def _publish_status(self) -> None:
         now = int(self.clock())

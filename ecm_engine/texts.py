@@ -2,9 +2,12 @@
 import time as _time
 from datetime import datetime
 
-from .combo import U_V1_OFF, descrizione
+from .combo import U_V1_OFF, descrizione, tipo_of
 from .learner import EFF_MIN, ranking
 from .rules import AUTO_MAX_PER_DAY, MARGINE, MARGINE_HEAT_START
+
+_BLOCCHI_ZONA = ("zona troppo calda per scaldare", "zona troppo fredda per raffrescare",
+                 "zona troppo fredda", "zona troppo calda")
 
 VERBO = {"HEAT": "scaldare", "COOL": "raffrescare"}
 TIPI = {"HEAT": ("HEAT",), "COOL": ("COOL", "DRY")}   # d'estate anche la deumidifica raffresca
@@ -154,15 +157,30 @@ def storico_rows(tests, stagione, now=None) -> list[dict]:
     return rows
 
 
-def da_misurare_rows(proposals, stats, f, stagione) -> list[dict]:
-    rows = []
+SEZ_ORA, SEZ_NON_ORA, SEZ_FATTE = "Provabili adesso", "Non provabili adesso", "Già misurate"
+
+
+def da_misurare_rows(proposals, esclusi, stats, f, stagione, c=None) -> list[dict]:
+    """Tutte le combinazioni della stagione, in tre sezioni: provabili adesso (nell'ordine
+    di propose), non provabili adesso (con il motivo), già misurate (100%)."""
+    def misure(code, tipo):
+        st = stats.get((code, tipo, f))
+        return int(st.affidabilita * 100) if st else 0
+
+    ora, non_ora, fatte = [], [], []
     for p in proposals:
-        st = stats.get((p.code, p.tipo, f))
-        misure = int(st.affidabilita * 100) if st else 0
-        if misure >= 100:
-            continue
-        rows.append({"ordine": len(rows) + 1, "combinazione": descrizione(p.code, stagione),
-                     "misure": misure, "durata": f"{p.durata} min"})
-        if len(rows) == 20:
-            break
-    return rows
+        m = misure(p.code, p.tipo)
+        row = {"combinazione": descrizione(p.code, stagione), "misure": m, "durata": f"{p.durata} min"}
+        if m >= 100:
+            fatte.append((p.code, row))
+        else:
+            ora.append({"sezione": SEZ_ORA, "ordine": len(ora) + 1, **row})
+    for code, why in sorted(esclusi):
+        m = misure(code, tipo_of(code, stagione))
+        row = {"combinazione": descrizione(code, stagione), "misure": m}
+        if m >= 100:
+            fatte.append((code, row))
+        else:
+            motivo = blocco_testo(why, c) if why in _BLOCCHI_ZONA else why[:1].upper() + why[1:]
+            non_ora.append({"sezione": SEZ_NON_ORA, "motivo": motivo, **row})
+    return ora + non_ora + [{"sezione": SEZ_FATTE, **r} for _, r in sorted(fatte, key=lambda x: x[0])]

@@ -66,6 +66,32 @@ def codes_for_season(stagione: str, night: bool) -> list[int]:
     return codes
 
 
+def night_reason(code: int) -> str | None:
+    """Perché codes_for_season(..., night=True) toglie il codice (None se resta)."""
+    v4, alta = code % 10 in (3, 6), code >= 10 and (code // 10) % 3 == 0
+    if v4 and alta:
+        return "di notte niente Nilan V4 né Toshiba velocità alta"
+    if v4:
+        return "di notte niente Nilan V4"
+    if alta:
+        return "di notte niente Toshiba velocità alta"
+    return None
+
+
+def excluded_candidates(c: Ctx) -> list[tuple[int, str]]:
+    """Codici della stagione che ordered_candidates scarta adesso, con il motivo interno."""
+    night = is_night(c)
+    out = []
+    for code in codes_for_season(c.stagione, False):
+        why = night_reason(code) if night else None
+        if why is None:
+            zb = zone_blockers(c, tipo_of(code, c.stagione))
+            why = zb[0] if zb else None
+        if why is not None:
+            out.append((code, why))
+    return out
+
+
 def _energia_ok(c: Ctx, soc_min: float) -> bool:
     return c.soc >= soc_min or c.pv >= c.load
 

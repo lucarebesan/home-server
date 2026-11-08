@@ -112,14 +112,28 @@ def test_storico_rows():
 def test_da_misurare_rows():
     from ecm_engine.rules import Proposal
     from ecm_engine.texts import da_misurare_rows
-    stats = aggregate([per(82)] * 5 + [per(5)] * 2)
+    stats = aggregate([per(82)] * 5 + [per(5)] * 2 + [per(93)] * 5)
     props = [Proposal(6, "HEAT", 30, "x"), Proposal(5, "HEAT", 20, "x"), Proposal(82, "HEAT", 20, "x")]
-    rows = da_misurare_rows(props, stats, "5-10", "INVERNO")
-    assert [r["ordine"] for r in rows] == [1, 2]
+    esclusi = [(93, "di notte niente Toshiba velocità alta"), (90, "di notte niente Toshiba velocità alta")]
+    rows = da_misurare_rows(props, esclusi, stats, "5-10", "INVERNO")
+    assert [r["sezione"] for r in rows] == ["Provabili adesso"] * 2 + ["Non provabili adesso"] + ["Già misurate"] * 2
+    assert [r.get("ordine") for r in rows[:2]] == [1, 2]
     assert rows[0]["misure"] == 0 and rows[0]["durata"] == "30 min"
     assert 0 < rows[1]["misure"] < 100
+    assert rows[2]["combinazione"] == "Nilan ferma + Toshiba caldo alta"
+    assert rows[2]["motivo"] == "Di notte niente Toshiba velocità alta"
+    assert [r["combinazione"] for r in rows[3:]] == [
+        "Nilan solo ventilazione V3 + Toshiba caldo media", "Nilan solo ventilazione V4 + Toshiba caldo alta"]
     many = [Proposal(6, "HEAT", 30, "x")] * 30
-    assert len(da_misurare_rows(many, {}, "5-10", "INVERNO")) == 20
+    assert len(da_misurare_rows(many, [], {}, "5-10", "INVERNO")) == 30
+
+
+def test_da_misurare_motivo_zona():
+    from ecm_engine.texts import da_misurare_rows
+    from types import SimpleNamespace
+    c = SimpleNamespace(soglia_estate=24.5, lim_inf=20.0, lim_sup=26.0)
+    rows = da_misurare_rows([], [(76, "zona troppo calda per scaldare")], {}, "5-10", "INVERNO", c)
+    assert rows[0]["motivo"] == "La casa è già calda: una zona supera 23,5 °C."
 
 
 def test_testi_write():

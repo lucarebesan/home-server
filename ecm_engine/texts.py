@@ -2,7 +2,7 @@
 import time as _time
 from datetime import datetime
 
-from .combo import descrizione
+from .combo import U_V1_OFF, descrizione
 from .learner import EFF_MIN, ranking
 from .rules import AUTO_MAX_PER_DAY, MARGINE, MARGINE_HEAT_START
 
@@ -13,7 +13,8 @@ SOGLIA = 0.4
 
 def _consigliati(stats, tipo, f):
     """Ranking con costo noto: prima i dati affidabili, poi gli altri (ordine interno invariato)."""
-    r = [s for s in ranking(stats, TIPI[tipo], f) if s.costo is not None]
+    # V1 (u>=7) e' solo osservato: non e' selezionabile su 09, quindi non si consiglia
+    r = [s for s in ranking(stats, TIPI[tipo], f) if s.costo is not None and s.code % 10 < U_V1_OFF]
     return [s for s in r if s.affidabilita >= SOGLIA] + [s for s in r if s.affidabilita < SOGLIA]
 
 
@@ -49,11 +50,25 @@ def summary_lines(stats, stagione, f) -> list[str]:
     return lines
 
 
+TIPI_STAGIONE = {"INVERNO": ("HEAT", "NEUTRO"), "ESTATE": ("COOL", "DRY", "NEUTRO")}
+TIPO_TESTO = {"HEAT": "caldo", "COOL": "freddo"}
+
+
+def _descr_riga(s, stagione) -> str:
+    """Solo CP acceso (d=0): lo stesso codice esiste per caldo e freddo, sono modi fisici diversi."""
+    d = descrizione(s.code, stagione)
+    if s.code // 10 == 0 and s.tipo in TIPO_TESTO:
+        d += f" ({TIPO_TESTO[s.tipo]})"
+    return d
+
+
 def detail_rows(stats, f, stagione) -> list[dict]:
     rows = []
-    for s in sorted((s for s in stats.values() if s.fascia == f), key=lambda s: s.code):
+    tipi = TIPI_STAGIONE.get((stagione or "").strip().upper())
+    sel = (s for s in stats.values() if s.fascia == f and (tipi is None or s.tipo in tipi))
+    for s in sorted(sel, key=lambda s: (s.code, s.tipo)):
         rows.append({
-            "codice": f"E{s.code}", "descrizione": descrizione(s.code, stagione),
+            "codice": f"E{s.code}", "descrizione": _descr_riga(s, stagione),
             "W": round(s.p_tot),
             "W_cp_on": round(s.p_cp_on) if s.p_cp_on is not None else None, "duty": round(s.duty_cp, 2),
             "zg": round(s.eff_zg, 2), "zn": round(s.eff_zn, 2),

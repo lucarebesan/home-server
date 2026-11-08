@@ -1,7 +1,11 @@
 """Stato reale delle macchine -> codice combinazione E (numerazione HA)."""
 from dataclasses import dataclass
 
-CP_VENT = {"OFF": 0, "STEP 2": 2, "STEP 3": 3, "STEP 4": 4}
+CP_VENT = {"OFF": 0, "STEP 1": 1, "STEP 2": 2, "STEP 3": 3, "STEP 4": 4}
+# u 0..6 e' la numerazione HA (09 la usa). u 7/8 = V1 (STEP 1) con compressore OFF/ON: solo
+# osservazione e apprendimento, 09 non ha queste opzioni, quindi mai proposti come prova.
+U_V1_OFF, U_V1_ON = 7, 8
+V1_IDX = 4
 TOSH_VENT = {"BASSA": 1, "MEDIA": 2, "ALTA": 3}
 TOSH_MODO_BASE = {"DEUMIDIFICATORE": 0, "RAFFRESCAMENTO": 3, "RISCALDAMENTO": 6}
 CP_STATI_ESCLUSI = {"ACS", "ANTILEGIONELLA", "SBRINAMENTO", "ALLARME", "SERVICE", "PROTEZIONE ANTIGELO"}
@@ -20,7 +24,9 @@ def _u(v):
 
 
 def vent_idx(u: int) -> int:
-    """0 = V0, 1/2/3 = V2/V3/V4 indipendentemente dal compressore."""
+    """0 = V0, 1/2/3 = V2/V3/V4, 4 = V1 indipendentemente dal compressore."""
+    if u >= U_V1_OFF:
+        return V1_IDX
     return 0 if u == 0 else (u - 1) % 3 + 1
 
 
@@ -32,6 +38,8 @@ def cp_unit(cp_vent: str, cp_compressore: str) -> int | None:
     on = comp == "ON"
     if v == 0:
         return None if on else 0
+    if v == 1:
+        return U_V1_ON if on else U_V1_OFF
     return (v - 1) + (3 if on else 0)
 
 
@@ -55,7 +63,7 @@ def tipo_of(code: int, stagione: str) -> str:
         return "COOL"
     if d >= 1:
         return "DRY"
-    if u >= 4:
+    if u >= 4 and u != U_V1_OFF:
         return "HEAT" if _u(stagione) == "INVERNO" else "COOL"
     return "NEUTRO"
 
@@ -78,10 +86,18 @@ def classify(s: dict) -> Combo:
     return Combo(code, tipo_of(code, s.get("stagione")), None)
 
 
+def _vnum(u: int) -> int:
+    return 1 if u >= U_V1_OFF else vent_idx(u) + 1
+
+
+def _cp_on(u: int) -> bool:
+    return u == U_V1_ON or 4 <= u <= 6
+
+
 def _cp_label(u: int) -> str:
     if u == 0:
         return "CP OFF V0"
-    return f"CP {'ON' if u >= 4 else 'OFF'} V{vent_idx(u) + 1}"
+    return f"CP {'ON' if _cp_on(u) else 'OFF'} V{_vnum(u)}"
 
 
 def _split_label(d: int) -> str:
@@ -93,6 +109,8 @@ def _split_label(d: int) -> str:
 
 def label_09(code: int) -> str:
     d, u = divmod(code, 10)
+    if u >= U_V1_OFF:
+        raise ValueError(f"E{code}: V1 non ha un'opzione 09 (solo osservazione)")
     return f"E{code} - {_cp_label(u)} • {_split_label(d)}"
 
 
@@ -100,10 +118,10 @@ def descrizione(code: int, stagione: str) -> str:
     d, u = divmod(code, 10)
     if u == 0:
         cp = "Nilan ferma"
-    elif u >= 4:
-        cp = f"Nilan pompa di calore V{vent_idx(u) + 1}"
+    elif _cp_on(u):
+        cp = f"Nilan pompa di calore V{_vnum(u)}"
     else:
-        cp = f"Nilan solo ventilazione V{vent_idx(u) + 1}"
+        cp = f"Nilan solo ventilazione V{_vnum(u)}"
     if d == 0:
         t = "Toshiba spento"
     else:

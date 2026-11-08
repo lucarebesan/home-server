@@ -126,3 +126,34 @@ def test_testi_write():
     from ecm_engine.texts import esito_testo
     assert blocco_testo("write spenta", None) == "Il comando delle macchine (00-NILAN WRITE) è spento."
     assert esito_testo("comando macchine spento") == "Interrotta: comando delle macchine spento"
+
+
+def test_best_stat_ignores_v1_not_commandable():
+    from ecm_engine.texts import best_stat
+    stats = aggregate([per(88, p=100, s=2.0)] * 5 + [per(82)] * 5)
+    assert best_stat(stats, "HEAT", "5-10").code == 82
+
+def test_detail_rows_v1_described():
+    rows = detail_rows(aggregate([per(7, "NEUTRO", s=0.0)] * 2 + [per(88)] * 2), "5-10", "INVERNO")
+    d = {r["codice"]: r["descrizione"] for r in rows}
+    assert d["E7"] == "Nilan solo ventilazione V1 + Toshiba spento"
+    assert d["E88"].startswith("Nilan pompa di calore V1")
+
+def test_detail_rows_season_filter():
+    stats = aggregate([per(82)] * 2 + [per(0, "NEUTRO")] * 2 + [per(14, "DRY", t_ext=8.0)] * 2
+                      + [per(45, "COOL", t_ext=8.0)] * 2)
+    inv = [r["codice"] for r in detail_rows(stats, "5-10", "INVERNO")]
+    assert inv == ["E0", "E82"]
+    est = [r["codice"] for r in detail_rows(stats, "5-10", "ESTATE")]
+    assert est == ["E0", "E14", "E45"]
+
+def test_detail_rows_cp_on_without_toshiba_shows_tipo():
+    stats = aggregate([per(4, "HEAT")] * 2 + [per(4, "COOL", s=-1.0)] * 2 + [per(0, "NEUTRO")] * 2)
+    rows = detail_rows(stats, "5-10", "ALTRO")
+    e4 = [r for r in rows if r["codice"] == "E4"]
+    assert sorted(r["descrizione"] for r in e4) == ["Nilan pompa di calore V2 + Toshiba spento (caldo)",
+                                                    "Nilan pompa di calore V2 + Toshiba spento (freddo)"]
+    e0 = [r for r in rows if r["codice"] == "E0"][0]
+    assert "(" not in e0["descrizione"]
+    inv = [r for r in detail_rows(stats, "5-10", "INVERNO") if r["codice"] == "E4"]
+    assert len(inv) == 1 and inv[0]["descrizione"].endswith("(caldo)")

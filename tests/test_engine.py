@@ -560,3 +560,12 @@ def test_write_off_counter_resets(tmp_path):
         api.snap["write"] = w
         clock["t"] += 60; e.tick_sample()
     assert e.store.open_test() is not None
+
+
+def test_build_sample_v1_observed_and_never_matches_a_test():
+    snap = dict(SNAP, cp_vent="STEP 1", cp_compressore="ON", tosh_on="ACCESO")
+    s = build_sample(snap, 100, None)
+    assert s["code"] == 88 and s["valido"] == 1
+    # prova su V2 (E84): la macchina e' ancora in V1 -> non ancora applicata, non E84
+    s2 = build_sample(snap, 100, {"id": 3, "code": 84})
+    assert s2["valido"] == 0 and s2["motivo"] == "prova non ancora applicata"

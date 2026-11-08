@@ -25,8 +25,28 @@ def test_cp_on_with_v0_unclassified():
     c = classify(s(cp_vent="OFF", cp_compressore="ON"))
     assert c.code is None and c.motivo == "cp non classificato"
 
-def test_step1_unclassified():
-    assert classify(s(cp_vent="STEP 1")).code is None
+def test_step1_is_observable_v1():
+    c = classify(s(cp_vent="STEP 1"))
+    assert (c.code, c.tipo, c.motivo) == (7, "NEUTRO", None)
+    c = classify(s(cp_vent="STEP 1", cp_compressore="ON"))
+    assert (c.code, c.tipo) == (8, "HEAT")
+    assert classify(s(cp_vent="STEP 1", cp_compressore="ON", stagione="ESTATE")).tipo == "COOL"
+    assert classify(s(cp_vent="STEP 1", tosh_on="ACCESO")).code == 87
+    assert classify(s(cp_vent="STEP 1", cp_compressore="ON", tosh_on="ACCESO")).code == 88
+
+def test_v1_codes_tipo_vent_label():
+    assert tipo_of(7, "INVERNO") == "NEUTRO" and tipo_of(87, "INVERNO") == "HEAT"
+    assert tipo_of(8, "ESTATE") == "COOL" and tipo_of(18, "ESTATE") == "DRY"
+    assert vent_idx(7) == vent_idx(8) == 4
+    assert vent_idx(7) not in [vent_idx(u) for u in range(7)]
+    import pytest
+    for code in (7, 8, 87, 88):
+        with pytest.raises(ValueError):
+            label_09(code)
+
+def test_descrizione_v1():
+    assert descrizione(7, "INVERNO") == "Nilan solo ventilazione V1 + Toshiba spento"
+    assert descrizione(88, "INVERNO") == "Nilan pompa di calore V1 + Toshiba caldo media"
 
 def test_toshiba_heat_v2_with_cp_off_v4():
     c = classify(s(cp_vent="STEP 4", tosh_on="ACCESO"))

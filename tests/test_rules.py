@@ -156,3 +156,12 @@ def test_write_off_blocks_first_manual_and_auto():
     assert start_blockers(c, "HEAT", auto=False, tests_today=0, last_end=None)[0] == "write spenta"
     assert start_blockers(c, "HEAT", auto=True, tests_today=0, last_end=None)[0] == "write spenta"
     assert "write spenta" not in start_blockers(ctx(), "HEAT", auto=True, tests_today=0, last_end=None)
+
+
+def test_v1_codes_never_proposed():
+    from ecm_engine.rules import ordered_candidates
+    for st in ("INVERNO", "ESTATE"):
+        for night in (False, True):
+            assert all(c % 10 < 7 for c in codes_for_season(st, night))
+    stats = aggregate([Period(88, "HEAT", 0, 1, 20, 300.0, 0.0, 300.0, 1.0, 0.0, 1.0, 1.0, 8.0, False)] * 5)
+    assert all(p.code % 10 < 7 for p in ordered_candidates(stats, ctx()))

@@ -748,15 +748,16 @@ views:
                 color: 'var(--success-color)'
           - type: custom:button-card
             template: ecm_kpi
-            entity: input_number.ventilatore_compactp
-            name: Ventilazione ECM
+            entity: sensor.compactp_ventilazione_selezionata
+            name: Ventilazione
             icon: mdi:fan
             grid_options:
               columns: 6
             state_display: |
               [[[
-                const v = Math.round(Number(entity?.state));
-                return isNaN(v) ? '—' : `V${v}`;
+                const s = String(entity?.state ?? '').toUpperCase().trim();
+                const m = {'OFF': 'V0', 'STEP 1': 'V1', 'STEP 2': 'V2', 'STEP 3': 'V3', 'STEP 4': 'V4'};
+                return m[s] || '—';
               ]]]
           - type: custom:button-card
             template: ecm_kpi
@@ -2494,15 +2495,15 @@ views:
               - {<<: *aut, entity: automation.01_ecm_fc_estate, name: FC · Free cooling}
               - {<<: *aut, entity: automation.01_ecm_ig_inverno_fascia_giorno, name: IG · giorno inverno}
               - {<<: *aut, entity: automation.10_ecm_inverno, name: 10 · ECM Inverno}
-              - {<<: *aut, entity: automation.06_ecm_humidity_override, name: 06 · override umidità}
+              - {<<: *aut, entity: automation.06_ecm_humidity_override, name: 06 · umidità lavanderia}
               - {<<: *aut, entity: automation.07_ecm_ricambio_aria_minimo_2, name: 07 · ricambio aria minimo}
               - {<<: *aut, entity: automation.00_nilan_cambio_stagione_automatico_t10, name: Cambio stagione automatico (T10)}
               - {<<: *aut, entity: automation.09_ecm_manuale, name: 09 · ECM Manuale (prove motore)}
               - type: section
-                label: Sicurezza e watchdog
-              - {<<: *aut, entity: automation.02_ecm_safety_guard, name: 02 · safety guard}
-              - {<<: *aut, entity: automation.04_ecm_watchdog, name: 04 · watchdog}
-              - {<<: *aut, entity: automation.04_ecm_watchdog_fc_zona, name: 04 · watchdog free cooling zona}
+                label: Protezione e supervisione
+              - {<<: *aut, entity: automation.02_ecm_safety_guard, name: 02 · protezione limiti}
+              - {<<: *aut, entity: automation.04_ecm_watchdog, name: 04 · supervisione}
+              - {<<: *aut, entity: automation.04_ecm_watchdog_fc_zona, name: 04 · supervisione free cooling zona}
               - type: section
                 label: Scrittura Nilan
               - {<<: *aut, entity: automation.nilan_write, name: 00 · Nilan WRITE (solo ACS)}

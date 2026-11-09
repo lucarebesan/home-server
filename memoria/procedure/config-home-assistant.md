@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-08.
+Ultima verifica: 2026-11-09 (isolamento ACS).
 
 ## Prerequisiti
 
@@ -53,3 +53,30 @@ Ultima verifica: 2026-11-08.
 - Il database del recorder (`/config/home-assistant_v2.db`, circa 3 GB su HDD lento) va interrogato solo in sola lettura (`file:...?mode=ro`), un'entità alla volta, senza `COUNT(*)` né scansioni complete: fanno salire l'I/O di tutto il server.
 - Lo storico del recorder dura 7 giorni; le statistiche orarie (`statistics`) restano più a lungo.
 - Le dashboard storage si possono aggiornare senza riavvio via WebSocket `lovelace/config/save`: vedi `dashboard-ecm-v2.md`.
+
+## Isolamento ACS temporaneo dal 09/11
+
+Il commit HA `8e156b3` lascia attiva `00-NILAN WRITE` con un blocco iniziale che
+scrive solo ACS e, durante una prova temporizzata, CP HEAT; il vecchio ramo
+ECM è irraggiungibile. `05 ECM ACS MANAGER` gestisce anche la copertura
+serale con resistenza; `packages/ecm_acs_prova_caldo.yaml` contiene guardia
+e helper. Le altre automazioni decisionali ECM restano spente: l'elenco e i
+risultati della prima prova sono nel diario del 09/11.
+
+Prima di un'altra prova, verificare stagione INVERNO, setpoint reale ACS
+compressore 20 °C, resistenza non attiva, ventilazione CP spenta, sensori
+bollitore/aria/zone validi, `09 ECM MANUALE` e prove automatiche del motore
+spenti. Impostare gli helper `input_datetime.ecm_acs_prova_caldo_inizio`
+e `_fine`, poi accendere `input_boolean.ecm_acs_prova_caldo_attiva`. La WRITE
+usa velocità `input_number.ecm_acs_prova_caldo_velocita` (V2 predefinita) e
+la formula di setpoint/isteresi di `09`; la guardia ferma dopo la scadenza
+o se l'aria immessa resta sotto le medie delle zone. Verificare dopo lo stop
+compressore OFF, ventilazione OFF e setpoint aria di arresto.
+
+Per sospendere subito la gestione automatica, spegnere prima
+`automation.nilan_write` via API HA e verificare le macchine. Prima di
+ripristinare la vecchia WRITE generale, lasciare l'automazione spenta,
+ripristinare i file dal commit precedente `7ba3f03` in una copia di lavoro,
+eseguire `check_config` e `automation.reload`, poi decidere esplicitamente
+quali decisori ECM riaccendere. Non riaccendere la vecchia WRITE con tutte
+le automazioni ECM ancora in stato sconosciuto.

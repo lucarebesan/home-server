@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-08.
+Ultima verifica: 2026-11-09 (sezione ECM/ACS; le altre sezioni restano alla verifica precedente).
 
 - Nome host: `hp-homeassistant`.
 - Sistema operativo: Linux.
@@ -40,8 +40,8 @@ Ultima verifica: 2026-11-08.
 ## Attività pianificate
 
 - Crontab di `home`: rinnovo del certificato alle 04:17 (vedi `procedure/duckdns-certificato.md`).
-- `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti, prove automatiche spente.
-- HA: `00-NILAN WRITE` ogni 5 minuti (spenta dal 7/11); `07` ricambio aria con finestre 01/09/17.
+- `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti; prove automatiche verificate spente il 09/11. Il sorgente per aggiungere bollitore alto/basso al campione è preparato ma non ancora distribuito.
+- HA: `00-NILAN WRITE` è accesa dal 09/11 in modalità temporanea **solo ACS**; il vecchio ramo generale termina senza eseguire comandi. `05-ECM ACS MANAGER` resta accesa e prepara l'ACS serale; la guardia della prova CP HEAT è accesa. Le automazioni decisionali ECM generali, incluso `07` ricambio aria, sono spente per isolamento ACS. Vedi `diario/2026-11.md` per elenco e ripristino.
 - HA: `10 - ECM INVERNO` ogni 5 minuti, solo in INVERNO (creata e spenta l'8/11, in attesa dell'ok di Luca).
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.
 

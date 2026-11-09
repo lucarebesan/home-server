@@ -4,14 +4,14 @@ import threading
 
 SAMPLE_COLS = ["ts", "code", "tipo", "valido", "motivo", "stagione", "test_id", "cp_compressore",
                "tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext", "soc", "pv",
-               "load", "imp", "discharge", "charge"]
+               "load", "imp", "discharge", "charge", "t11", "t12", "acs_heat_test"]
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS samples (
   ts INTEGER PRIMARY KEY, code INTEGER, tipo TEXT, valido INTEGER, motivo TEXT, stagione TEXT,
   test_id INTEGER, cp_compressore INTEGER, tosh_rps REAL, p_cp REAL, p_tosh REAL, t_zg REAL,
   t_zn REAL, t10 REAL, t2 REAL, t_ext REAL, soc REAL, pv REAL, load REAL, imp REAL,
-  discharge REAL, charge REAL);
+  discharge REAL, charge REAL, t11 REAL, t12 REAL, acs_heat_test INTEGER);
 CREATE TABLE IF NOT EXISTS tests (
   id INTEGER PRIMARY KEY AUTOINCREMENT, code INTEGER, durata_min INTEGER, origine TEXT,
   inizio INTEGER, fine INTEGER, esito TEXT);
@@ -37,6 +37,11 @@ class Store:
             self.db.execute("PRAGMA journal_mode=WAL")
             self.db.execute("PRAGMA busy_timeout=5000")
             self.db.executescript(SCHEMA)
+            existing = {row[1] for row in self.db.execute("PRAGMA table_info(samples)")}
+            for column, column_type in (("t11", "REAL"), ("t12", "REAL"),
+                                        ("acs_heat_test", "INTEGER")):
+                if column not in existing:
+                    self.db.execute(f"ALTER TABLE samples ADD COLUMN {column} {column_type}")
             self.db.commit()
 
     def add_sample(self, s: dict) -> None:
@@ -48,6 +53,7 @@ class Store:
         for s in samples:
             s = dict(s)
             s["cp_compressore"] = _norm_onoff(s.get("cp_compressore"))
+            s["acs_heat_test"] = _norm_onoff(s.get("acs_heat_test"))
             rows.append([s.get(c) for c in SAMPLE_COLS])
         with self._lock:
             self.db.executemany(f"INSERT OR REPLACE INTO samples ({','.join(SAMPLE_COLS)}) "

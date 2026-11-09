@@ -40,6 +40,9 @@ ENTITIES = {
     "t_zn": "sensor.ecm_zona_notte_temperatura_media",
     "t10": "sensor.compactp_t10_temperatura_sensore_stanza",
     "t2": "sensor.compactp_t2_temperatura_immissione",
+    "t11": "sensor.compactp_t11_temperatura_bollitore_parte_alta",
+    "t12": "sensor.compactp_t12_temperatura_bollitore_parte_bassa",
+    "acs_heat_test": "input_boolean.ecm_acs_prova_caldo_attiva",
     "t_ext": "sensor.egwk_temp_aria_esterna_prima_egwk",
     # stessa sonda, ma solo dopo 10 min di ventilazione Compact (package HA ecm_temperatura_esterna)
     "t_ext_aff": "sensor.ecm_temperatura_esterna_affidabile",
@@ -52,6 +55,6 @@ ENTITIES = {
     "write": "automation.nilan_write",
 }
 
-NUMERIC_KEYS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext", "t_ext_aff",
+NUMERIC_KEYS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t11", "t12", "t_ext", "t_ext_aff",
                 "soc", "pv", "load", "imp", "discharge", "charge", "lim_inf", "lim_sup",
                 "commutazione", "isteresi_comm"]

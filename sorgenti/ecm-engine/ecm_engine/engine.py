@@ -31,7 +31,7 @@ def hold_states(snap: dict, last: dict, now: int) -> dict:
         elif k in last and now - last[k][0] <= STATE_HOLD_S:
             out[k] = last[k][1]
     return out
-SAMPLE_FIELDS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext", "soc", "pv",
+SAMPLE_FIELDS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t11", "t12", "acs_heat_test", "t_ext", "soc", "pv",
                  "load", "imp", "discharge", "charge"]
 SOGLIA_ESTATE_DEFAULT = 24.5
 MANUALE = "input_select.ecm_manuale"

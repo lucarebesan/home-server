@@ -47,9 +47,9 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 cd sorgenti/ecm-engine && python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
 # deploy: vedi "Installare una nuova versione sul server" qui sotto
 # stato e log
-ssh hp 'docker ps --filter name=ecm-engine; docker logs --tail 20 ecm-engine'
+ssh home@192.168.1.100 'docker ps --filter name=ecm-engine; docker logs --tail 20 ecm-engine'
 # fermare
-ssh hp 'cd ~/ecm-engine && docker compose down'
+ssh home@192.168.1.100 'cd ~/ecm-engine && docker compose down'
 ```
 
 ## Installare una nuova versione sul server
@@ -71,7 +71,7 @@ richiede l'ok di Luca (vedi `AGENTS.md`).
    creare il venv, vedi sopra). Se un test fallisce ci si ferma.
 4. **Backup coerente del database**, senza fermare il motore:
    ```sh
-   ssh hp 'docker exec ecm-engine python3 -c "import sqlite3; s=sqlite3.connect(\"/data/engine.db\"); d=sqlite3.connect(\"/data/engine_pre_<motivo>_<aaaammgg>.db\"); s.backup(d); d.close(); print(s.execute(\"pragma quick_check\").fetchone())"'
+   ssh home@192.168.1.100 'docker exec ecm-engine python3 -c "import sqlite3; s=sqlite3.connect(\"/data/engine.db\"); d=sqlite3.connect(\"/data/engine_pre_<motivo>_<aaaammgg>.db\"); s.backup(d); d.close(); print(s.execute(\"pragma quick_check\").fetchone())"'
    ```
    Deve stampare `('ok',)`. Il file si trova poi in `~/ecm-engine/data/` sul server.
 5. **Installare**, con l'ok di Luca: `./deploy.sh` da `sorgenti/ecm-engine`. Lo script

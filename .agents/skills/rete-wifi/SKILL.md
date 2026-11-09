@@ -22,7 +22,10 @@ lezioni, accesso alle interfacce).
 ## Diagnosi di un crollo
 
 1. **Dal server:**
-   - `journalctl --since "<ora>" -u NetworkManager` e `journalctl -k | grep wlo1`: cerca
+   - sul mini PC (dal 09/11, niente NetworkManager): `networkctl status enp2s0 wlp1s0`, `ip route`,
+     `journalctl --since "<ora>" -u systemd-networkd -u netplan-wpa-wlp1s0` e
+     `journalctl -k | grep -E 'enp2s0|wlp1s0'`; i comandi `nmcli`/`wlo1` sotto valgono solo per l'HP;
+   - HP: `journalctl --since "<ora>" -u NetworkManager` e `journalctl -k | grep wlo1`: cerca
      `deauthenticated`, `authentication timed out`, molti `missed beacons`;
    - `nmcli -f SSID,BSSID,CHAN,SIGNAL dev wifi list` per vedere gli access point visibili;
    - `nmcli -f DHCP4 dev show wlo1` per vedere chi ha dato l'indirizzo (deve essere

@@ -12,7 +12,7 @@ dettagli in `procedure/migrazione-minipc.md`.
 - Utenti: `home` (operativo, gruppo docker, solo chiave SSH, niente sudo) e `minipc`
   (amministratore, sudo con password). Un comando privilegiato va consegnato all'utente
   come `ssh -t minipc@192.168.1.100 'sudo …'`.
-- Alias SSH `hp` (comando `ssh hp`): vale ancora, punta a `.100`; non è configurato su tutti i PC.
+- Alias SSH `hp`: dove esiste punta a `.100`, ma non è configurato su tutti i PC (mancava sul Mac di Mattia il 09/11). La documentazione usa `home@192.168.1.100`. Il nome `minipc` risolto via mDNS può dare "Host key verification failed" su chi conosceva la chiave del mini PC prima della migrazione (ora usa le host key dell'HP).
 - Macchina: mini PC AMD Ryzen 7 5825U (8 core, 16 thread), 14 GiB di RAM, SSD BIWIN 477 GB (ext4 su `/dev/sda2`, EFI su `/dev/sda1`).
 - Sistema: Ubuntu Server 26.04.1 LTS, kernel `7.0.0-43-generic`, fuso Europe/Rome. Docker CE dal repository ufficiale, store immagini containerd.
 - Bluetooth: adattatore Realtek `hci0` `44:90:BA:32:32:BE`, configurato in HA dal 09/11.

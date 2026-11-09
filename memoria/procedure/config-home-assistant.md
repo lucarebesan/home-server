@@ -4,7 +4,7 @@ Ultima verifica: 2026-11-09 (isolamento ACS; commit HA `249e12e`).
 
 ## Prerequisiti
 
-- Accesso `ssh hp` (utente `home`). L'utente non ha sudo senza password.
+- Accesso `ssh home@192.168.1.100`. `home` non ha sudo: i comandi privilegiati passano dall'utente `minipc` (`ssh -t minipc@192.168.1.100 'sudo …'`).
 - La configurazione è in `/opt/homeassistant/config`, montata nel container `homeassistant` come `/config`. È un repository git (`lucarebesan/home-assistant-config`, branch `main`).
 - I file sono di root: `home` non li può modificare direttamente.
 - Token API di HA (long-lived) in `~/.config/ecm/ha_token` sul server, permessi 600. Non stamparlo e non copiarlo altrove: usarlo solo come `$(cat ~/.config/ecm/ha_token)` dentro i comandi remoti.
@@ -13,19 +13,19 @@ Ultima verifica: 2026-11-09 (isolamento ACS; commit HA `249e12e`).
 
 1. Copiare il file sul PC, modificarlo e ricopiarlo nel container:
    ```sh
-   scp hp:/opt/homeassistant/config/automations/nilan/07_ecm_ricambio_aria_minimo.yaml .
+   scp home@192.168.1.100:/opt/homeassistant/config/automations/nilan/07_ecm_ricambio_aria_minimo.yaml .
    # modifica locale
-   scp 07_ecm_ricambio_aria_minimo.yaml hp:/tmp/
-   ssh hp 'docker cp /tmp/07_ecm_ricambio_aria_minimo.yaml homeassistant:/config/automations/nilan/ && docker exec homeassistant chown 0:0 /config/automations/nilan/07_ecm_ricambio_aria_minimo.yaml'
+   scp 07_ecm_ricambio_aria_minimo.yaml home@192.168.1.100:/tmp/
+   ssh home@192.168.1.100 'docker cp /tmp/07_ecm_ricambio_aria_minimo.yaml homeassistant:/config/automations/nilan/ && docker exec homeassistant chown 0:0 /config/automations/nilan/07_ecm_ricambio_aria_minimo.yaml'
    ```
    Mantenere i permessi 644.
 2. Controllare la configurazione:
    ```sh
-   ssh hp 'docker exec homeassistant python -m homeassistant --script check_config -c /config'
+   ssh home@192.168.1.100 'docker exec homeassistant python -m homeassistant --script check_config -c /config'
    ```
 3. Ricaricare senza riavviare (sostituire il servizio secondo il caso: `automation/reload`, `input_select/reload`, `input_number/reload`, `template/reload`, `command_line/reload`):
    ```sh
-   ssh hp 'curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "Authorization: Bearer $(cat ~/.config/ecm/ha_token)" http://127.0.0.1:8123/api/services/automation/reload'
+   ssh home@192.168.1.100 'curl -s -o /dev/null -w "%{http_code}\n" -X POST -H "Authorization: Bearer $(cat ~/.config/ecm/ha_token)" http://127.0.0.1:8123/api/services/automation/reload'
    ```
 4. Commit e push **dall'interno del container**: lì c'è la deploy key. Il quoting inline si rompe, quindi conviene uno script passato da stdin.
    ```sh
@@ -36,7 +36,7 @@ Ultima verifica: 2026-11-09 (isolamento ACS; commit HA `249e12e`).
    $G commit -m "messaggio"
    GIT_SSH_COMMAND="ssh -i /config/.ssh/github_homeassistant -o UserKnownHostsFile=/config/.ssh/known_hosts -o StrictHostKeyChecking=yes" $G push origin main
    EOF
-   ssh hp 'docker exec -i homeassistant sh -s' < /tmp/commit.sh
+   ssh home@192.168.1.100 'docker exec -i homeassistant sh -s' < /tmp/commit.sh
    ```
    - Nel container l'identità git non è configurata: passarla con `-c` (per esempio quella dell'ultimo commit, `git log -1 --format='%an %ae'`).
    - Senza `GIT_SSH_COMMAND` il push fallisce con "Host key verification failed".

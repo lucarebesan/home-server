@@ -1,6 +1,6 @@
 # Stato e monitoraggio del server
 
-Ultima verifica: 2026-11-08, tramite `ssh hp` come `home`. I comandi seguenti si eseguono sul server; i risultati cambiano nel tempo. Le verifiche sono in sola lettura, salvo diversa indicazione. Non incollare nei documenti log contenenti segreti o dati personali.
+Ultima verifica: 2026-11-08 sull'HP, tramite `ssh` come `home` (ora il server è il mini PC, stesso indirizzo `192.168.1.100`). I comandi seguenti si eseguono sul server; i risultati cambiano nel tempo. Le verifiche sono in sola lettura, salvo diversa indicazione. Non incollare nei documenti log contenenti segreti o dati personali.
 
 ## Controllo rapido
 

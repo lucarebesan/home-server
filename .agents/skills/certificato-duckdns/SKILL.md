@@ -10,11 +10,11 @@ Riferimento: `memoria/procedure/duckdns-certificato.md`.
 ## Verifiche (sola lettura)
 
 ```sh
-ssh hp 'docker logs --tail 5 duckdns'                 # "successful", non "KO"
+ssh home@192.168.1.100 'docker logs --tail 5 duckdns'                 # "successful", non "KO"
 dig +short lrhub.duckdns.org                           # = IP pubblico di casa
-ssh hp 'curl -s -4 https://api.ipify.org'              # IP pubblico visto dal server
-ssh hp 'echo | openssl s_client -connect 127.0.0.1:443 -servername ha.lrhub.duckdns.org 2>/dev/null | openssl x509 -noout -enddate'
-ssh hp 'crontab -l; cat ~/certbot-renew.log'
+ssh home@192.168.1.100 'curl -s -4 https://api.ipify.org'              # IP pubblico visto dal server
+ssh home@192.168.1.100 'echo | openssl s_client -connect 127.0.0.1:443 -servername ha.lrhub.duckdns.org 2>/dev/null | openssl x509 -noout -enddate'
+ssh home@192.168.1.100 'crontab -l; cat ~/certbot-renew.log'
 ```
 
 ## Casi noti

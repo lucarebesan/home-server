@@ -1,6 +1,6 @@
 ---
 name: check-server
-description: Controllo generale in sola lettura del server di casa hp-homeassistant (Home Assistant, container, relè luci, rete, DuckDNS, certificato). Usala per "check", "come sta il server", "è ripartito tutto?", dopo un crollo di rete o un riavvio.
+description: Controllo generale in sola lettura del server di casa (mini PC `minipc`: Home Assistant, container, relè luci, rete, DuckDNS, certificato). Usala per "check", "come sta il server", "è ripartito tutto?", dopo un crollo di rete o un riavvio.
 ---
 
 # Check del server
@@ -9,9 +9,8 @@ Controllo **in sola lettura**: non riavviare, non modificare, non cancellare nie
 un problema, descrivilo e proponi l'intervento; agisci solo con l'ok esplicito
 dell'utente.
 
-Accesso: `ssh hp`, oppure `ssh home@192.168.1.100` se l'alias non c'è. `home` non ha sudo
-senza password: un comando che richiede sudo va consegnato all'utente come one-liner
-`ssh -t hp '…'`.
+Accesso: `ssh home@192.168.1.100`. `home` non ha sudo: un comando che richiede sudo va
+consegnato all'utente come one-liner `ssh -t minipc@192.168.1.100 'sudo …'`.
 
 ## Passi
 

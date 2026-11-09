@@ -30,7 +30,7 @@ Ogni fatto sta in un solo posto: aggiorna quel file invece di crearne uno nuovo 
 
 ## Regole sempre valide
 
-- Accesso: `ssh hp` (utente `home`, IP `192.168.1.100`). `home` non ha sudo senza password: un comando privilegiato va consegnato all'utente come one-liner `ssh -t hp '…'`.
+- Accesso: `ssh home@192.168.1.100` (mini PC `minipc` dal 09/11; l'alias `hp` non c'è su tutti i PC, il nome `minipc` via mDNS può dare errori di host key). `home` non ha sudo: un comando privilegiato va consegnato all'utente come one-liner `ssh -t minipc@192.168.1.100 'sudo …'` (utente amministratore `minipc`, sudo con password).
 - Prima si osserva, poi si propone, e si agisce solo con l'ok dell'utente. Senza un ok esplicito niente riavvii di container o del server, niente modifiche a box, router o relè, niente luci accese o spente.
 - Per spegnere il server non fermare i singoli container (`restart: unless-stopped` non li riavvierebbe al boot).
 - Le automazioni spente a mano in HA (deploy GitHub, `00-NILAN WRITE`, `luci_*`) restano spente finché Luca non decide diversamente.

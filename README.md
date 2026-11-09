@@ -1,6 +1,6 @@
 # Home server: memoria operativa
 
-Note, procedure e storico del server di casa (`hp-homeassistant`, Home Assistant e
+Note, procedure e storico del server di casa (mini PC `minipc` dal 09/11/2026, prima l'HP `hp-homeassistant`; Home Assistant e
 servizi in Docker), pensati per essere usati da Codex o da un altro agente.
 
 ## Come usarlo con Codex
@@ -13,8 +13,9 @@ servizi in Docker), pensati per essere usati da Codex o da un altro agente.
 3. Per richiamare una skill in modo esplicito: digita `$` e scegli dall'elenco (oppure
    `/skills`), per esempio `$check-server`.
 
-Codex deve poter entrare nel server con `ssh hp` (alias in `~/.ssh/config` verso
-`home@192.168.1.100`, con la tua chiave autorizzata sul server).
+L'agente deve poter entrare nel server con `ssh home@192.168.1.100`, con la tua chiave
+autorizzata sul server. Un alias in `~/.ssh/config` è comodo ma non indispensabile:
+la documentazione usa l'indirizzo.
 
 ## Cosa c'è
 

@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-09 (colonne aria e termometri installate e verificate; campionamento ACS; riparazioni che conservano le colonne ACS; guida all'installazione, non ancora eseguita con questa procedura).
+Ultima verifica: 2026-11-09 (09 ripristina solo le automazioni accese prima; colonne aria e termometri installate e verificate; campionamento ACS; riparazioni che conservano le colonne ACS; guida all'installazione, non ancora eseguita con questa procedura).
 
 ## Scopo
 
@@ -28,7 +28,7 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 
 - Partono dal pulsante oppure, se l'interruttore "Prove automatiche" è acceso (spento di default), da sole tra le 10 e le 17, al massimo 3 al giorno, con 60 minuti tra una e l'altra.
 - Condizioni di avvio: 09 in AUTO, Free Cooling spento, nessun ciclo ACS, SOC ≥ 40% oppure FV ≥ consumo, **00-NILAN WRITE accesa**, temperature delle zone compatibili. Per le prove di caldo la zona più calda deve restare sotto la soglia ESTATE − 1 °C (oggi 23,5 °C).
-- Il motore riporta 09 in AUTO se: una zona supera la soglia ESTATE − 0,5 °C, il SOC scende sotto il 25% senza sole, WRITE si spegne, mancano dati per 5 minuti, oppure la prova supera la durata di 3 minuti.
+- Il motore riporta 09 in AUTO se: una zona supera la soglia ESTATE − 0,5 °C, il SOC scende sotto il 25% senza sole, WRITE si spegne, mancano dati per 5 minuti, oppure la prova supera la durata di 3 minuti. Al ritorno in AUTO la 09 riaccende solo le automazioni ECM che erano accese prima della prova (salvate in `input_text.ecm_manuale_automazioni_da_ripristinare`, dal commit HA `183c35a`).
 - Senza WRITE accesa gli helper cambiano ma le macchine no: le prove sarebbero inutili e sospenderebbero il ricambio aria, per questo il motore le blocca.
 
 ## Dati caricati

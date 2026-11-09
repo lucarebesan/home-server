@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-09 22:26 (ricambio minimo invernale attivo; macchina e rete restano alla verifica delle 16:09).
+Ultima verifica: 2026-11-09 22:39 (ricambio minimo invernale attivo; logica umidità pronta ma non ancora attivata; macchina e rete restano alla verifica delle 16:09).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -56,8 +56,11 @@ dettagli in `procedure/migrazione-minipc.md`.
   inoltra anche la richiesta della `07` alla sola Compact P, con priorità ACS.
   `07-ECM RICAMBIO ARIA MINIMO` è accesa: sceglie automaticamente V2/V3/V4 di giorno,
   soltanto V2/V3 di notte, mai V1; decide CP HEAT/OFF dalla temperatura esterna e può
-  acquisirla con un campionamento preventivo V2. `06-ECM HUMIDITY OVERRIDE` resta spenta
-  in attesa di completare la regola energetica oltre i 90 minuti. `05-ECM ACS MANAGER`
+  acquisirla con un campionamento preventivo V2. `06-ECM HUMIDITY OVERRIDE`, aggiornata
+  nel commit HA `534cf90`, resta spenta in attesa dell'ok esplicito di Luca: garantisce
+  almeno 90 minuti e poi continua di giorno se il FV copre il carico con batteria buona
+  (soglia iniziale 40%), oppure la sera/notte se la proiezione lascia almeno il 15% al
+  mattino; altrimenti passa ai richiami di 15 minuti a inizio ora. `05-ECM ACS MANAGER`
   resta accesa; le altre automazioni decisionali ECM generali restano spente.
 - HA: `10 - ECM INVERNO` ogni 5 minuti, solo in INVERNO (creata e spenta l'8/11, in attesa dell'ok di Luca).
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.

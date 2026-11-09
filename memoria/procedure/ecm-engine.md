@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-09 (09 ripristina solo le automazioni accese prima; colonne aria e termometri installate e verificate; campionamento ACS; riparazioni che conservano le colonne ACS; guida all'installazione, non ancora eseguita con questa procedura).
+Ultima verifica: 2026-11-09 22:53 (learner ACSe 5+15 con stime provvisorie installato e verificato; colonne aria, termometri e ACS presenti).
 
 ## Scopo
 
@@ -109,24 +109,26 @@ Quando HA ha perso letture di stato (minuti `cp non classificato` / `toshiba non
 ## Apprendimento ACS per combinazione (09/11)
 
 Implementato in `ecm_engine/acs_learner.py`, pubblicazione MQTT nel sensore
-`sensor.ecm_engine_resa_acs`. Attivo dal 09/11 alle 11:52 dopo consenso di Luca
-al riavvio del solo ecm-engine. Usa CP HEAT V1–V4 con ogni combinazione SPLIT,
-compreso SPLIT OFF, da funzionamento normale e prove. Ogni riga riporta fascia
-iniziale del bollitore basso (5 °C), pendenza netta mediana in °C/h, finestre,
-minuti, origine prova/normale, potenze CP/SPLIT separate e dispersione delle rese.
-Non è un COP e non misura un contributo causale dello SPLIT all'acqua.
+`sensor.ecm_engine_resa_acs`. La versione ACSe corrente è attiva dal 09/11 alle
+22:52 (commit `ebd047a`), dopo consenso di Luca al riavvio del solo ecm-engine.
+Usa CP HEAT V1–V4 da funzionamento normale e prove. L'identità ACSe dipende solo
+dalla velocità CP: lo stato dello SPLIT non spezza né distingue la misura, ma resta
+registrato nell'attributo `split_contesto`. Ogni riga riporta fascia iniziale del
+bollitore basso (5 °C), pendenza netta mediana in °C/h, osservazioni, minuti,
+origine prova/normale, potenze CP/SPLIT separate e dispersione delle rese. Non è
+un COP e non misura un contributo causale dello SPLIT all'acqua.
 
 Richiede dati numerici, CP in HEAT con compressore acceso e resistenza spenta;
 il nuovo marcatore persistente `acs_source_ok` è calcolato prima di recuperare
 eventuali stati vecchi. Campioni precedenti privi del marcatore restano esclusi.
-**Il codice attualmente distribuito**, non ancora allineato alla decisione successiva di
-Luca, attende 8 minuti dopo avvio, cambio combinazione, dati mancanti o variazione
-rapida del bollitore (calo >0,3 °C/min circa o salto >2 °C per campione), poi
-misura finestre non sovrapposte di almeno 10 minuti. Questa regola 8+10 non è una
-regola valida concordata per ACSe e non va usata per giudicare le prove: per ACSe la
-temperatura esterna e il suo assestamento sono irrilevanti. La regola da implementare
-per una prova controllata di 20 minuti è al massimo 5 minuti iniziali di avvio e i
-successivi 15 minuti considerati integralmente. Conserva rese nulle e negative.
+Dopo l'avvio o un cambio di velocità CP scarta al massimo i primi 5 campioni e usa
+i 15 successivi come finestra completa. Se il tratto termina prima, almeno 5 campioni
+successivi all'avvio producono comunque una stima `provvisoria`; non scompaiono dalla
+dashboard. Un cambio dello SPLIT a velocità CP invariata non interrompe ACSe. Buchi,
+dati invalidi e variazioni rapide del bollitore (calo >0,3 °C/min circa o salto >2 °C
+per campione) chiudono o scartano il tratto secondo la sua validità. Conserva rese
+nulle e negative. Per ACSe la temperatura esterna e il suo assestamento non entrano
+nel calcolo.
 Piccoli prelievi non rilevati e stratificazione possono ancora influire: dati
 osservativi, supporto iniziale sotto cinque finestre, nessun comando ACS basato
 automaticamente su questa stima. Nessun uso della temperatura esterna per ACS.
@@ -134,7 +136,7 @@ automaticamente su questa stima. Nessun uso della temperatura esterna per ACS.
 Il calcolo condivide con la segmentazione del clima un'unica lettura del database
 (prima erano due, e il ciclo dei 15 minuti era passato da 3,5 a 8,1 s). Gli attributi
 del sensore restano sotto 15 000 byte, perché il recorder di HA non salva quelli oltre
-16 384: se la tabella è più grande si tengono le righe con più finestre, e
+16 384: se la tabella è più grande si tengono le righe con più osservazioni, e
 `righe_omesse` dice quante ne mancano.
 
 ## Limiti delle misure climatiche

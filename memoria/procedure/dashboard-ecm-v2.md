@@ -1,6 +1,6 @@
 # Dashboard ECM v2
 
-Ultima verifica: 2026-11-09 17:16 (deploy del restyling e della tab Albero).
+Ultima verifica: 2026-11-09 22:55 (card ACSe con finestre complete e stime provvisorie).
 
 ## Scopo
 
@@ -34,7 +34,10 @@ Salvare via WebSocket il JSON di backup più recente.
 - Nella stessa tab la card "Modalità ACS inverno" mantiene separate le finalità ACS
   dalle combinazioni climatiche: `ACSr` è la resistenza del bollitore; `ACSe V1`–
   `ACSe V4` sono le richieste empiriche `CP HEAT V1`–`CP HEAT V4`. Lo stato dello
-  SPLIT non fa parte del nome ACSe.
+  SPLIT non fa parte del nome ACSe. La resa è distinta per fascia iniziale del
+  bollitore basso; `≈` indica una stima provvisoria ricavata da un tratto più corto
+  della finestra completa 5+15. La colonna Campioni conta le osservazioni mostrate,
+  comprese quelle provvisorie, non soltanto le finestre complete.
 
 - Testi (revisione Draftsmith del 09/11): automazione spenta a mano = "spenta per scelta",
   accesa = "attiva"; nomi brevi ECM Giorno / ECM Notte / ECM Inverno / ECM Manuale / ACS

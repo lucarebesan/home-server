@@ -144,7 +144,21 @@ Per tornare del tutto a MQTT: `docker compose -p dtbridge down`.
     verrebbe rifiutato. Un rifiuto è innocuo se il firmware usa le API OTA standard di
     ESP-IDF, ma non è verificabile senza provarci. La flash cifrata da sola non
     impedirebbe l'OTA.
-  - Strada concreta: Development Board Dingtian (stesso formato e morsetti) flashate al
+  - **Verificato il 09/11 (fonti web):** la scheda di ESPHome Devices per la DT-R016 e il
+    thread "Has anyone used Dingtian 8ch Ethernet Relay?" sul forum di HA dicono che senza
+    "test/dev firmware" chiesto all'ordine l'ESP32 arriva **bloccato** (secure boot: eFuse
+    `ABS_DONE_0/1`). Nessuno riporta uno sblocco via OTA o tramite il supporto. Un utente
+    descrive il firmware originale come "buggy (random reboots, drop connection)".
+  - **Verificato il 09/11:** i firmware ufficiali (`dingtian-tech.com/sdk/relay_upgrade_tool.zip`,
+    `.dtf` fino a 4897 e `.dtf2` fino a **V3.1.6991** del 25/09/2026) sono cifrati: non
+    hanno l'intestazione delle immagini ESP32. `upgrade.cgi` accetta quindi solo immagini
+    Dingtian, e **un'immagine ESPHome via OTA non è possibile**. Percorso di aggiornamento
+    ufficiale: sotto 4897 prima `v3_1_4897_8ch.dtf`, poi la `.dtf2`.
+  - ChangeLog: nessuna voce sui riavvii dopo una WiFi persa. Voci utili per noi: 5312
+    (con "Power Failure Recovery" su Yes un'alimentazione instabile riportava la
+    configurazione a quella di fabbrica), 5975 ("HTTP Auth"). Giardino9 è già alla 6236 e
+    ha comunque buchi lunghi: aggiornare il firmware non basta.
+  - Strade concrete: Development Board Dingtian (stesso formato e morsetti) flashate al
     banco con ESPHome e sostituite nel quadro, oppure cambio del chip.
 - **Copertura WiFi:** se i buchi lunghi isolati restano frequenti sui relè con segnale
   debole (Notte7 −74, Notte8 −72, Sottotetto4 −68 dBm), conviene migliorare il 2,4 GHz in

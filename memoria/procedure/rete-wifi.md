@@ -22,11 +22,14 @@ Echo, Yi cam. Al controllo dell'08/11 i 9 relè erano tutti agganciati al box.
 
 ## Server bloccato sul box
 
-**Mini PC (09/11):** il WiFi di riserva risultava agganciato a `Rebesan_ILIAD5`
-`3a:07:16:65:98:b0` (5 GHz del box), letto con `networkctl status wlp1s0`. Non è verificato
-se in netplan c'è un blocco sul BSSID: i file in `/etc/netplan/` sono leggibili solo da root
-(`ssh -t minipc@192.168.1.100 'sudo grep -il bssid /etc/netplan/*.yaml'`). Questione aperta.
-Con l'ethernet collegata il problema dell'aggancio all'EOLO pesa molto meno.
+**Mini PC (09/11):** **nessun blocco sul BSSID.** `/etc/netplan/00-installer-config.yaml`
+ha solo `Rebesan_ILIAD5` con password e DHCP; `60-ethernet.yaml` mette l'ethernet a metrica
+100. Il WiFi di riserva risultava agganciato al 5 GHz del box (`3a:07:16:65:98:b0`,
+`networkctl status wlp1s0`), ma può passare all'EOLO. Con l'ethernet collegata pesa poco;
+se il server dovesse restare solo in WiFi, valutare `bssid:` sotto l'access point in netplan.
+I file netplan sono leggibili solo da root; senza sudo si leggono in sola lettura con
+`docker run --rm -v /etc/netplan:/n:ro alpine cat /n/00-installer-config.yaml` (contiene la
+password WiFi: non copiarla).
 
 **HP (storico, valido se si torna all'HP):** dall'08/11 la connessione `Rebesan_ILIAD5` dell'HP ha
 `802-11-wireless.bssid = 3A:07:16:65:98:B0` (5 GHz del box). Motivo: quando il 5 GHz del

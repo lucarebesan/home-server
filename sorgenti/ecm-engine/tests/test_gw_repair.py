@@ -43,6 +43,15 @@ def test_rebuild_conserva_bollitore_e_marcatori_acs():
     assert (s["t11"], s["t12"], s["acs_heat_test"], s["acs_source_ok"]) == (45.0, 30.0, 1, 1)
 
 
+def test_rebuild_conserva_aria_e_termometri():
+    # Anche T1/T4, bypass, serranda e termometri (età e validità comprese) arrivano solo dal vivo.
+    row = dict(ROW, t1=16.0, t4=19.2, serranda=1, t_leo=20.8, bat_leo=70.0, age_leo=45, ok_leo=1,
+               u_bagno=61.0)
+    s = rebuild(row, dict(CP, cp_resistenza="ON"), SPLIT, None)
+    assert (s["t1"], s["t4"], s["serranda"], s["u_bagno"]) == (16.0, 19.2, 1, 61.0)
+    assert (s["t_leo"], s["bat_leo"], s["age_leo"], s["ok_leo"]) == (20.8, 70.0, 45, 1)
+
+
 def test_repair_su_db_non_azzera_le_colonne_acs(tmp_path, monkeypatch):
     import ecm_engine.gw_repair as gr
     from ecm_engine.store import Store

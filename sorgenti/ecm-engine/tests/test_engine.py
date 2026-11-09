@@ -18,7 +18,7 @@ class FakeApi:
         self.snap = dict(SNAP)
         self.calls = []
 
-    def snapshot(self, entities, numeric):
+    def snapshot(self, entities, numeric, reported=None):
         return dict(self.snap)
 
     def call_service(self, d, s, data):
@@ -49,6 +49,21 @@ def test_build_sample_valid_and_invalid():
     bad = dict(SNAP, p_cp=None)
     s2 = build_sample(bad, 100, None)
     assert s2["valido"] == 0 and s2["motivo"] == "dato mancante p_cp"
+
+
+def test_build_sample_rooms_and_ventilation():
+    snap = dict(SNAP, t1=16.0, t4=19.2, bypass_apre="OFF", bypass_chiude="OFF", serranda="ON",
+                t_sogg=21.0, bat_sogg=80.0, lr_sogg=40.0,      # valido, letto 60 s prima
+                t_studio=21.4, bat_studio=9.0, lr_studio=90.0,  # batteria sotto 10%: non valido
+                t_matr=None, bat_matr=70.0, lr_matr=None,       # valore non numerico: non valido
+                t_bagno=20.8, bat_bagno=64.0, u_bagno=61.0, lr_bagno=100.0)
+    s = build_sample(snap, 100, None)
+    assert (s["t1"], s["t4"], s["serranda"]) == (16.0, 19.2, "ON")
+    assert (s["t_sogg"], s["bat_sogg"], s["age_sogg"], s["ok_sogg"]) == (21.0, 80.0, 60, 1)
+    assert (s["age_studio"], s["ok_studio"]) == (10, 0)
+    assert (s["age_matr"], s["ok_matr"]) == (None, 0)
+    assert (s["age_leo"], s["ok_leo"]) == (None, 0)                # sensore assente dallo snapshot
+    assert (s["u_bagno"], s["age_bagno"], s["ok_bagno"]) == (61.0, 0, 1)
 
 
 def test_build_sample_during_test_uses_test_code():

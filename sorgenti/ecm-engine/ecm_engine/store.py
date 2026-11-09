@@ -2,13 +2,23 @@
 import sqlite3
 import threading
 
+from .config import ROOMS
+
 SAMPLE_COLS = ["ts", "code", "tipo", "valido", "motivo", "stagione", "test_id", "cp_compressore",
                "tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext", "soc", "pv",
                "load", "imp", "discharge", "charge", "t11", "t12", "acs_heat_test", "acs_source_ok"]
 
+# aria esterna lungo la Compact, bypass/serranda e termometri ambiente (dal 09/11)
+NEW_COLS = [("t1", "REAL"), ("t4", "REAL"), ("bypass_apre", "INTEGER"), ("bypass_chiude", "INTEGER"),
+            ("serranda", "INTEGER"), ("u_bagno", "REAL"),
+            *((f"{p}_{k}", typ) for k in ROOMS
+              for p, typ in (("t", "REAL"), ("bat", "REAL"), ("age", "INTEGER"), ("ok", "INTEGER")))]
+SAMPLE_COLS += [c for c, _ in NEW_COLS]
+ONOFF_COLS = ("cp_compressore", "acs_heat_test", "bypass_apre", "bypass_chiude", "serranda")
+
 # Colonne che solo il campionamento dal vivo conosce (il datalogger no): import e
 # riparazioni che riscrivono una riga esistente devono conservarle.
-LIVE_ONLY_COLS = ("t11", "t12", "acs_heat_test", "acs_source_ok")
+LIVE_ONLY_COLS = ("t11", "t12", "acs_heat_test", "acs_source_ok", *(c for c, _ in NEW_COLS))
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS samples (
@@ -43,7 +53,8 @@ class Store:
             self.db.executescript(SCHEMA)
             existing = {row[1] for row in self.db.execute("PRAGMA table_info(samples)")}
             for column, column_type in (("t11", "REAL"), ("t12", "REAL"),
-                                        ("acs_heat_test", "INTEGER"), ("acs_source_ok", "INTEGER")):
+                                        ("acs_heat_test", "INTEGER"), ("acs_source_ok", "INTEGER"),
+                                        *NEW_COLS):
                 if column not in existing:
                     self.db.execute(f"ALTER TABLE samples ADD COLUMN {column} {column_type}")
             self.db.commit()
@@ -56,8 +67,8 @@ class Store:
         rows = []
         for s in samples:
             s = dict(s)
-            s["cp_compressore"] = _norm_onoff(s.get("cp_compressore"))
-            s["acs_heat_test"] = _norm_onoff(s.get("acs_heat_test"))
+            for c in ONOFF_COLS:
+                s[c] = _norm_onoff(s.get(c))
             rows.append([s.get(c) for c in SAMPLE_COLS])
         with self._lock:
             self.db.executemany(f"INSERT OR REPLACE INTO samples ({','.join(SAMPLE_COLS)}) "

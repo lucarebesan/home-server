@@ -53,8 +53,27 @@ ENTITIES = {
     "discharge": "sensor.growatt_inverter_growatt_battery_discharge_power",
     "charge": "sensor.growatt_inverter_growatt_battery_charge_power",
     "write": "automation.nilan_write",
+    # catena dell'aria esterna: sonda prima EGWK (t_ext) -> T1 -> T4 -> T2 immessa
+    "t1": "sensor.compactp_t1_temperatura_aria_esterna_post_egwk",
+    "t4": "sensor.compactp_t4_temperatura_dopo_scambiatore_passivo",
+    "bypass_apre": "sensor.compactp_apertura_bypass",
+    "bypass_chiude": "sensor.compactp_chiusura_bypass",
+    "serranda": "sensor.compactp_serranda_aria",
+    "u_bagno": "sensor.ble_humidity_mija_bagno",
 }
+
+# termometri ambiente (MIJA via ble_monitor): giorno = sogg + studio, notte = matr + ale + leo;
+# il bagno non entra nelle medie (zona ponte fra giorno e notte)
+ROOMS = {"sogg": "soggiorno", "studio": "studio", "matr": "matrimoniale", "ale": "ale", "leo": "leo",
+         "bagno": "bagno"}
+for _k, _n in ROOMS.items():
+    ENTITIES[f"t_{_k}"] = f"sensor.ble_temperature_mija_{_n}"
+    ENTITIES[f"bat_{_k}"] = f"sensor.ble_battery_mija_{_n}"
+# istante dell'ultima lettura ricevuta (last_reported) del termometro: serve per l'età del dato
+REPORTED = {f"lr_{_k}": f"sensor.ble_temperature_mija_{_n}" for _k, _n in ROOMS.items()}
+ROOM_BATTERY_MIN = 10   # stessa soglia del package HA ecm_zone_climate
 
 NUMERIC_KEYS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t11", "t12", "t_ext", "t_ext_aff",
                 "soc", "pv", "load", "imp", "discharge", "charge", "lim_inf", "lim_sup",
-                "commutazione", "isteresi_comm"]
+                "commutazione", "isteresi_comm", "t1", "t4", "u_bagno",
+                *(f"{p}_{k}" for k in ROOMS for p in ("t", "bat", "lr"))]

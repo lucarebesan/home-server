@@ -4,9 +4,13 @@ import math
 import urllib.request
 
 
-def build_template(entities: dict) -> str:
-    parts = ", ".join(f"'{k}': states('{v}')" for k, v in entities.items())
-    return "{{ {" + parts + "} | tojson }}"
+def build_template(entities: dict, reported: dict | None = None) -> str:
+    """Un dizionario JSON con lo stato di ogni entità e, per quelle in reported, il timestamp
+    dell'ultima lettura ricevuta (None se l'entità non esiste)."""
+    parts = [f"'{k}': states('{v}')" for k, v in entities.items()]
+    parts += [f"'{k}': (expand('{v}') | map(attribute='last_reported') | map('as_timestamp') | first"
+              f" | default(none))" for k, v in (reported or {}).items()]
+    return "{{ {" + ", ".join(parts) + "} | tojson }}"
 
 
 def _num(v):
@@ -36,8 +40,8 @@ class HAApi:
         with urllib.request.urlopen(req, timeout=self.timeout) as r:
             return r.read().decode()
 
-    def snapshot(self, entities: dict, numeric: list[str]) -> dict:
-        txt = self._req("/api/template", {"template": build_template(entities)})
+    def snapshot(self, entities: dict, numeric: list[str], reported: dict | None = None) -> dict:
+        txt = self._req("/api/template", {"template": build_template(entities, reported)})
         return parse_snapshot(json.loads(txt), numeric)
 
     def call_service(self, domain: str, service: str, data: dict) -> None:

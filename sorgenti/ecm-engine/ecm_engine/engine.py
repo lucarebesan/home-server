@@ -37,7 +37,20 @@ def hold_states(snap: dict, last: dict, now: int) -> dict:
             out[k] = last[k][1]
     return out
 SAMPLE_FIELDS = ["acs_source_ok", "tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t11", "t12", "acs_heat_test", "t_ext", "soc", "pv",
-                 "load", "imp", "discharge", "charge"]
+                 "load", "imp", "discharge", "charge", "t1", "t4", "bypass_apre", "bypass_chiude", "serranda",
+                 "u_bagno", *(f"{p}_{k}" for k in config.ROOMS for p in ("t", "bat"))]
+
+
+def room_fields(snap: dict, ts: int) -> dict:
+    """Età (s) dell'ultima lettura e validità di ogni termometro ambiente. Valido come nel
+    package HA: temperatura e batteria numeriche, batteria >= ROOM_BATTERY_MIN. L'età è solo
+    registrata, non entra nella validità."""
+    out = {}
+    for k in config.ROOMS:
+        lr, t, bat = snap.get(f"lr_{k}"), snap.get(f"t_{k}"), snap.get(f"bat_{k}")
+        out[f"age_{k}"] = max(0, int(ts - lr)) if lr is not None else None
+        out[f"ok_{k}"] = int(t is not None and bat is not None and bat >= config.ROOM_BATTERY_MIN)
+    return out
 SOGLIA_ESTATE_DEFAULT = 24.5
 MANUALE = "input_select.ecm_manuale"
 DURATA = "input_number.ecm_manuale_durata_minuti"
@@ -52,6 +65,7 @@ WRITE_OFF_SAMPLES = 2   # 00-NILAN WRITE spenta per 2 campioni consecutivi duran
 def build_sample(snap: dict, ts: int, open_test: dict | None) -> dict:
     c = classify(snap)
     s = {k: snap.get(k) for k in SAMPLE_FIELDS}
+    s.update(room_fields(snap, ts))
     s.update(ts=ts, stagione=snap.get("stagione"), test_id=None,
              cp_compressore=snap.get("cp_compressore"),
              code=c.code, tipo=c.tipo, valido=1, motivo=c.motivo)
@@ -129,7 +143,7 @@ class Engine:
         with self.lock:
             now = int(self.clock())
             try:
-                self.snap = hold_states(self.api.snapshot(config.ENTITIES, config.NUMERIC_KEYS),
+                self.snap = hold_states(self.api.snapshot(config.ENTITIES, config.NUMERIC_KEYS, config.REPORTED),
                                         self.last_states, now)
                 self.snap_ts = now
                 self.ha_error = None
@@ -290,7 +304,7 @@ class Engine:
             if not t:
                 return
             try:
-                snap = self.api.snapshot(config.ENTITIES, config.NUMERIC_KEYS)
+                snap = self.api.snapshot(config.ENTITIES, config.NUMERIC_KEYS, config.REPORTED)
             except Exception as ex:
                 log.warning("recover: snapshot fallito, riprovo in supervisione: %s", ex)
                 return

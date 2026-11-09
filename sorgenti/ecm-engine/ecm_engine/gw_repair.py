@@ -120,7 +120,10 @@ def rebuild(row: dict, cp_state: dict | None, split_state: dict | None, open_tes
     c = {k: v for k, v in cp_state.items() if k not in ("mode_act", "cp_modo", "t10", "t2")}
     snap = {k: row.get(k) for k in MEASURE_COLS}
     snap.update(c, **split_state, stagione=row.get("stagione"), free_cooling=None)
-    return build_sample(snap, row["ts"], open_test)
+    s = build_sample(snap, row["ts"], open_test)
+    # età e validità dei termometri vengono dal campionamento dal vivo (last_reported non è nel DB)
+    s.update({k: row.get(k) for k in LIVE_ONLY_COLS if k.startswith(("age_", "ok_"))})
+    return s
 
 
 def is_target(row: dict, cp_state: dict | None) -> bool:

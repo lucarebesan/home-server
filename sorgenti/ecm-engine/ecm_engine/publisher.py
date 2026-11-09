@@ -10,6 +10,7 @@ AVAIL = "ecm_engine/availability"
 DEVICE = {"identifiers": ["ecm_engine"], "name": "ECM Engine", "model": "fase 1", "manufacturer": "Misc"}
 
 SENSORS = [
+    ("resa_acs", "Resa ACS per combinazione", "mdi:water-thermometer", None),
     ("stato", "Stato motore", "mdi:engine", None),
     ("in_breve", "In breve", "mdi:text", None),
     ("migliore_caldo", "Migliore per scaldare", "mdi:fire", None),

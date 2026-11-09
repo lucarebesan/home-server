@@ -5,6 +5,7 @@ import time
 from datetime import datetime, time as dtime
 
 from . import config
+from .acs_learner import learn_acs
 from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
 from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, excluded_candidates, ordered_candidates, propose, start_blockers
@@ -24,6 +25,10 @@ def hold_states(snap: dict, last: dict, now: int) -> dict:
     """Sostituisce gli stati non validi con l'ultimo valido se ha al più STATE_HOLD_S secondi;
     aggiorna last {chiave: (ts, valore)}."""
     out = dict(snap)
+    out['acs_source_ok'] = int(
+        all(snap.get(k) not in _NON_VALIDO for k in STATE_KEYS)
+        and snap.get('cp_modo') == 'RISCALDAMENTO'
+        and str(snap.get('cp_resistenza')).upper() == 'OFF')
     for k in STATE_KEYS:
         v = snap.get(k)
         if v not in _NON_VALIDO:
@@ -31,7 +36,7 @@ def hold_states(snap: dict, last: dict, now: int) -> dict:
         elif k in last and now - last[k][0] <= STATE_HOLD_S:
             out[k] = last[k][1]
     return out
-SAMPLE_FIELDS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t11", "t12", "acs_heat_test", "t_ext", "soc", "pv",
+SAMPLE_FIELDS = ["acs_source_ok", "tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t11", "t12", "acs_heat_test", "t_ext", "soc", "pv",
                  "load", "imp", "discharge", "charge"]
 SOGLIA_ESTATE_DEFAULT = 24.5
 MANUALE = "input_select.ecm_manuale"
@@ -324,9 +329,11 @@ class Engine:
                 yield r
         periods = segment(counted(self.store.iter_samples_since(since)))
         stats = aggregate(periods)
+        acs = learn_acs(self.store.iter_samples_since(since))
         log.info("apprendimento: %d campioni, %d periodi, %d statistiche in %.1f s",
                  n[0], len(periods), len(stats), time.monotonic() - t0)
         with self.lock:
+            self.pub.set_state('resa_acs', len(acs['tabella']), acs)
             self.stats = stats
             self._update_proposal()
             self._publish_learn()

@@ -4,7 +4,7 @@ import threading
 
 SAMPLE_COLS = ["ts", "code", "tipo", "valido", "motivo", "stagione", "test_id", "cp_compressore",
                "tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext", "soc", "pv",
-               "load", "imp", "discharge", "charge", "t11", "t12", "acs_heat_test"]
+               "load", "imp", "discharge", "charge", "t11", "t12", "acs_heat_test", "acs_source_ok"]
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS samples (
@@ -39,7 +39,7 @@ class Store:
             self.db.executescript(SCHEMA)
             existing = {row[1] for row in self.db.execute("PRAGMA table_info(samples)")}
             for column, column_type in (("t11", "REAL"), ("t12", "REAL"),
-                                        ("acs_heat_test", "INTEGER")):
+                                        ("acs_heat_test", "INTEGER"), ("acs_source_ok", "INTEGER")):
                 if column not in existing:
                     self.db.execute(f"ALTER TABLE samples ADD COLUMN {column} {column_type}")
             self.db.commit()

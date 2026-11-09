@@ -2946,15 +2946,17 @@ views:
               |---|---|---:|---:|
               | **ACSr** | {{ 'attiva' if is_state('sensor.compactp_resistenza_elettrica_acs','ON') else 'ferma' }} | T11 {{ state_attr(sr,'resistenza_t11_c_h') or '–' }} · T12 {{ state_attr(sr,'resistenza_t12_c_h') or '–' }} | {{ state_attr(sr,'resistenza_campioni') or 0 }} |
               {% for v in [1, 2, 3, 4] -%}
-              {%- set ns = namespace(rows=[]) -%}
+              {%- set ns = namespace(rows=[], valori=[], campioni=0) -%}
               {%- for x in tab -%}
-                {%- if ('CP HEAT V' ~ v ~ ' ') in x.combinazione -%}
+                {%- if ('CP HEAT V' ~ v) in x.combinazione -%}
                   {%- set ns.rows = ns.rows + [x] -%}
+                  {%- set ns.valori = ns.valori + [(('≈' if x.provvisoria | default(false) else '') ~ x.resa_bollitore_basso_c_h)] -%}
+                  {%- set ns.campioni = ns.campioni + (x.osservazioni | default(x.finestre) | int(0)) -%}
                 {%- endif -%}
               {%- endfor -%}
-              | **ACSe V{{ v }}** | {{ 'attiva' if acse_on and acse_v == v else 'ferma' }} | {{ ('T12 ' ~ (ns.rows | map(attribute='resa_bollitore_basso_c_h') | list | join(' / '))) if ns.rows | count else 'da misurare' }} | {{ ns.rows | map(attribute='finestre') | sum if ns.rows | count else 0 }} |
+              | **ACSe V{{ v }}** | {{ 'attiva' if acse_on and acse_v == v else 'ferma' }} | {{ ('T12 ' ~ (ns.valori | join(' / '))) if ns.rows | count else 'da misurare' }} | {{ ns.campioni }} |
               {% endfor %}
-              ACSr = resistenza del bollitore. ACSe Vx = CP HEAT Vx.
+              ACSr = resistenza del bollitore. ACSe Vx = CP HEAT Vx. ≈ = stima provvisoria.
 
           # Modalità ACS inverno: tabella completa per schermi larghi
           - type: markdown
@@ -2973,14 +2975,17 @@ views:
               |---|---|---|---|---:|
               | **ACSr** | Resistenza bollitore | {{ 'attiva' if is_state('sensor.compactp_resistenza_elettrica_acs','ON') else 'ferma' }} | T11 {{ state_attr(sr,'resistenza_t11_c_h') or '–' }} °C/h · T12 {{ state_attr(sr,'resistenza_t12_c_h') or '–' }} °C/h | {{ state_attr(sr,'resistenza_campioni') or 0 }} |
               {% for v in [1, 2, 3, 4] -%}
-              {%- set ns = namespace(rows=[]) -%}
+              {%- set ns = namespace(rows=[], valori=[], campioni=0) -%}
               {%- for x in tab -%}
-                {%- if ('CP HEAT V' ~ v ~ ' ') in x.combinazione -%}
+                {%- if ('CP HEAT V' ~ v) in x.combinazione -%}
                   {%- set ns.rows = ns.rows + [x] -%}
+                  {%- set ns.valori = ns.valori + [(x.fascia_bollitore_basso ~ ' → ' ~ ('≈' if x.provvisoria | default(false) else '') ~ x.resa_bollitore_basso_c_h)] -%}
+                  {%- set ns.campioni = ns.campioni + (x.osservazioni | default(x.finestre) | int(0)) -%}
                 {%- endif -%}
               {%- endfor -%}
-              | **ACSe V{{ v }}** | CP HEAT V{{ v }} | {{ 'attiva' if acse_on and acse_v == v else 'ferma' }} | {{ (ns.rows | map(attribute='resa_bollitore_basso_c_h') | list | join(' / ') ~ ' °C/h T12') if ns.rows | count else 'da misurare' }} | {{ ns.rows | map(attribute='finestre') | sum if ns.rows | count else 0 }} |
+              | **ACSe V{{ v }}** | CP HEAT V{{ v }} | {{ 'attiva' if acse_on and acse_v == v else 'ferma' }} | {{ (ns.valori | join(' / ') ~ ' °C/h T12') if ns.rows | count else 'da misurare' }} | {{ ns.campioni }} |
               {% endfor %}
+              ≈ = stima provvisoria ricavata da un tratto più corto della finestra completa 5+15.
           - type: markdown
             title: Da misurare
             grid_options:

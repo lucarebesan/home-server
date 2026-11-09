@@ -2,6 +2,10 @@
 
 Ultima verifica: 2026-11-09 (sezione ECM/ACS; le altre sezioni restano alla verifica precedente).
 
+> **Migrazione in corso (09/11):** il nuovo server `minipc` (ethernet `.76`, WiFi `.25`) è
+> pronto con i container creati ma non avviati. Fino al cutover i servizi girano
+> sull'HP descritto qui sotto. Vedi `procedure/migrazione-minipc.md`.
+
 - Nome host: `hp-homeassistant`.
 - Sistema operativo: Linux.
 - Indirizzo SSH: `192.168.1.100`, porta 22.

@@ -1,6 +1,6 @@
 # Gateway Higeco (Nilan, Toshiba, contatori)
 
-Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
+Ultima verifica: 2026-11-09 (raggiungibilità del gateway e confronto fra catalogo, HA e manuali CTS602; nessun accesso admin in questa verifica). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
 
 ## Cos'è
 
@@ -13,6 +13,13 @@ Ultima verifica: 2026-11-08. Documentazione completa del protocollo, catalogo de
 - Pannello di controllo → Utenti (cliccare l'icona, non l'etichetta). Gli utenti esistenti sono `admin` (Amministratore) e `user` (Ruolo 15). Ci sono 15 ruoli con permessi a matrice (sistema, interfaccia, periferiche, plugin). Nessun utente è stato aggiunto.
 - Le credenziali admin le conosce Mattia: si inseriscono a mano nella pagina, mai in chat, script o repository.
 - Con `user` si leggono circa 49 grandezze tramite i plugin proxy (`pluginManager.cgi` `sendCmd`/`sendCommand`, `getShm`). Storico (`dataLogCgi getDataLog`) e lettura diretta (`acqModCgi getShmData`) richiedono admin.
+
+## Confini dell'audit Nilan tramite il gateway
+
+- **Verificato il 09/11 dal catalogo salvato:** il driver `NILAN-CTS602_it` del gateway mappa 89 grandezze Compact P, di cui 32 leggibili con `user` e 57 aggiuntive tramite la lettura diretta riservata all'admin. Fra le 89, 46 risultano `RW` nel driver: questa etichetta descrive il registro, non autorizza a scriverlo. Il 09/11 il gateway ha risposto su `192.168.1.171:80`; HA esponeva 39/39 valori del batch Nilan. Non è stata eseguita una nuova lettura admin.
+- **Verificato dai manuali Nilan:** CTS602 offre anche funzioni native come programma settimanale, regolazione umidità, ACS e antilegionella, sbrinamento, bypass/raffrescamento e, nelle versioni che lo supportano, Smart Grid. Non tutte compaiono fra le 89 grandezze del driver Higeco. L'admin Higeco dà accesso ai valori e allo storico configurati nel gateway, non all'intero software della centralina né alle opzioni installatore. Riferimenti: [panoramica Compact P](https://www.en.nilan.dk/products/ventilation-with-heating/ventilation-and-hot-water-production/compact-p), [istruzioni CTS602 Compact P](https://www.en.nilan.dk/Files/Files/Engelsk/Downloads/4.%20Software%20instructions/S24_Compact-P_GB.pdf).
+- **Audit ripetibile in sola lettura:** accedere manualmente come admin nel pannello Higeco (credenziali mai negli script o nel repository); leggere le 89 grandezze Compact P con `getShmData` e lo storico con `getDataLog`, senza `W*`, set/save/reset; confrontare versione software, accessori e impostazioni di servizio con il pannello Nilan. Registrare separatamente valori osservati, funzioni solo documentate e funzioni non mappate. Le credenziali admin Higeco e il livello installatore CTS602 sono accessi distinti.
+- **Aperto:** versione firmware CTS602 e disponibilità reale di accessori/contatti Smart Grid, CO2 e postriscaldo su questo impianto; serve verifica dal pannello Nilan o da registri esplicitamente esposti, senza dedurla dal manuale generico.
 
 ## Lettura
 

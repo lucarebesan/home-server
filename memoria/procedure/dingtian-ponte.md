@@ -60,8 +60,10 @@ mai riavviato, mentre gli altri 8 hanno totalizzato 32 riavvii. Dopo la migrazio
 tutti i relè i riavvii sono **diminuiti ma non spariti**: l'08/11 alle 20:29, dopo un
 buco di rete di 3–4 s, se ne sono riavviati 3 (Sottotetto4, Notte8, Giardino9). Dalle
 20:35 dell'08/11 il ponte apre e chiude una connessione Modbus a ogni lettura
-(`MB_SHORT=1`), per verificare se il socket sempre aperto contribuiva. Da valutare nei
-giorni successivi.
+(`MB_SHORT=1`), per verificare se il socket sempre aperto contribuiva. Esito al 09/11:
+i buchi lunghi continuano (circa uno ogni 1–1,5 ore) anche con il server in ethernet,
+quindi né il socket né la WiFi del server ne sono la causa (dettagli in
+`diario/2026-11.md`, 09/11 sera).
 
 ### Gestione del ponte
 

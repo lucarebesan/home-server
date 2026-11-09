@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-09 16:09 (dopo la migrazione al mini PC: macchina, rete, container; le sezioni ECM/ACS restano alla verifica del mattino).
+Ultima verifica: 2026-11-09 17:10 (container aggiornati; migrazione al mini PC delle 16:09 per macchina e rete; le sezioni ECM/ACS restano alla verifica del mattino).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -30,9 +30,9 @@ dettagli in `procedure/migrazione-minipc.md`.
 - Accesso esterno: `https://ha.lrhub.duckdns.org` (nginx con certificato Let's Encrypt).
 - Dettagli in `procedure/rete-wifi.md` e `procedure/duckdns-certificato.md`.
 
-## Container (8/11)
+## Container (9/11)
 
-- `homeassistant` (versione tenuta apposta a 2026.9.3), `mosquitto`, `nginx`, `duckdns`, `letsencrypt`, `opt-portainer-1`, `crosschex-webapi` (Anviz), `hassconfigurator`.
+- `homeassistant` (2026.11.0 dal 09/11; l'immagine precedente resta con il tag `2026.9.3`), `mosquitto`, `nginx`, `duckdns`, `letsencrypt`, `opt-portainer-1`, `crosschex-webapi` (Anviz), `hassconfigurator`.
 - `ecm-engine`: vedi `procedure/ecm-engine.md`.
 - Dal 09/11 il motore pubblica anche la resa ACS osservata per combinazione CP HEAT/SPLIT; conserva i dati sorgente, filtra periodi incerti e non usa questa stima per comandare le macchine.
 - `dtbridge`: ponte tra i relè Dingtian e MQTT, che dal 7/11 serve tutti e 9 i relè (`~/dingtian/dtbridge`). Vedi `procedure/dingtian-ponte.md`.

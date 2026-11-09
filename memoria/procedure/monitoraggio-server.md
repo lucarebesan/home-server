@@ -48,6 +48,42 @@ Sostituire `homeassistant` con il nome del container interessato. `docker logs` 
 
 Prima di riavviare un servizio o container, verificare che sia effettivamente necessario, capire le dipendenze e concordare un'eventuale interruzione. Dopo un'azione, verificare stato, log e funzionamento dell'applicazione. Evitare `docker system prune`, cancellazioni di volumi e riavvii globali senza averne verificato conseguenze e backup.
 
+## Aggiornare i container (verificato il 2026-11-09)
+
+Gli stack Portainer stanno in `/var/lib/docker/volumes/opt_data/_data/compose/<n>/`
+(leggibili solo da root). `home` li gestisce senza sudo con il client compose in un
+container. Vanno **nominati i servizi**, altrimenti ripartono anche quelli fermi di
+proposito (`grott` nello stack `server`, `matter-hub` in `homeassistant`).
+
+| Stack (progetto) | Cartella | Servizi attivi |
+|---|---|---|
+| `server` | `compose/2` | `duckdns letsencrypt mosquitto nginx` |
+| `homeassistant` | `compose/3` | `homeassistant hass-configurator` |
+| `opt` (Portainer) | `/opt/docker-compose.yaml` | `portainer` |
+
+```sh
+# 1. backup (config HA senza DB, DB con backup SQLite online, nginx/mosquitto/certs)
+#    esempio usato il 09/11: ~/backup-2026-11-09-preupdate/
+# 2. tag dell'immagine HA in uso, per poter tornare indietro
+docker tag ghcr.io/home-assistant/home-assistant:latest ghcr.io/home-assistant/home-assistant:<versione>
+# 3. pull (nessun disservizio)
+docker pull ghcr.io/home-assistant/home-assistant:latest   # e le altre immagini
+# 4. ricreare i soli servizi indicati
+C=/var/lib/docker/volumes/opt_data/_data/compose/2
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v $C:$C:ro -w $C \
+  docker:cli compose -p server up -d --no-deps duckdns letsencrypt mosquitto nginx
+```
+
+Verifica: `curl` su `:8123` (200), errori nuovi confrontando `home-assistant.log` con
+`home-assistant.log.1` (avvio precedente), entità `unavailable` prima e dopo via API,
+`dtbridge` che scrive "MQTT connesso", `certbot renew --dry-run` (vedi
+`duckdns-certificato.md`).
+
+Ripristino di HA: nel compose `compose/3` sostituire `:latest` con il tag salvato e
+ricreare il servizio; se serve il DB, fermare HA e rimettere il `home-assistant_v2.db`
+del backup. Prima di aggiornare HA leggere i "Backward-incompatible changes" delle note
+di rilascio di ogni versione maggiore saltata.
+
 ## Anomalia osservata: logrotate
 
 L'8 novembre `logrotate.service` era fallito: `/etc/logrotate.d/cloud-init` e `/etc/logrotate.d/cloud-init-base` contenevano entrambi una regola per `/var/log/cloud-init*.log`. Il timer risultava attivo e aveva una prossima esecuzione prevista. Questo può impedire la corretta rotazione di alcuni log; non si è stabilito che tutti i log siano privi di rotazione.

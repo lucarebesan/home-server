@@ -569,3 +569,15 @@ def test_build_sample_v1_observed_and_never_matches_a_test():
     # prova su V2 (E84): la macchina e' ancora in V1 -> non ancora applicata, non E84
     s2 = build_sample(snap, 100, {"id": 3, "code": 84})
     assert s2["valido"] == 0 and s2["motivo"] == "prova non ancora applicata"
+
+
+def test_tick_learn_legge_i_campioni_una_volta_sola(tmp_path):
+    # Disco lento: segmentazione e resa ACS devono condividere un'unica lettura del database.
+    e, api, pub, clock = mk(tmp_path, T0)
+    e.tick_sample()
+    calls = []
+    orig = e.store.iter_samples_since
+    e.store.iter_samples_since = lambda ts: calls.append(ts) or orig(ts)
+    e.tick_learn()
+    assert len(calls) == 1
+    assert pub.states["resa_acs"][0] == 0 and pub.states["resa_acs"][1]["tabella"] == []

@@ -90,6 +90,12 @@ Piccoli prelievi non rilevati e stratificazione possono ancora influire: dati
 osservativi, supporto iniziale sotto cinque finestre, nessun comando ACS basato
 automaticamente su questa stima. Nessun uso della temperatura esterna per ACS.
 
+Il calcolo condivide con la segmentazione del clima un'unica lettura del database
+(prima erano due, e il ciclo dei 15 minuti era passato da 3,5 a 8,1 s). Gli attributi
+del sensore restano sotto 15 000 byte, perché il recorder di HA non salva quelli oltre
+16 384: se la tabella è più grande si tengono le righe con più finestre, e
+`righe_omesse` dice quante ne mancano.
+
 ## Limiti delle misure climatiche
 
 - Dallo storico i consumi sono attendibili, l'efficacia (°C/ora) poco: osservando passivamente la casa è già regolata e le zone hanno solo medie orarie. Per l'efficacia servono le prove.

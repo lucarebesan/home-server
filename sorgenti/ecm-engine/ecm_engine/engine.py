@@ -5,7 +5,7 @@ import time
 from datetime import datetime, time as dtime
 
 from . import config
-from .acs_learner import learn_acs
+from .acs_learner import AcsLearner
 from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
 from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, excluded_candidates, ordered_candidates, propose, start_blockers
@@ -322,14 +322,17 @@ class Engine:
         t0 = time.monotonic()
         self.store.purge(since)
         n = [0]
+        acs_learner = AcsLearner()
 
+        # una sola lettura del database (disco lento): ogni campione va anche alla resa ACS
         def counted(rows):
             for r in rows:
                 n[0] += 1
+                acs_learner.feed(r)
                 yield r
         periods = segment(counted(self.store.iter_samples_since(since)))
         stats = aggregate(periods)
-        acs = learn_acs(self.store.iter_samples_since(since))
+        acs = acs_learner.result()
         log.info("apprendimento: %d campioni, %d periodi, %d statistiche in %.1f s",
                  n[0], len(periods), len(stats), time.monotonic() - t0)
         with self.lock:

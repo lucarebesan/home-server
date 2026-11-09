@@ -2320,7 +2320,10 @@ views:
                 'automation.04_ecm_watchdog_fc_zona', 'automation.06_ecm_humidity_override',
                 'automation.07_ecm_ricambio_aria_minimo_2', 'automation.09_ecm_manuale', 'automation.10_ecm_inverno',
                 'automation.99_ecm_test_nilan_write'] -%}
-              {%- set aut = states.automation | selectattr('entity_id', 'search', 'ecm|nilan|acs') | list -%}
+              {%- set tutte = states.automation | selectattr('entity_id', 'search', 'ecm|nilan|acs') | list -%}
+              {#- restored = file YAML cancellato ma voce rimasta nel registro entità: non è un guasto -#}
+              {%- set rimosse = tutte | selectattr('attributes.restored', 'defined') | selectattr('attributes.restored', 'eq', true) | list -%}
+              {%- set aut = tutte | reject('in', rimosse) | list -%}
               {%- set guaste = aut | selectattr('state', 'in', ['unavailable', 'unknown']) | list -%}
               {%- set attive = aut | selectattr('state', 'eq', 'on') | list -%}
               {%- set spente = aut | selectattr('state', 'eq', 'off') | list -%}
@@ -2364,6 +2367,10 @@ views:
               {%- endfor %}
 
               **Automazioni ECM:** {{ attive | count }} attive · {{ per_scelta | count }} spente per scelta · {{ guaste | count + inattese | count }} con problemi
+              {%- if rimosse | count %}
+
+              Rimosse dalla configurazione ma ancora nel registro entità: {{ rimosse | map(attribute='name') | join(', ') }}. Si eliminano da Impostazioni → Entità.
+              {%- endif %}
           - type: markdown
             title: Dati aggiornati?
             content: |-
@@ -2482,10 +2489,10 @@ views:
                 state: |-
                   {%- set s = states(config.entity) -%}
                   {%- set scelta = ['automation.00_nilan_cambio_stagione_automatico_t10', 'automation.00_nilan_sync', 'automation.01_ecm_eg_estate_fascia_giorno', 'automation.01_ecm_en_estate_fascia_notturna', 'automation.01_ecm_fc_estate', 'automation.02_ecm_safety_guard', 'automation.04_ecm_watchdog', 'automation.04_ecm_watchdog_fc_zona', 'automation.06_ecm_humidity_override', 'automation.07_ecm_ricambio_aria_minimo_2', 'automation.09_ecm_manuale', 'automation.10_ecm_inverno', 'automation.99_ecm_test_nilan_write'] -%}
-                  {%- if s == 'on' -%}attiva{%- elif s == 'off' and config.entity in scelta -%}spenta per scelta{%- elif s == 'off' -%}spenta: verificare{%- else -%}non caricata{%- endif -%}
+                  {%- if s == 'on' -%}attiva{%- elif s == 'off' and config.entity in scelta -%}spenta per scelta{%- elif s == 'off' -%}spenta: verificare{%- elif state_attr(config.entity, 'restored') -%}rimossa{%- else -%}non caricata{%- endif -%}
                 color: |-
                   {%- set s = states(config.entity) -%}
-                  {%- if s == 'on' -%}var(--success-color){%- elif s == 'off' and config.entity in ['automation.00_nilan_cambio_stagione_automatico_t10', 'automation.00_nilan_sync', 'automation.01_ecm_eg_estate_fascia_giorno', 'automation.01_ecm_en_estate_fascia_notturna', 'automation.01_ecm_fc_estate', 'automation.02_ecm_safety_guard', 'automation.04_ecm_watchdog', 'automation.04_ecm_watchdog_fc_zona', 'automation.06_ecm_humidity_override', 'automation.07_ecm_ricambio_aria_minimo_2', 'automation.09_ecm_manuale', 'automation.10_ecm_inverno', 'automation.99_ecm_test_nilan_write'] -%}var(--disabled-text-color){%- else -%}var(--error-color){%- endif -%}
+                  {%- if s == 'on' -%}var(--success-color){%- elif s == 'off' and config.entity in ['automation.00_nilan_cambio_stagione_automatico_t10', 'automation.00_nilan_sync', 'automation.01_ecm_eg_estate_fascia_giorno', 'automation.01_ecm_en_estate_fascia_notturna', 'automation.01_ecm_fc_estate', 'automation.02_ecm_safety_guard', 'automation.04_ecm_watchdog', 'automation.04_ecm_watchdog_fc_zona', 'automation.06_ecm_humidity_override', 'automation.07_ecm_ricambio_aria_minimo_2', 'automation.09_ecm_manuale', 'automation.10_ecm_inverno', 'automation.99_ecm_test_nilan_write'] -%}var(--disabled-text-color){%- elif state_attr(config.entity, 'restored') -%}var(--disabled-text-color){%- else -%}var(--error-color){%- endif -%}
                 secondary: |-
                   {%- set t = state_attr(config.entity, 'last_triggered') -%}
                   {%- if t -%}{%- set m = ((now() - t).total_seconds() // 60) | int -%}
@@ -2493,7 +2500,6 @@ views:
                   {%- else -%}Mai eseguita{%- endif -%}
               - {<<: *aut, entity: automation.01_ecm_en_estate_fascia_notturna, name: EN · ECM Notte}
               - {<<: *aut, entity: automation.01_ecm_fc_estate, name: FC · Free cooling}
-              - {<<: *aut, entity: automation.01_ecm_ig_inverno_fascia_giorno, name: IG · giorno inverno}
               - {<<: *aut, entity: automation.10_ecm_inverno, name: 10 · ECM Inverno}
               - {<<: *aut, entity: automation.06_ecm_humidity_override, name: 06 · umidità lavanderia}
               - {<<: *aut, entity: automation.07_ecm_ricambio_aria_minimo_2, name: 07 · ricambio aria minimo}

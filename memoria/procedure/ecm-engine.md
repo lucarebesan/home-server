@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-09 (campionamento ACS; riparazioni che conservano le colonne ACS).
+Ultima verifica: 2026-11-09 (campionamento ACS; riparazioni che conservano le colonne ACS; guida all'installazione, non ancora eseguita con questa procedura).
 
 ## Scopo
 
@@ -45,13 +45,49 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 ```sh
 # primo uso su una macchina nuova (il venv non è nel repository)
 cd sorgenti/ecm-engine && python3 -m venv .venv && .venv/bin/pip install -r requirements-dev.txt
-# deploy (da sorgenti/ecm-engine): test + rsync + rebuild. Prima committare le modifiche.
-./deploy.sh
+# deploy: vedi "Installare una nuova versione sul server" qui sotto
 # stato e log
 ssh hp 'docker ps --filter name=ecm-engine; docker logs --tail 20 ecm-engine'
 # fermare
 ssh hp 'cd ~/ecm-engine && docker compose down'
 ```
+
+## Installare una nuova versione sul server
+
+Il sorgente in questo repository è la fonte di verità; sul server `~/ecm-engine` è solo
+la copia che `deploy.sh` sincronizza (non è un repository git). Riavviare il container
+richiede l'ok di Luca (vedi `AGENTS.md`).
+
+1. **Allineare il repository**, dalla radice: `git fetch && git status`, poi
+   `git pull --ff-only`. `deploy.sh` copia la cartella così com'è, comprese eventuali
+   modifiche non committate: se `git status` ne mostra in `sorgenti/ecm-engine`, chiarire
+   di chi sono prima di procedere. Annotare il commit che si installa
+   (`git log --oneline -1 -- sorgenti/ecm-engine`) e quello installato prima (dal diario),
+   per poter tornare indietro.
+2. **Leggere cosa cambia**: `git log --oneline <installato>..HEAD -- sorgenti/ecm-engine`
+   e il diario del giorno. Fare attenzione alle modifiche dello schema di `samples` in
+   `store.py`: sono aggiunte di colonne (`ALTER TABLE`) e restano anche tornando indietro.
+3. **Test in locale**: `cd sorgenti/ecm-engine && .venv/bin/pytest -q` (al primo uso
+   creare il venv, vedi sopra). Se un test fallisce ci si ferma.
+4. **Backup coerente del database**, senza fermare il motore:
+   ```sh
+   ssh hp 'docker exec ecm-engine python3 -c "import sqlite3; s=sqlite3.connect(\"/data/engine.db\"); d=sqlite3.connect(\"/data/engine_pre_<motivo>_<aaaammgg>.db\"); s.backup(d); d.close(); print(s.execute(\"pragma quick_check\").fetchone())"'
+   ```
+   Deve stampare `('ok',)`. Il file si trova poi in `~/ecm-engine/data/` sul server.
+5. **Installare**, con l'ok di Luca: `./deploy.sh` da `sorgenti/ecm-engine`. Lo script
+   rilancia i test, sincronizza i file (esclusi `data`, `.env`, `.venv`), ricostruisce
+   l'immagine e ricrea **solo** il container `ecm-engine`, poi mostra le ultime righe di log.
+6. **Verificare**: sezione "Verifica" più sotto, più quanto indicato nel diario per quella
+   versione. Il primo apprendimento parte all'avvio: nel log cercare la riga
+   `apprendimento: … in N s`.
+7. **Registrare** nel diario: commit installato, ora, nome del backup ed esito delle verifiche.
+
+**Tornare indietro**, dalla radice del repository: riportare la cartella alla versione
+precedente con `git checkout <commit precedente> -- sorgenti/ecm-engine`, lanciare
+`./deploy.sh`, poi rimettere il repository com'era con `git checkout HEAD -- sorgenti/ecm-engine`.
+Le colonne aggiunte al database restano e il codice precedente le ignora. Il backup serve
+solo se una versione ha rovinato i dati: fermare il container, sostituire `data/engine.db`
+con il backup e riavviare.
 
 ## Riparare campioni dal datalogger
 

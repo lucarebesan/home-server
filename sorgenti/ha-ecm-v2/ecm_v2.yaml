@@ -2734,28 +2734,27 @@ views:
               {% for r in state_attr('sensor.ecm_engine_in_breve','righe') or ['Il motore ECM non ha ancora dati.'] -%}
               - {{ r }}
               {% endfor %}
-          - type: conditional
-            conditions:
-              - condition: state
-                entity: input_select.stagione
-                state: INVERNO
-            card:
-              type: gauge
-              entity: sensor.ecm_engine_apprendimento_caldo
-              name: Misure riscaldamento
-              min: 0
-              max: 100
-          - type: conditional
-            conditions:
-              - condition: state
-                entity: input_select.stagione
-                state: ESTATE
-            card:
-              type: gauge
-              entity: sensor.ecm_engine_apprendimento_freddo
-              name: Misure raffrescamento
-              min: 0
-              max: 100
+          # Avanzamento misure: al posto del gauge, quante combinazioni della fascia esterna attuale hanno dati.
+          # Elenchi codici = codes_for_season() di ecm-engine (rules.py): HEAT d'inverno, COOL/DRY d'estate.
+          - type: markdown
+            content: |-
+              {%- set inv = is_state('input_select.stagione', 'INVERNO') -%}
+              {%- set ns = namespace(c=['E4', 'E5', 'E6']) -%}
+              {%- for dz in ([7, 8, 9] if inv else [1, 2, 3, 4, 5, 6]) -%}{%- for u in range(7) -%}{%- set ns.c = ns.c + ['E' ~ (dz * 10 + u)] -%}{%- endfor -%}{%- endfor -%}
+              {%- set codici = ns.c -%}
+              {%- set d = 'sensor.ecm_engine_dettaglio' -%}
+              {%- set righe = (state_attr(d, 'tabella') or []) | selectattr('codice', 'in', codici) | list -%}
+              {%- set complete = righe | selectattr('affidabilita', '>=', 1) | list | count -%}
+              {%- set pct = states('sensor.ecm_engine_apprendimento_caldo' if inv else 'sensor.ecm_engine_apprendimento_freddo') -%}
+              {%- set prove = (state_attr('sensor.ecm_engine_ultime_prove', 'righe') or []) | count -%}
+              ### {{ righe | count }} di {{ codici | count }} combinazioni misurate
+              {{ 'Riscaldamento' if inv else 'Raffrescamento' }} con esterno {{ state_attr(d, 'fascia_esterna') or '–' }} °C · {{ complete }} complete · avanzamento {{ pct }}%
+
+              {% if prove == 0 -%}
+              Nessuna prova fatta finora: le misure vengono solo da quando le macchine lavorano da sole, quindi crescono poco.
+              {%- else -%}
+              {{ prove }} prove registrate (elenco sotto).
+              {%- endif %}
           - type: markdown
             content: Consumo e resa di ogni combinazione di Nilan e Toshiba, misurati con prove da 15 a 30 minuti. Servono a scegliere la combinazione che costa meno.
           - type: markdown

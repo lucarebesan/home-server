@@ -90,7 +90,10 @@ si modifica un'automazione ECM, aggiornare anche:
    card di rimando all'Albero, in JS).
 3. **Diagnostica**: l'elenco delle automazioni "spente per scelta" è scritto nei template
    (riepilogo e righe). Se Luca ne riaccende o ne spegne una apposta, aggiornarlo.
-4. **Impostazioni**: gli avvisi "automazione spenta" leggono `09_ecm_manuale`,
+4. **Apprendimento**: la card "N di M combinazioni misurate" ripete in Jinja gli elenchi di
+   `codes_for_season()` di ecm-engine (E4–E6 più E70–E96 d'inverno, E10–E66 d'estate):
+   se cambiano nel motore, aggiornarli anche qui.
+5. **Impostazioni**: gli avvisi "automazione spenta" leggono `09_ecm_manuale`,
    `00_nilan_cambio_stagione_automatico_t10`, `01_ecm_fc_estate`, `05_ecm_acs_manager`.
 
 Fonti dei nodi dell'Albero:

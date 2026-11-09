@@ -98,6 +98,14 @@ comando `input_number.acs_r_set` e il setpoint reale della CP, poi la
 temperatura del bollitore alto alla scadenza. Il ramo FV/batteria può
 riscaldare prima dell'avvio di copertura.
 
+Dal commit HA `ad17e6f` la copertura invernale usa il bollitore basso per
+scegliere l'obiettivo del bollitore alto: **50 °C** con basso <30 °C,
+**47 °C** con basso da 30 a <35 °C, **44 °C** con basso ≥35 °C (anche
+oltre 40 °C, per scelta esplicita di Luca). Il setpoint della resistenza
+è 50 °C nei primi due casi e 45 °C nel terzo; al raggiungimento
+dell'obiettivo torna al valore di base 38 °C. La scadenza resta 30 minuti
+prima dell'ora di utilizzo appresa.
+
 Prima di un'altra prova, verificare stagione INVERNO, setpoint reale ACS
 compressore 20 °C, resistenza non attiva, ventilazione CP spenta, sensori
 bollitore/aria/zone validi, `09 ECM MANUALE` e prove automatiche del motore

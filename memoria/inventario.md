@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-09 17:10 (container aggiornati; migrazione al mini PC delle 16:09 per macchina e rete; le sezioni ECM/ACS restano alla verifica del mattino).
+Ultima verifica: 2026-11-09 22:26 (ricambio minimo invernale attivo; macchina e rete restano alla verifica delle 16:09).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -51,7 +51,14 @@ dettagli in `procedure/migrazione-minipc.md`.
 
 - Crontab di `home`: rinnovo del certificato alle 04:17 (vedi `procedure/duckdns-certificato.md`).
 - `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti; dal 09/11 campiona anche bollitore alto/basso e marcatore della prova ACS indiretta. Prove automatiche verificate spente il 09/11.
-- HA: `00-NILAN WRITE` è accesa dal 09/11 in modalità temporanea **solo ACS**, ora per INVERNO ed ESTATE; il vecchio ramo generale termina senza eseguire comandi. `05-ECM ACS MANAGER` resta accesa e prepara l'ACS serale. In inverno la guardia CP HEAT e il mantenimento del bollitore basso a 25 °C sono attivi. Le automazioni decisionali ECM generali, incluso `07` ricambio aria, sono spente per isolamento ACS. Vedi `diario/2026-11.md` per elenco e ripristino.
+- HA: `00-NILAN WRITE` è accesa dal 09/11 in modalità temporanea ACS più ricambio
+  minimo invernale. Il ramo generale ECM resta escluso, ma dal commit HA `8e950d6`
+  inoltra anche la richiesta della `07` alla sola Compact P, con priorità ACS.
+  `07-ECM RICAMBIO ARIA MINIMO` è accesa: sceglie automaticamente V2/V3/V4 di giorno,
+  soltanto V2/V3 di notte, mai V1; decide CP HEAT/OFF dalla temperatura esterna e può
+  acquisirla con un campionamento preventivo V2. `06-ECM HUMIDITY OVERRIDE` resta spenta
+  in attesa di completare la regola energetica oltre i 90 minuti. `05-ECM ACS MANAGER`
+  resta accesa; le altre automazioni decisionali ECM generali restano spente.
 - HA: `10 - ECM INVERNO` ogni 5 minuti, solo in INVERNO (creata e spenta l'8/11, in attesa dell'ok di Luca).
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.
 

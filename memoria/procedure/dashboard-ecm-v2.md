@@ -1,6 +1,6 @@
 # Dashboard ECM v2
 
-Ultima verifica: 2026-11-08.
+Ultima verifica: 2026-11-09.
 
 ## Scopo
 
@@ -31,6 +31,10 @@ Salvare via WebSocket il JSON di backup più recente.
 ## Note
 
 - La card "Da misurare" (tab Apprendimento) divide le righe per l'attributo `sezione` pubblicato da `ecm-engine` (vedi `ecm-engine.md`).
+- Nella stessa tab la card "Modalità ACS inverno" mantiene separate le finalità ACS
+  dalle combinazioni climatiche: `ACSr` è la resistenza del bollitore; `ACSe V1`–
+  `ACSe V4` sono le richieste empiriche `CP HEAT V1`–`CP HEAT V4`. Lo stato dello
+  SPLIT non fa parte del nome ACSe.
 
 - Nei blocchi markdown con tabelle usare `|-` in YAML: con `>-` le righe si uniscono e la tabella si rompe.
 - In HA una card si può nascondere solo in base allo stato di un'entità, non a un attributo: per questo il motore pubblica `binary_sensor.ecm_engine_prova_avviabile`.

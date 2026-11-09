@@ -1509,6 +1509,29 @@ views:
               ⚠ = pochi dati, valori da confermare. W per 1 °C/h: più è basso, meno costa scaldare o raffrescare.
               {%- endif %}
           - type: markdown
+            title: Modalità ACS inverno
+            grid_options:
+              columns: full
+            content: |-
+              {%- set sr = 'sensor.ecm_acs_resa_sorgenti' -%}
+              {%- set tab = state_attr('sensor.ecm_engine_resa_acs','tabella') or [] -%}
+              {%- set acse_on = is_state('input_boolean.ecm_acs_prova_caldo_attiva','on') -%}
+              {%- set acse_v = states('input_number.ecm_acs_prova_caldo_velocita') | int(0) -%}
+              Queste modalità descrivono lo **scopo ACS** e restano separate dalle combinazioni climatiche.
+
+              | Modalità | Azionamento | Stato | Resa osservata | Campioni |
+              |---|---|---|---|---:|
+              | **ACSr** | Resistenza bollitore | {{ 'ATTIVA' if is_state('sensor.compactp_resistenza_elettrica_acs','ON') else 'ferma' }} | T11 {{ state_attr(sr,'resistenza_t11_c_h') or '–' }} °C/h · T12 {{ state_attr(sr,'resistenza_t12_c_h') or '–' }} °C/h | {{ state_attr(sr,'resistenza_campioni') or 0 }} |
+              {% for v in [1, 2, 3, 4] -%}
+              {%- set ns = namespace(rows=[]) -%}
+              {%- for x in tab -%}
+                {%- if ('CP HEAT V' ~ v ~ ' ') in x.combinazione -%}
+                  {%- set ns.rows = ns.rows + [x] -%}
+                {%- endif -%}
+              {%- endfor -%}
+              | **ACSe V{{ v }}** | CP HEAT V{{ v }} | {{ 'ATTIVA' if acse_on and acse_v == v else 'ferma' }} | {{ (ns.rows | map(attribute='resa_bollitore_basso_c_h') | list | join(' / ') ~ ' °C/h T12') if ns.rows | count else 'da misurare' }} | {{ ns.rows | map(attribute='finestre') | sum if ns.rows | count else 0 }} |
+              {% endfor %}
+          - type: markdown
             title: Da misurare
             grid_options:
               columns: full
@@ -1518,6 +1541,26 @@ views:
               {%- set ora = r | selectattr('sezione','eq','Provabili adesso') | list -%}
               {%- set non_ora = r | selectattr('sezione','eq','Non provabili adesso') | list -%}
               {%- set fatte = r | selectattr('sezione','eq','Già misurate') | list -%}
+              {%- macro nome_combo(s) -%}
+                {%- set n = s
+                  | replace('Nilan ferma', 'CP OFF V0')
+                  | replace('Nilan solo ventilazione', 'CP OFF')
+                  | replace('Toshiba spento', 'SPLIT OFF')
+                  | replace('Toshiba caldo bassa', 'SPLIT HEAT V1')
+                  | replace('Toshiba caldo media', 'SPLIT HEAT V2')
+                  | replace('Toshiba caldo alta', 'SPLIT HEAT V3')
+                  | replace('Toshiba freddo bassa', 'SPLIT COOL V1')
+                  | replace('Toshiba freddo media', 'SPLIT COOL V2')
+                  | replace('Toshiba freddo alta', 'SPLIT COOL V3')
+                  | replace('Toshiba deumidifica bassa', 'SPLIT DRY V1')
+                  | replace('Toshiba deumidifica media', 'SPLIT DRY V2')
+                  | replace('Toshiba deumidifica alta', 'SPLIT DRY V3') -%}
+                {%- if is_state('input_select.stagione', 'ESTATE') -%}
+                  {{- n | replace('Nilan pompa di calore', 'CP COOL') -}}
+                {%- else -%}
+                  {{- n | replace('Nilan pompa di calore', 'CP HEAT') -}}
+                {%- endif -%}
+              {%- endmacro -%}
               Temperatura esterna: **{{ state_attr(d,'fascia_esterna') or '–' }} °C**. Ancora da misurare: **{{ states(d) }}** combinazioni.
 
               **Provabili adesso** ({{ ora | count }})
@@ -1527,7 +1570,7 @@ views:
               | Ordine | Combinazione | Misure | Durata prova |
               |---:|---|---:|---:|
               {% for x in ora -%}
-              | {{ x.ordine }} | {{ x.combinazione }} | {{ x.misure }}% | {{ x.durata }} |
+              | {{ x.ordine }} | {{ nome_combo(x.combinazione) }} | {{ x.misure }}% | {{ x.durata }} |
               {% endfor %}
               {%- endif %}
 
@@ -1538,7 +1581,7 @@ views:
               | Combinazione | Misure | Perché |
               |---|---:|---|
               {% for x in non_ora -%}
-              | {{ x.combinazione }} | {{ x.misure }}% | {{ x.motivo }} |
+              | {{ nome_combo(x.combinazione) }} | {{ x.misure }}% | {{ x.motivo }} |
               {% endfor %}
               {%- endif %}
 
@@ -1549,7 +1592,7 @@ views:
               | Combinazione | Misure |
               |---|---:|
               {% for x in fatte -%}
-              | {{ x.combinazione }} | {{ x.misure }}% |
+              | {{ nome_combo(x.combinazione) }} | {{ x.misure }}% |
               {% endfor %}
               {%- endif %}
           - type: markdown

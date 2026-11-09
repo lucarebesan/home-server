@@ -11,7 +11,7 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 ## Funzionamento
 
 - Ogni 60 s legge da HA (una richiesta `POST /api/template`) e salva un campione in `~/ecm-engine/data/engine.db` (SQLite, conservazione 400 giorni). Dal 09/11 salva anche temperatura del bollitore alto/basso (`t11`, `t12`) e marcatore della prova ACS indiretta (`acs_heat_test`); per i campioni precedenti queste colonne restano vuote. Potenza CP/SPLIT, aria immessa, zone e temperatura esterna erano già registrate.
-- Le due temperature del bollitore sono salvate in **ogni** campione, con il codice della combinazione CP/SPLIT quando classificabile: valgono anche per CP HEAT V3 + SPLIT HEAT V1 e per il normale riscaldamento, non soltanto per le prove marcate `acs_heat_test`. Oggi il motore non calcola ancora °C/ora ACS distinti per combinazione. Per farlo servono segmenti stabili e filtri per prelievi d'acqua, resistenza, ACS dedicata, transitori e sensori mancanti. La tabella `samples` conserva una riga per timestamp: i nuovi minuti si aggiungono, mentre import o riparazioni dello stesso minuto possono sostituire quella riga (`INSERT OR REPLACE`).
+- Le due temperature del bollitore sono salvate in **ogni** campione, con il codice della combinazione CP/SPLIT quando classificabile: valgono anche per CP HEAT V3 + SPLIT HEAT V1 e per il normale riscaldamento, non soltanto per le prove marcate `acs_heat_test`. Per il nuovo calcolo della resa ACS e i suoi filtri vedere la sezione dedicata più sotto. La tabella `samples` conserva una riga per timestamp: i nuovi minuti si aggiungono, mentre import o riparazioni dello stesso minuto possono sostituire quella riga (`INSERT OR REPLACE`).
 - Ogni 15 minuti ricalcola l'apprendimento (circa 3,5 s su 180 mila campioni) e aggiorna le entità.
 - Pubblica in HA via MQTT discovery: `sensor.ecm_engine_*` (stato, in breve, migliore caldo/freddo, apprendimento, prova proposta, prova in corso, ultime prove, da misurare, dettaglio, avvisi), `binary_sensor.ecm_engine_prova_avviabile`, `button.ecm_engine_avvia_prova`, `switch.ecm_engine_prove_automatiche`.
 - Le entità sono mostrate nella tab "Apprendimento" della dashboard ECM v2.
@@ -71,6 +71,28 @@ Quando HA ha perso letture di stato (minuti `cp non classificato` / `toshiba non
 - Campioni recenti in `engine.db` (l'ultimo ha meno di 2 minuti).
 
 ## Limiti noti
+
+## Apprendimento ACS per combinazione (09/11)
+
+Implementato in `ecm_engine/acs_learner.py`, pubblicazione MQTT nel sensore
+`sensor.ecm_engine_resa_acs`. Attivo dal 09/11 alle 11:52 dopo consenso di Luca
+al riavvio del solo ecm-engine. Usa CP HEAT V1–V4 con ogni combinazione SPLIT,
+compreso SPLIT OFF, da funzionamento normale e prove. Ogni riga riporta fascia
+iniziale del bollitore basso (5 °C), pendenza netta mediana in °C/h, finestre,
+minuti, origine prova/normale, potenze CP/SPLIT separate e dispersione delle rese.
+Non è un COP e non misura un contributo causale dello SPLIT all'acqua.
+
+Richiede dati numerici, CP in HEAT con compressore acceso e resistenza spenta;
+il nuovo marcatore persistente `acs_source_ok` è calcolato prima di recuperare
+eventuali stati vecchi. Campioni precedenti privi del marcatore restano esclusi.
+Attende 8 minuti dopo avvio, cambio combinazione, dati mancanti o variazione
+rapida del bollitore (calo >0,3 °C/min circa o salto >2 °C per campione), poi
+misura finestre non sovrapposte di almeno 10 minuti. Conserva rese nulle e negative.
+Piccoli prelievi non rilevati e stratificazione possono ancora influire: dati
+osservativi, supporto iniziale sotto cinque finestre, nessun comando ACS basato
+automaticamente su questa stima. Nessun uso della temperatura esterna per ACS.
+
+## Limiti delle misure climatiche
 
 - Dallo storico i consumi sono attendibili, l'efficacia (°C/ora) poco: osservando passivamente la casa è già regolata e le zone hanno solo medie orarie. Per l'efficacia servono le prove.
 - La velocità V1 della Nilan (STEP 1) è registrata con codici propri (u=7 e u=8, per esempio E7, E8), fuori dalla numerazione di HA. Non è mai proposta come prova.

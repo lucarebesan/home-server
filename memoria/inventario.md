@@ -25,6 +25,7 @@ Ultima verifica: 2026-11-09 (sezione ECM/ACS; le altre sezioni restano alla veri
 
 - `homeassistant` (versione tenuta apposta a 2026.9.3), `mosquitto`, `nginx`, `duckdns`, `letsencrypt`, `opt-portainer-1`, `crosschex-webapi` (Anviz), `hassconfigurator`.
 - `ecm-engine`: vedi `procedure/ecm-engine.md`.
+- Dal 09/11 il motore pubblica anche la resa ACS osservata per combinazione CP HEAT/SPLIT; conserva i dati sorgente, filtra periodi incerti e non usa questa stima per comandare le macchine.
 - `dtbridge`: ponte tra i relè Dingtian e MQTT, che dal 7/11 serve tutti e 9 i relè (`~/dingtian/dtbridge`). Vedi `procedure/dingtian-ponte.md`.
 - `dtdiag`: diagnostica dei Dingtian costruita come test da un altro agente (`~/dingtian/dtdiag`). Dopo la migrazione al ponte è superata in parte.
 - Fermi di proposito: `grott`, `matter-hub`, `adguard`. `reolink-tv` è fermo dal 3/11 (non si sa se è voluto).

@@ -114,9 +114,10 @@ nuovo sul MAC WiFi dell'HP. HP: accendere e avviare i container fermati al passo
 
 ## Questioni aperte
 
-- `ble_monitor` ha ancora nelle opzioni il MAC dell'adattatore HP: a ogni avvio scrive
-  un errore e passa da solo all'adattatore di default (funziona). Da aggiornare dalle
-  opzioni dell'integrazione.
+- (Risolta il 09/11) `ble_monitor`: al primo avvio non ha trovato l'adattatore dell'HP,
+  è passato a `44:90:BA:32:32:BE` e ha salvato da solo l'opzione `bt_interface`
+  (verificato in `core.config_entries`). L'errore nel log è di quell'unico avvio. Riceve
+  dati (es. Mija sottotetto, −97 dBm).
 - iBeacon `74278bda…` non ricevuto dal mini PC (sull'HP −88 dBm, al limite): probabile
   portata, dipende da dove sta il mini PC.
 - Quando non serve più come riserva: cancellare `~/.ssh/id_migrazione*` sull'HP e

@@ -128,6 +128,24 @@ Per tornare del tutto a MQTT: `docker compose -p dtbridge down`.
   `github.com/dtlzp/relay_dev_demo`): **sospeso**. Non c'è accesso fisico alle schede,
   quindi non è possibile flashare via seriale né fare il backup della flash. Resterebbe
   solo l'OTA dalla pagina di aggiornamento, con il rischio di bloccare una scheda.
+  Ricerca del 09/11 (solo GitHub, la ricerca web non era disponibile):
+  - **Fatto (fonte esterna):** `github.com/kecajtop/dtr0xx_io` contiene componenti
+    ESPHome per i DT-R00x (`dtr0xx_io`, e `dtr008v2io` per il layout 8CH_V2 come il
+    nostro) che gestiscono 74HC595 e 74HC165 insieme. Il suo autore scrive che la
+    scheda DT-R008 V3.6.13 "came with the locked chip" e che ha **sostituito l'ESP32**
+    (ESP32-D0WD-V3) per poterla flashare.
+  - Dingtian vende a parte una "Development Board" (README di `relay_dev_demo`: va
+    chiesta esplicitamente al venditore), segno che le schede normali sono bloccate.
+    `relay_dev_demo` non contiene OTA né tabella delle partizioni.
+  - Altre configurazioni: `misevcik/esphome-templates` (DT-R008.yaml) e
+    `dotdoom/esphome` (heating-og.yaml, DT-R008 rev 3.6.9 flashato via seriale con IO0 a
+    GND). Nessuno ha documentato un passaggio via `upgrade.cgi`.
+  - **Ipotesi:** se il chip ha il secure boot, l'OTA di un'immagine ESPHome non firmata
+    verrebbe rifiutato. Un rifiuto è innocuo se il firmware usa le API OTA standard di
+    ESP-IDF, ma non è verificabile senza provarci. La flash cifrata da sola non
+    impedirebbe l'OTA.
+  - Strada concreta: Development Board Dingtian (stesso formato e morsetti) flashate al
+    banco con ESPHome e sostituite nel quadro, oppure cambio del chip.
 - **Copertura WiFi:** se i buchi lunghi isolati restano frequenti sui relè con segnale
   debole (Notte7 −74, Notte8 −72, Sottotetto4 −68 dBm), conviene migliorare il 2,4 GHz in
   zona notte e nel sottotetto.

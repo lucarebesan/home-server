@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-09 (isolamento ACS).
+Ultima verifica: 2026-11-09 (isolamento ACS; commit HA `249e12e`).
 
 ## Prerequisiti
 
@@ -79,8 +79,9 @@ basso è a 60 °C; se la resistenza è ancora alta e la parte alta raggiunge
 Per il **minimo invernale del bollitore basso**, la nuova automazione avvia
 CP HEAT V2 sotto 25 °C solo con compressore e ventilatore fermi, ACS dedicata
 a 20 °C, resistenza a 38 °C, zone sotto 23,5 °C e sensori validi. Ogni ciclo
-dura al massimo 20 minuti; la guardia lo ferma al raggiungimento di 25 °C,
-per aria immessa fredda rispetto alle medie delle zone o per dati invalidi.
+dura almeno 15 e al massimo 20 minuti (dal commit HA `249e12e`, per evitare
+cicli brevi del compressore): la guardia lo ferma a 25 °C solo dopo 15 minuti,
+mentre gli stop di sicurezza restano immediati (aria immessa fredda rispetto alle medie delle zone o per dati invalidi.
 Una nuova prova attende almeno 30 minuti dopo la scadenza del ciclo
 precedente. Verificare `input_boolean.ecm_acs_minimo_t12_attivo`, inizio/fine
 del ciclo, ventilazione V2, bollitore basso e motivo di arresto nel logbook.
@@ -105,6 +106,23 @@ oltre 40 °C, per scelta esplicita di Luca). Il setpoint della resistenza
 coincide con l'obiettivo: 50/47/44 °C (corretto nel commit HA `a60d704`); al raggiungimento
 dell'obiettivo torna al valore di base 38 °C. La scadenza resta 30 minuti
 prima dell'ora di utilizzo appresa.
+
+Dal commit HA `249e12e` (richiesta di Luca) la preparazione serale si fa **una volta
+al giorno**: raggiunto l'obiettivo, la `05` scrive l'ora in
+`input_datetime.ecm_acs_backup_sera_completato` e la resistenza resta a 38 °C fino
+al giorno dopo. Unica eccezione: bollitore alto sotto 38 °C, recupero con resistenza
+fino a 42 °C a qualsiasi ora, anche dalla rete (`input_boolean.ecm_acs_recupero_38_attivo`),
+poi di nuovo 38 °C. L'accumulo con FV/batteria nella finestra 10:00–17:30 resta
+possibile anche dopo. Il controllo "completata oggi" usa `>` mezzanotte: un helper
+appena creato vale oggi alle 00:00 e non deve contare.
+
+**Setpoint aria della Compact P (dal commit HA `249e12e`).** La Nilan salva ogni
+scrittura, quindi la WRITE scrive il setpoint aria solo quando serve. A riposo è
+fisso a **17 °C** (in riscaldamento il compressore non parte) e viene scritto una
+volta sola. Durante una prova CP HEAT si scrive all'inizio (sensore ambiente CP +
+metà isteresi + 0,1 °C) e poi solo se il compressore spento non potrebbe partire o
+quello acceso sta per fermarsi (termostato: acceso sotto setpoint − isteresi/2,
+spento sopra setpoint + isteresi/2). Anche la guardia, quando ferma, scrive 17 °C.
 
 Prima di un'altra prova, verificare stagione INVERNO, setpoint reale ACS
 compressore 20 °C, resistenza non attiva, ventilazione CP spenta, sensori

@@ -119,9 +119,14 @@ Non è un COP e non misura un contributo causale dello SPLIT all'acqua.
 Richiede dati numerici, CP in HEAT con compressore acceso e resistenza spenta;
 il nuovo marcatore persistente `acs_source_ok` è calcolato prima di recuperare
 eventuali stati vecchi. Campioni precedenti privi del marcatore restano esclusi.
-Attende 8 minuti dopo avvio, cambio combinazione, dati mancanti o variazione
+**Il codice attualmente distribuito**, non ancora allineato alla decisione successiva di
+Luca, attende 8 minuti dopo avvio, cambio combinazione, dati mancanti o variazione
 rapida del bollitore (calo >0,3 °C/min circa o salto >2 °C per campione), poi
-misura finestre non sovrapposte di almeno 10 minuti. Conserva rese nulle e negative.
+misura finestre non sovrapposte di almeno 10 minuti. Questa regola 8+10 non è una
+regola valida concordata per ACSe e non va usata per giudicare le prove: per ACSe la
+temperatura esterna e il suo assestamento sono irrilevanti. La regola da implementare
+per una prova controllata di 20 minuti è al massimo 5 minuti iniziali di avvio e i
+successivi 15 minuti considerati integralmente. Conserva rese nulle e negative.
 Piccoli prelievi non rilevati e stratificazione possono ancora influire: dati
 osservativi, supporto iniziale sotto cinque finestre, nessun comando ACS basato
 automaticamente su questa stima. Nessun uso della temperatura esterna per ACS.

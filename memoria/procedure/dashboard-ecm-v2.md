@@ -40,6 +40,9 @@ Salvare via WebSocket il JSON di backup più recente.
   accesa = "attiva"; nomi brevi ECM Giorno / ECM Notte / ECM Inverno / ECM Manuale / ACS
   Manager (in Diagnostica con il numero, es. "10 · ECM Inverno"); "Motore ECM" per
   ecm-engine; niente nomi di entità (`t_estate`, `ventilatore_compactp`) nei testi visibili.
+- Le viste `sections` vanno a righe: con 3 colonne la quarta sezione finisce sotto la
+  colonna più alta della riga. In Diagnostica i Grafici stanno quindi dentro la sezione
+  "Motore ECM e gateway" (colonna corta), non in una sezione propria.
 - Nei blocchi markdown con tabelle usare `|-` in YAML: con `>-` le righe si uniscono e la tabella si rompe.
 - button-card con `tap_action: none` marca la card `disabled` e le dà
   `pointer-events: none`: nessun tocco arriva all'HTML dei `custom_fields` (in JS con

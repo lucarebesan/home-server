@@ -2468,6 +2468,36 @@ views:
               {% for x in el %}
               - {{ x }}
               {% endfor %}{% endif %}
+          - type: heading
+            heading: Grafici
+            icon: mdi:chart-timeline-variant
+          - type: history-graph
+            title: Temperature · 12 ore
+            hours_to_show: 12
+            entities:
+              - entity: sensor.ecm_temperatura_zona_attiva
+                name: Zona
+              - entity: sensor.egwk_temp_aria_esterna_prima_egwk
+                name: Esterna
+              - entity: sensor.compactp_t1_temperatura_aria_esterna_post_egwk
+                name: Post geotermico
+              - entity: sensor.compactp_t2_temperatura_immissione
+                name: Immissione CP
+              - entity: sensor.compactp_t10_temperatura_sensore_stanza
+                name: Sonda T10
+              - entity: sensor.ble_temperature_mija_garage
+                name: Immissione split
+          - type: history-graph
+            title: Configurazione ECM · 24 ore
+            hours_to_show: 24
+            entities:
+              - entity: sensor.ecm_configurazione_reale
+                name: Reale
+              - entity: input_select.stagione
+                name: Stagione
+              - entity: sensor.ecm_fascia_climatica_attiva
+                name: Fascia
+
 
       # 3 · Automazioni ECM, per funzione. Righe senza toggle: il tocco apre solo i dettagli.
       - type: grid
@@ -2537,40 +2567,6 @@ views:
               - type: section
                 label: Test
               - {<<: *aut, entity: automation.99_ecm_test_nilan_write, name: 99 · test Nilan WRITE}
-
-      # 4 · Grafici
-      - type: grid
-        column_span: 1
-        cards:
-          - type: heading
-            heading: Grafici
-            icon: mdi:chart-timeline-variant
-          - type: history-graph
-            title: Temperature · 12 ore
-            hours_to_show: 12
-            entities:
-              - entity: sensor.ecm_temperatura_zona_attiva
-                name: Zona
-              - entity: sensor.egwk_temp_aria_esterna_prima_egwk
-                name: Esterna
-              - entity: sensor.compactp_t1_temperatura_aria_esterna_post_egwk
-                name: Post geotermico
-              - entity: sensor.compactp_t2_temperatura_immissione
-                name: Immissione CP
-              - entity: sensor.compactp_t10_temperatura_sensore_stanza
-                name: Sonda T10
-              - entity: sensor.ble_temperature_mija_garage
-                name: Immissione split
-          - type: history-graph
-            title: Configurazione ECM · 24 ore
-            hours_to_show: 24
-            entities:
-              - entity: sensor.ecm_configurazione_reale
-                name: Reale
-              - entity: input_select.stagione
-                name: Stagione
-              - entity: sensor.ecm_fascia_climatica_attiva
-                name: Fascia
 
   # ───────────────────────────── APPRENDIMENTO ─────────────────────────────
   - title: Apprendimento

@@ -63,6 +63,17 @@ serale con resistenza; `packages/ecm_acs_prova_caldo.yaml` contiene guardia
 e helper. Le altre automazioni decisionali ECM restano spente: l'elenco e i
 risultati della prima prova sono nel diario del 09/11.
 
+Per controllare la preparazione serale, leggere in HA
+`input_number.ecm_acs_ora_uso_appresa` (ore decimali),
+`input_number.ecm_acs_campioni_appresi`, bollitore alto/basso e
+`input_number.ecm_acs_resa_t11_resistenza`. La scadenza della `05` è
+30 minuti prima dell'ora appresa se ci sono almeno tre eventi validi;
+in caso contrario vale 17:10. L'avvio effettivo è anticipato in base ai
+gradi mancanti e alla resa conservativa della resistenza. Verificare il
+comando `input_number.acs_r_set` e il setpoint reale della CP, poi la
+temperatura del bollitore alto alla scadenza. Il ramo FV/batteria può
+riscaldare prima dell'avvio di copertura.
+
 Prima di un'altra prova, verificare stagione INVERNO, setpoint reale ACS
 compressore 20 °C, resistenza non attiva, ventilazione CP spenta, sensori
 bollitore/aria/zone validi, `09 ECM MANUALE` e prove automatiche del motore

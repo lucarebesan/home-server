@@ -1,6 +1,6 @@
 # Migrazione dall'HP al mini PC
 
-Ultima verifica: 2026-11-09 (preparazione e prova completate; cutover non ancora fatto).
+Ultima verifica: 2026-11-09 16:09 (cutover completato e verificato, vedi "Esito").
 
 Scopo: spostare tutti i servizi dall'HP (`hp-homeassistant`) al mini PC (`minipc`) con
 downtime breve e l'HP intatto come ripristino. Script in `sorgenti/migrazione/`.
@@ -50,7 +50,26 @@ Rete del mini PC: ethernet preferita (metrica 100), WiFi di riserva (metrica 600
 5. `04-crea-container.sh`: 11 container in stato `Created`, nessuno avviato.
 6. Riavvio del mini PC con cavo: nessun container partito da solo, ethernet preferita.
 
-## Cutover (da fare, ~15 min di downtime)
+## Esito del cutover (09/11)
+
+- Servizi fermi dalle 15:51:02 (HP) a 16:04:20 (mini PC): **~13 min**. Copia finale
+  4 min 44 s; checksum dei DB HA ed ECM identici tra HP e mini PC; nella config HA
+  mancano solo le `__pycache__` (escluse apposta).
+- Prenotazione `.100` sul box spostata da Claude via interfaccia web (sessione già
+  autenticata dall'utente). Durante l'operazione è stata aperta per errore la voce del
+  relè Giorno1: chiusa con Annulla, verificata invariata.
+- HA risponde in ~5 s dall'avvio (prima minuti); esterno 200 con certificato valido;
+  71 switch relè/luci disponibili; `nilan_batch` 39/39; ECM campiona ogni 60 s; MQTT con
+  `ecm_engine`, `dtbridge`, `dtdiag`; Portainer e Configurator 200.
+- Confronto con l'ultimo stato sull'HP: delle 369 entità `unavailable` solo 10 erano
+  valide prima, tutte Bluetooth. Causa: l'integrazione Bluetooth di HA conosceva solo
+  l'adattatore dell'HP. Aggiunto `hci0` `44:90:BA:32:32:BE` (flusso di configurazione) e
+  rimossa la voce vecchia `C8:21:58:3F:2C:BB`: ATC C1A9 tornato. Le altre `unavailable`
+  (anche `nilan_*` e `toshiba_*` vecchie) lo erano già sull'HP.
+- Chiave temporanea rimossa da `authorized_keys` del mini PC; restano sull'HP spento i
+  file `~/.ssh/id_migrazione*` (innocui senza la riga autorizzata).
+
+## Cutover (fatto il 09/11; passi per ripeterlo)
 
 Prerequisito: ok esplicito dell'utente e accesso all'interfaccia del box Iliad.
 
@@ -95,6 +114,15 @@ nuovo sul MAC WiFi dell'HP. HP: accendere e avviare i container fermati al passo
 
 ## Questioni aperte
 
+- `ble_monitor` ha ancora nelle opzioni il MAC dell'adattatore HP: a ogni avvio scrive
+  un errore e passa da solo all'adattatore di default (funziona). Da aggiornare dalle
+  opzioni dell'integrazione.
+- iBeacon `74278bda…` non ricevuto dal mini PC (sull'HP −88 dBm, al limite): probabile
+  portata, dipende da dove sta il mini PC.
+- Quando non serve più come riserva: cancellare `~/.ssh/id_migrazione*` sull'HP e
+  decidere cosa fare dell'HP.
+- I 4 "Created" mai esistiti sul mini PC (`grott`, `matter-hub`, `adguard`,
+  `reolink-tv`) andranno ricreati dai loro stack solo se servono.
 - `ha_backup_daily.sh` non compare nella crontab di `home`: non è chiaro se e come è
   pianificato.
 - Alias `hp` non configurato su tutti i PC (mancava sul Mac di Mattia il 09/11).

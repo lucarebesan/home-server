@@ -1,25 +1,30 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-09 (sezione ECM/ACS; le altre sezioni restano alla verifica precedente).
+Ultima verifica: 2026-11-09 16:09 (dopo la migrazione al mini PC: macchina, rete, container; le sezioni ECM/ACS restano alla verifica del mattino).
 
-> **Migrazione in corso (09/11):** il nuovo server `minipc` (ethernet `.76`, WiFi `.25`) è
-> pronto con i container creati ma non avviati. Fino al cutover i servizi girano
-> sull'HP descritto qui sotto. Vedi `procedure/migrazione-minipc.md`.
+**Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
+container fermati apposta: è la copia di riserva. Migrazione, ripristino e
+dettagli in `procedure/migrazione-minipc.md`.
 
-- Nome host: `hp-homeassistant`.
-- Sistema operativo: Linux.
-- Indirizzo SSH: `192.168.1.100`, porta 22.
-- Utente SSH: `home`.
-- Alias SSH configurato su questo PC: `hp` (comando `ssh hp`).
-- Macchina: HP Pavilion x360 Convertible, Intel Core i3-7100U (2 core, 4 CPU logiche), circa 3,2 GiB di RAM utilizzabile e 3,9 GiB di swap.
-- Sistema rilevato: Ubuntu 26.04.1 LTS, kernel `7.0.0-42-generic`, architettura x86-64.
-- Disco: HGST `HTS545050A7E680`, circa 466 GiB; filesystem principale ext4 su `/dev/sda3`, partizione EFI su `/dev/sda2`.
+- Nome host: `minipc`.
+- Indirizzo SSH: `192.168.1.100` (ethernet), porta 22. Host key SSH copiate dall'HP:
+  chi conosceva l'HP non vede avvisi.
+- Utenti: `home` (operativo, gruppo docker, solo chiave SSH, niente sudo) e `minipc`
+  (amministratore, sudo con password). Un comando privilegiato va consegnato all'utente
+  come `ssh -t minipc@192.168.1.100 'sudo …'`.
+- Alias SSH `hp` (comando `ssh hp`): vale ancora, punta a `.100`; non è configurato su tutti i PC.
+- Macchina: mini PC AMD Ryzen 7 5825U (8 core, 16 thread), 14 GiB di RAM, SSD BIWIN 477 GB (ext4 su `/dev/sda2`, EFI su `/dev/sda1`).
+- Sistema: Ubuntu Server 26.04.1 LTS, kernel `7.0.0-43-generic`, fuso Europe/Rome. Docker CE dal repository ufficiale, store immagini containerd.
+- Bluetooth: adattatore Realtek `hci0` `44:90:BA:32:32:BE`, configurato in HA dal 09/11.
 - Docker e SSH sono attivi. Home Assistant, MQTT (mosquitto), nginx, Portainer e altri servizi sono in container Docker. Per i nomi aggiornati usare `docker ps -a`.
 - Per spegnere il server **non** fermare i singoli container: con `restart: unless-stopped` non ripartirebbero al boot. Usare `poweroff`.
 
 ## Rete
 
-- Solo WiFi: 5 GHz `Rebesan_ILIAD5`, bloccata sul BSSID del box `3A:07:16:65:98:B0` (dall'8/11). La porta ethernet non è usata.
+- Ethernet `enp2s0` (`68:1d:ef:66:29:75`) con prenotazione DHCP `.100` sul box (voce
+  "hp-homeassistant", MAC aggiornato il 09/11). WiFi `wlp1s0` (`44:90:ba:32:32:bd`, `.25`)
+  di riserva: networkd preferisce l'ethernet (metrica 100 contro 600). Se il cavo
+  manca il server resta raggiungibile solo su `.25`. Config in `/etc/netplan/`.
 - Box Iliad `192.168.1.254` (router e DHCP): `Rebesan_ILIAD` a 2,4 GHz sul canale 11 dal 7/11, `Rebesan_ILIAD5` a 5 GHz.
 - Router EOLO `192.168.1.253`: secondo access point con gli stessi nomi di rete, DHCP spento.
 - Accesso esterno: `https://ha.lrhub.duckdns.org` (nginx con certificato Let's Encrypt).

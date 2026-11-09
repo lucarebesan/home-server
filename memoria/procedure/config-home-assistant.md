@@ -63,6 +63,30 @@ serale con resistenza; `packages/ecm_acs_prova_caldo.yaml` contiene guardia
 e helper. Le altre automazioni decisionali ECM restano spente: l'elenco e i
 risultati della prima prova sono nel diario del 09/11.
 
+Dal commit HA `423b2da` il blocco ACS della WRITE opera in entrambe le
+stagioni. In INVERNO inoltra il setpoint tecnico 20 °C per escludere l'ACS
+dedicata, il setpoint della resistenza e CP HEAT solo nei cicli sorvegliati.
+In ESTATE inoltra il setpoint ACS dedicata limitato a 25–50 °C e usa
+ventilazione V1 solo quando il bollitore basso è sotto quel setpoint e le
+zone non sono in protezione freddo. Con protezione freddo usa 25 °C,
+ventilazione OFF e consente la resistenza solo dopo aver verificato la CP
+dedicata al minimo e il ventilatore fermo. I comandi climatici ECM generali
+restano esclusi. La WRITE non inoltra riscaldamenti se il bollitore alto o
+basso è a 60 °C; se la resistenza è ancora alta e la parte alta raggiunge
+60 °C, invia il setpoint di base 38 °C. Il limite macchina letto da HA era
+80 °C il 09/11: la soglia software non garantisce assenza di inerzia termica.
+
+Per il **minimo invernale del bollitore basso**, la nuova automazione avvia
+CP HEAT V2 sotto 25 °C solo con compressore e ventilatore fermi, ACS dedicata
+a 20 °C, resistenza a 38 °C, zone sotto 23,5 °C e sensori validi. Ogni ciclo
+dura al massimo 20 minuti; la guardia lo ferma al raggiungimento di 25 °C,
+per aria immessa fredda rispetto alle medie delle zone o per dati invalidi.
+Una nuova prova attende almeno 30 minuti dopo la scadenza del ciclo
+precedente. Verificare `input_boolean.ecm_acs_minimo_t12_attivo`, inizio/fine
+del ciclo, ventilazione V2, bollitore basso e motivo di arresto nel logbook.
+Questa soglia è un tentativo di recupero, non una garanzia fisica di 25 °C
+in ogni condizione.
+
 Per controllare la preparazione serale, leggere in HA
 `input_number.ecm_acs_ora_uso_appresa` (ore decimali),
 `input_number.ecm_acs_campioni_appresi`, bollitore alto/basso e

@@ -41,7 +41,7 @@ Ultima verifica: 2026-11-09 (sezione ECM/ACS; le altre sezioni restano alla veri
 
 - Crontab di `home`: rinnovo del certificato alle 04:17 (vedi `procedure/duckdns-certificato.md`).
 - `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti; dal 09/11 campiona anche bollitore alto/basso e marcatore della prova ACS indiretta. Prove automatiche verificate spente il 09/11.
-- HA: `00-NILAN WRITE` è accesa dal 09/11 in modalità temporanea **solo ACS**; il vecchio ramo generale termina senza eseguire comandi. `05-ECM ACS MANAGER` resta accesa e prepara l'ACS serale; la guardia della prova CP HEAT è accesa. Le automazioni decisionali ECM generali, incluso `07` ricambio aria, sono spente per isolamento ACS. Vedi `diario/2026-11.md` per elenco e ripristino.
+- HA: `00-NILAN WRITE` è accesa dal 09/11 in modalità temporanea **solo ACS**, ora per INVERNO ed ESTATE; il vecchio ramo generale termina senza eseguire comandi. `05-ECM ACS MANAGER` resta accesa e prepara l'ACS serale. In inverno la guardia CP HEAT e il mantenimento del bollitore basso a 25 °C sono attivi. Le automazioni decisionali ECM generali, incluso `07` ricambio aria, sono spente per isolamento ACS. Vedi `diario/2026-11.md` per elenco e ripristino.
 - HA: `10 - ECM INVERNO` ogni 5 minuti, solo in INVERNO (creata e spenta l'8/11, in attesa dell'ok di Luca).
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.
 

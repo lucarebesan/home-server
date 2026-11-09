@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-08.
+Ultima verifica: 2026-11-09 (campionamento ACS).
 
 ## Scopo
 
@@ -10,7 +10,7 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 
 ## Funzionamento
 
-- Ogni 60 s legge da HA (una richiesta `POST /api/template`) e salva un campione in `~/ecm-engine/data/engine.db` (SQLite, conservazione 400 giorni).
+- Ogni 60 s legge da HA (una richiesta `POST /api/template`) e salva un campione in `~/ecm-engine/data/engine.db` (SQLite, conservazione 400 giorni). Dal 09/11 salva anche temperatura del bollitore alto/basso (`t11`, `t12`) e marcatore della prova ACS indiretta (`acs_heat_test`); per i campioni precedenti queste colonne restano vuote. Potenza CP/SPLIT, aria immessa, zone e temperatura esterna erano già registrate.
 - Ogni 15 minuti ricalcola l'apprendimento (circa 3,5 s su 180 mila campioni) e aggiorna le entità.
 - Pubblica in HA via MQTT discovery: `sensor.ecm_engine_*` (stato, in breve, migliore caldo/freddo, apprendimento, prova proposta, prova in corso, ultime prove, da misurare, dettaglio, avvisi), `binary_sensor.ecm_engine_prova_avviabile`, `button.ecm_engine_avvia_prova`, `switch.ecm_engine_prove_automatiche`.
 - Le entità sono mostrate nella tab "Apprendimento" della dashboard ECM v2.

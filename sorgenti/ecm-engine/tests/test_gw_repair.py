@@ -34,3 +34,23 @@ def test_energy_power():
          1200: {"Totale energia importata": "100.050"}, 4000: {"Totale energia importata": "101.000"},
          4600: {"Totale energia importata": "100.900"}, 5200: {"Totale energia importata": None}}
     assert energy_power(m) == [(0, 600, 300.0), (600, 1200, 0.0)]
+
+
+def test_rebuild_conserva_bollitore_e_marcatori_acs():
+    # Il gateway non ha bollitore né marcatori ACS: la riga riparata deve tenere quelli salvati dal vivo.
+    row = dict(ROW, t11=45.0, t12=30.0, acs_heat_test=1, acs_source_ok=1)
+    s = rebuild(row, dict(CP, cp_resistenza="ON"), SPLIT, None)
+    assert (s["t11"], s["t12"], s["acs_heat_test"], s["acs_source_ok"]) == (45.0, 30.0, 1, 1)
+
+
+def test_repair_su_db_non_azzera_le_colonne_acs(tmp_path, monkeypatch):
+    import ecm_engine.gw_repair as gr
+    from ecm_engine.store import Store
+    st = Store(str(tmp_path / "e.db"))
+    st.add_samples([dict(ROW, code=None, tipo=None, t11=45.0, t12=30.0, acs_heat_test=1, acs_source_ok=1)])
+    monkeypatch.setattr(gr, "decode_cp", lambda raw: CP)
+    monkeypatch.setattr(gr, "decode_split", lambda raw: SPLIT)
+    _, _, n = gr.repair(st, {600: {}}, {600: {}}, 0, 10_000, apply=True)
+    assert n == 1
+    r = st.samples_since(0)[0]
+    assert r["valido"] == 1 and (r["t11"], r["t12"], r["acs_heat_test"], r["acs_source_ok"]) == (45.0, 30.0, 1, 1)

@@ -265,3 +265,14 @@ def test_replace_invalid_only_touches_listed_motivi(tmp_path):
     assert rows[840]["code"] == 99
     assert done == {("dato mancante t_zg", "valido"): 1, ("cp non classificato", "valido"): 1}
     assert len(written) == 2
+
+
+def test_replace_invalid_conserva_bollitore_e_marcatori_acs(tmp_path):
+    from ecm_engine.store import Store
+    st = Store(str(tmp_path / "e.db"))
+    st.add_samples([{"ts": 600, "valido": 0, "code": None, "tipo": None, "motivo": "cp non classificato",
+                     "t11": 45.0, "t12": 30.0, "acs_heat_test": 1, "acs_source_ok": 0}])
+    new = {"ts": 600, "valido": 1, "code": 7, "tipo": "NEUTRO", "motivo": None, "cp_compressore": "OFF"}
+    g.replace_invalid(st, [new], 1000)
+    r = st.samples_since(0)[0]
+    assert r["code"] == 7 and (r["t11"], r["t12"], r["acs_heat_test"], r["acs_source_ok"]) == (45.0, 30.0, 1, 0)

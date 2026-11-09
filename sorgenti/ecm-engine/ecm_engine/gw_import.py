@@ -20,7 +20,7 @@ from zoneinfo import ZoneInfo
 
 from . import config
 from .engine import build_sample
-from .store import SAMPLE_COLS, Store, _norm_onoff
+from .store import LIVE_ONLY_COLS, SAMPLE_COLS, Store, _norm_onoff
 
 FILES = {
     "cp": ["cp_135_90.json", "cp_90_45.json", "cp_45_0.json", "cp_topup.json"],
@@ -277,15 +277,19 @@ def replace_invalid(store, samples: list[dict], before: int, motivi=REPLACE_MOTI
     done: Counter = Counter()
     written = []
     with store._lock:
-        old = {r[0]: r[1] for r in store.db.execute(
-            f"SELECT ts, motivo FROM samples WHERE ts < ? AND valido = 0 AND motivo IN ({','.join('?' * len(motivi))})",
+        old = {r["ts"]: dict(r) for r in store.db.execute(
+            f"SELECT ts, motivo, {','.join(LIVE_ONLY_COLS)} FROM samples "
+            f"WHERE ts < ? AND valido = 0 AND motivo IN ({','.join('?' * len(motivi))})",
             (before, *motivi))}
         rows = []
         for s in samples:
             if s["ts"] in old and s["ts"] < before:
-                done[(old[s["ts"]], "valido" if s["valido"] else s["motivo"])] += 1
+                prev = old[s["ts"]]
+                done[(prev["motivo"], "valido" if s["valido"] else s["motivo"])] += 1
                 written.append(s)
-                s = dict(s, cp_compressore=_norm_onoff(s.get("cp_compressore")))
+                # il datalogger non ha bollitore né marcatori ACS: tieni quelli registrati dal vivo
+                kept = {k: prev[k] for k in LIVE_ONLY_COLS if s.get(k) is None}
+                s = dict(s, **kept, cp_compressore=_norm_onoff(s.get("cp_compressore")))
                 rows.append([s.get(c) for c in SAMPLE_COLS])
         store.db.executemany(f"INSERT OR REPLACE INTO samples ({','.join(SAMPLE_COLS)}) "
                              f"VALUES ({','.join('?' * len(SAMPLE_COLS))})", rows)

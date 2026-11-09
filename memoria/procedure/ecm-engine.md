@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-09 (campionamento ACS).
+Ultima verifica: 2026-11-09 (campionamento ACS; riparazioni che conservano le colonne ACS).
 
 ## Scopo
 
@@ -11,7 +11,7 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 ## Funzionamento
 
 - Ogni 60 s legge da HA (una richiesta `POST /api/template`) e salva un campione in `~/ecm-engine/data/engine.db` (SQLite, conservazione 400 giorni). Dal 09/11 salva anche temperatura del bollitore alto/basso (`t11`, `t12`) e marcatore della prova ACS indiretta (`acs_heat_test`); per i campioni precedenti queste colonne restano vuote. Potenza CP/SPLIT, aria immessa, zone e temperatura esterna erano già registrate.
-- Le due temperature del bollitore sono salvate in **ogni** campione, con il codice della combinazione CP/SPLIT quando classificabile: valgono anche per CP HEAT V3 + SPLIT HEAT V1 e per il normale riscaldamento, non soltanto per le prove marcate `acs_heat_test`. Per il nuovo calcolo della resa ACS e i suoi filtri vedere la sezione dedicata più sotto. La tabella `samples` conserva una riga per timestamp: i nuovi minuti si aggiungono, mentre import o riparazioni dello stesso minuto possono sostituire quella riga (`INSERT OR REPLACE`).
+- Le due temperature del bollitore sono salvate in **ogni** campione, con il codice della combinazione CP/SPLIT quando classificabile: valgono anche per CP HEAT V3 + SPLIT HEAT V1 e per il normale riscaldamento, non soltanto per le prove marcate `acs_heat_test`. Per il nuovo calcolo della resa ACS e i suoi filtri vedere la sezione dedicata più sotto. La tabella `samples` conserva una riga per timestamp: i nuovi minuti si aggiungono, mentre import o riparazioni dello stesso minuto possono sostituire quella riga (`INSERT OR REPLACE`). Le colonne che il datalogger non conosce (`t11`, `t12`, `acs_heat_test`, `acs_source_ok`, elenco `LIVE_ONLY_COLS` in `store.py`) vengono conservate da `gw_repair` e da `gw_import --replace-before`: una colonna aggiunta al campionamento dal vivo va inserita anche in quell'elenco.
 - Ogni 15 minuti ricalcola l'apprendimento (circa 3,5 s su 180 mila campioni) e aggiorna le entità.
 - Pubblica in HA via MQTT discovery: `sensor.ecm_engine_*` (stato, in breve, migliore caldo/freddo, apprendimento, prova proposta, prova in corso, ultime prove, da misurare, dettaglio, avvisi), `binary_sensor.ecm_engine_prova_avviabile`, `button.ecm_engine_avvia_prova`, `switch.ecm_engine_prove_automatiche`.
 - Le entità sono mostrate nella tab "Apprendimento" della dashboard ECM v2.
@@ -69,8 +69,6 @@ Quando HA ha perso letture di stato (minuti `cp non classificato` / `toshiba non
 - `sensor.ecm_engine_stato` = `online`.
 - `docker logs ecm-engine` senza `Traceback`; riga di log con la durata dell'apprendimento.
 - Campioni recenti in `engine.db` (l'ultimo ha meno di 2 minuti).
-
-## Limiti noti
 
 ## Apprendimento ACS per combinazione (09/11)
 

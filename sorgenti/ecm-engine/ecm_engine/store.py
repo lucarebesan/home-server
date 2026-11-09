@@ -6,6 +6,10 @@ SAMPLE_COLS = ["ts", "code", "tipo", "valido", "motivo", "stagione", "test_id", 
                "tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext", "soc", "pv",
                "load", "imp", "discharge", "charge", "t11", "t12", "acs_heat_test", "acs_source_ok"]
 
+# Colonne che solo il campionamento dal vivo conosce (il datalogger no): import e
+# riparazioni che riscrivono una riga esistente devono conservarle.
+LIVE_ONLY_COLS = ("t11", "t12", "acs_heat_test", "acs_source_ok")
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS samples (
   ts INTEGER PRIMARY KEY, code INTEGER, tipo TEXT, valido INTEGER, motivo TEXT, stagione TEXT,

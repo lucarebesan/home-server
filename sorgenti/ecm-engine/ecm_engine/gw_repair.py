@@ -20,14 +20,14 @@ from collections import Counter
 from . import config
 from .engine import build_sample
 from .gw_import import CP_COLS, DEV_MAX_AGE_S, METER_COL, METER_MAX_AGE_S, SPLIT_COLS, num, StepLookup, decode_cp, decode_split, parse_chunks, parse_ts
-from .store import SAMPLE_COLS, Store, _norm_onoff
+from .store import LIVE_ONLY_COLS, SAMPLE_COLS, Store, _norm_onoff
 
 DEV_CP, DEV_SPLIT, DEV_M_CP = 2001969, 2002144, 2002794
 ENERGY_COL = "Totale energia importata"
 ENERGY_MAX_GAP_S = 1800   # oltre, nessuna media (record mancanti per più di mezz'ora)
 REPAIR_MOTIVI = ("cp non classificato", "toshiba non classificato", "resistenza ACS")
 MEASURE_COLS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t_ext", "soc", "pv",
-                "load", "imp", "discharge", "charge"]
+                "load", "imp", "discharge", "charge", *LIVE_ONLY_COLS]
 
 
 def _dev(chunk: dict) -> int | None:

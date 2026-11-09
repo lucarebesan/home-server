@@ -2299,6 +2299,88 @@ views:
               Inverno: temperatura = Set inverno ({{ '%.1f' | format(b) | replace('.', ',') }}) + coefficiente × Δ comfort ({{ '%.1f' | format(d) | replace('.', ',') }}). Il coefficiente limite dà il limite superiore; l'inferiore è Min inverno.
               {%- endif %}
 
+          - type: heading
+            heading: Interruttori automazioni
+            icon: mdi:toggle-switch-outline
+          - type: markdown
+            text_only: true
+            grid_options:
+              columns: full
+            content: Tocca per accendere o spegnere (chiede conferma). Tieni premuto per i dettagli.
+          - &interruttore
+            type: custom:button-card
+            entity: automation.nilan_write
+            name: 00 · Nilan WRITE
+            show_state: true
+            show_icon: true
+            grid_options:
+              columns: full
+            tap_action:
+              action: toggle
+              confirmation:
+                text: "Accendere o spegnere 00-NILAN WRITE? Da spenta nessun comando arriva a Nilan e Toshiba: decidono le macchine da sole."
+            hold_action:
+              action: more-info
+            state_display: "[[[ return entity?.state === 'on' ? 'attiva' : (entity?.state === 'off' ? 'spenta' : 'non disponibile'); ]]]"
+            styles:
+              card:
+                - padding: 10px 12px
+              grid:
+                - grid-template-areas: '"i n s"'
+                - grid-template-columns: 24px 1fr auto
+                - column-gap: 10px
+              icon:
+                - width: 22px
+              name:
+                - justify-self: start
+                - font-size: 14px
+                - font-weight: 500
+              state:
+                - font-size: 13px
+                - font-weight: 600
+            state:
+              - value: 'on'
+                icon: mdi:toggle-switch
+                color: var(--success-color)
+              - value: 'off'
+                icon: mdi:toggle-switch-off-outline
+                color: var(--disabled-text-color)
+          - <<: *interruttore
+            entity: automation.01_ecm_eg_estate_fascia_giorno
+            name: EG · ECM Giorno
+            tap_action:
+              action: toggle
+              confirmation:
+                text: "Accendere o spegnere ECM Giorno (estate, fascia giorno)?"
+          - <<: *interruttore
+            entity: automation.01_ecm_en_estate_fascia_notturna
+            name: EN · ECM Notte
+            tap_action:
+              action: toggle
+              confirmation:
+                text: "Accendere o spegnere ECM Notte (estate, fascia notte)?"
+          - <<: *interruttore
+            entity: automation.01_ecm_fc_estate
+            name: FC · Free cooling
+            tap_action:
+              action: toggle
+              confirmation:
+                text: "Accendere o spegnere l'automazione Free cooling?"
+          - <<: *interruttore
+            entity: automation.02_ecm_safety_guard
+            name: 02 · protezione limiti
+            tap_action:
+              action: toggle
+              confirmation:
+                text: "Accendere o spegnere la protezione limiti (corregge i valori fuori dai limiti)?"
+          - <<: *interruttore
+            entity: automation.06_ecm_humidity_override
+            name: 06 · umidità lavanderia
+            tap_action:
+              action: toggle
+              confirmation:
+                text: "Accendere o spegnere la ventilazione per l'umidità della lavanderia?"
+
   # ───────────────────────────── DIAGNOSTICA ─────────────────────────────
   - title: Diagnostica
     path: diagnostica

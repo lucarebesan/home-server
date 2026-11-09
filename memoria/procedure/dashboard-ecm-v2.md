@@ -70,6 +70,10 @@ Salvare via WebSocket il JSON di backup più recente.
   conteneva errori, vedi diario 09/11 sera).
 - **Impostazioni**: controlli Mushroom a pulsanti e select; bottoni stagione con conferma;
   gruppo "Avanzate" separato (isteresi CP, cambio stagione, coefficienti).
+  In fondo "Interruttori automazioni": WRITE, EG, EN, FC, 02 protezione limiti, 06 umidità
+  lavanderia (gli stessi che la vecchia Diagnostica permetteva di accendere/spegnere), con
+  conferma al tocco; tenendo premuto si apre il dettaglio. È l'unico punto della plancia
+  con interruttori di automazioni.
 - **Diagnostica**: riepilogo salute (problemi, avvisi), freschezza dei dati, ecm-engine e
   gateway (`sensor.nilan_batch`, aggiornato ogni 20 s), tutte le automazioni ECM con stato
   e ultima esecuzione, senza interruttori.

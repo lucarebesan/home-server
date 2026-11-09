@@ -1319,6 +1319,9 @@ views:
             styles:
               card:
                 - padding: 12px
+                # tap_action none rende la card "disabled" (pointer-events none): servono i tocchi sui nodi
+                - pointer-events: auto
+                - cursor: default
               grid:
                 - grid-template-areas: '"albero"'
                 - grid-template-columns: 1fr
@@ -1757,46 +1760,82 @@ views:
                   const ICO = { ok: 'mdi:check-circle-outline', scelta: 'mdi:pause-circle-outline', info: 'mdi:arrow-right-circle-outline', attenzione: 'mdi:alert-outline', errore: 'mdi:close-octagon-outline' };
                   const GRIGIO = 'var(--disabled-text-color, #9e9e9e)';
                   const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-                  const tap = (e) => `onclick="this.dispatchEvent(new CustomEvent('hass-more-info',{bubbles:true,composed:true,detail:{entityId:'${e}'}}))"`;
-                  const conn = (attivo) => `<div style="margin-left:18px;height:12px;border-left:2px ${attivo ? 'solid var(--primary-color)' : `dashed ${GRIGIO}`}"></div>`;
+                  // Icone con larghezza fissa: button-card dà a ha-icon una larghezza in %, che sballa i flex.
+                  const ico = (i, px, col, extra = '') => `<ha-icon icon="${i}" style="--mdc-icon-size:${px}px;width:${px}px;height:${px}px;flex:none;margin:0;color:${col};${extra}"></ha-icon>`;
+                  const conn = (attivo) => `<div style="margin-left:14px;height:8px;border-left:2px ${attivo ? 'solid var(--primary-color)' : `dashed ${GRIGIO}`}"></div>`;
+                  // Etichette brevi per il riepilogo del percorso (id nodo → etichetta). Nodi assenti = non nel riepilogo.
+                  const BREVE = { write: 'WRITE', writeIsolata: 'ACS isolata', manuale: 'Gestione', stagione: 'Stagione', fc: 'Free cooling', fascia: 'Fascia', gestore: 'Logica', banda: 'Zona', livello: 'Livello', inverno10: 'ECM inverno', nilan: 'Nilan', toshiba: 'Split', vent: 'Ventilazione', acsModo: 'ACS', allineato: 'Esito' };
 
-                  const nodoHtml = (n) => {
+                  // Valuta ogni nodo una volta sola.
+                  const valuta = (n) => {
                     const attivo = n.attivo(c);
-                    const ent = n.entitaFn ? n.entitaFn(c) : n.entita;
                     const es = n.esito(c);
-                    const col = attivo ? (es ? COL[es.tipo] : 'var(--primary-color)') : GRIGIO;
-                    const val = n.valore(c);
-                    const so = n.soglia(c);
-                    const righe = n.righe ? n.righe(c) : [];
-                    const extra = n.extra ? n.extra(c) : '';
-                    const op = attivo ? 1 : 0.5;
-                    const righeHtml = righe.map(r => `<div style="display:flex;gap:8px;align-items:baseline;padding:3px 0;border-top:1px solid var(--divider-color)"><ha-icon icon="${ICO[r.tipo]}" style="--mdc-icon-size:14px;color:${attivo ? COL[r.tipo] : GRIGIO};flex:none"></ha-icon><span style="flex:1;color:var(--primary-text-color)">${esc(r.n)}</span><span style="text-align:right;color:var(--secondary-text-color)">${esc(r.v)}</span></div>`).join('');
-                    return `<div role="button" tabindex="0" ${tap(ent)} style="cursor:pointer;opacity:${op};border:1px ${attivo ? 'solid' : 'dashed'} var(--divider-color);border-left:4px solid ${col};border-radius:10px;padding:8px 10px;background:var(--card-background-color)">
-                      <div style="display:flex;gap:8px;align-items:baseline"><span style="flex:1;font-size:13px;font-weight:600;color:var(--primary-text-color)">${esc(n.domanda)}</span>${val ? `<span style="font-size:14px;font-weight:700;color:${attivo ? col : GRIGIO};text-align:right">${esc(val)}</span>` : ''}</div>
-                      ${so ? `<div style="font-size:11px;color:var(--secondary-text-color);margin-top:2px">${esc(so)}</div>` : ''}
-                      ${extra}
-                      ${righeHtml ? `<div style="font-size:12px;margin-top:6px">${righeHtml}</div>` : ''}
-                      ${es ? `<div style="display:flex;gap:6px;align-items:flex-start;margin-top:6px;font-size:12.5px;color:${attivo ? 'var(--primary-text-color)' : GRIGIO}"><ha-icon icon="${attivo ? ICO[es.tipo] : 'mdi:minus-circle-outline'}" style="--mdc-icon-size:16px;color:${col};flex:none;margin-top:1px"></ha-icon><span>${esc(es.testo)}</span></div>` : ''}
-                    </div>`;
+                    const tipo = es ? es.tipo : 'info';
+                    return { n, attivo, es, tipo, col: attivo ? COL[tipo] : GRIGIO, val: n.valore(c), so: n.soglia(c), righe: n.righe ? n.righe(c) : [], extra: n.extra ? n.extra(c) : '' };
                   };
-                  const catena = (nodi) => nodi.map((n, i) => (i ? conn(n.attivo(c)) : '') + nodoHtml(n)).join('');
+
+                  // Nodo chiudibile: riga con domanda e valore; la spiegazione si apre toccando.
+                  // Aperto di default solo se c'è qualcosa da guardare (attenzione/errore).
+                  const nodoHtml = (v) => {
+                    const { n, attivo, es, tipo, col, val, so, righe, extra } = v;
+                    // Lo stato aperto/chiuso sopravvive ai ridisegni della card (salvato in window per id nodo).
+                    const memo = window.__ecmAlberoAperti || {};
+                    const aperto = n.id in memo ? memo[n.id] : (attivo && (tipo === 'attenzione' || tipo === 'errore'));
+                    const righeHtml = righe.map(r => `<div style="display:flex;gap:8px;align-items:baseline;padding:3px 0;border-top:1px solid var(--divider-color)">${ico(ICO[r.tipo], 14, attivo ? COL[r.tipo] : GRIGIO)}<span style="flex:1;color:var(--primary-text-color)">${esc(r.n)}</span><span style="text-align:right;color:var(--secondary-text-color)">${esc(r.v)}</span></div>`).join('');
+                    return `<details ${aperto ? 'open' : ''} style="opacity:${attivo ? 1 : 0.55};border:1px ${attivo ? 'solid' : 'dashed'} var(--divider-color);border-left:4px solid ${col};border-radius:10px;background:var(--card-background-color)">
+                      <summary onclick="event.preventDefault();event.stopPropagation();const d=this.parentElement;d.open=!d.open;(window.__ecmAlberoAperti=window.__ecmAlberoAperti||{})['${n.id}']=d.open;" style="list-style:none;cursor:pointer;display:flex;gap:8px;align-items:center;padding:8px 10px">
+                        ${ico(attivo ? ICO[tipo] : 'mdi:minus-circle-outline', 18, col)}
+                        <span style="flex:1;font-size:13.5px;font-weight:600;color:var(--primary-text-color)">${esc(n.domanda)}</span>
+                        ${val ? `<span style="font-size:14px;font-weight:700;color:${col};text-align:right">${esc(val)}</span>` : ''}
+                        ${ico('mdi:chevron-down', 18, 'var(--secondary-text-color)')}
+                      </summary>
+                      <div style="padding:0 10px 10px 36px">
+                        ${so ? `<div style="font-size:12px;color:var(--secondary-text-color)">${esc(so)}</div>` : ''}
+                        ${extra}
+                        ${righeHtml ? `<div style="font-size:12px;margin-top:6px">${righeHtml}</div>` : ''}
+                        ${es ? `<div style="margin-top:6px;font-size:13px;color:${attivo ? 'var(--primary-text-color)' : GRIGIO}">${esc(es.testo)}</div>` : ''}
+                      </div>
+                    </details>`;
+                  };
+                  const catena = (vs) => vs.map((v, i) => (i ? conn(v.attivo) : '') + nodoHtml(v)).join('');
                   const compresso = (sr) => `<div style="opacity:.55;border:1px dashed var(--divider-color);border-left:4px solid ${GRIGIO};border-radius:10px;padding:6px 10px;font-size:12px;color:${GRIGIO}"><b>${esc(sr.titolo)}</b>: non attivo (${esc(sr.perche(c))}) · ${sr.nodi.map(n => esc(n.domanda)).join(' → ')}</div>`;
 
-                  const ramoHtml = (r) => {
-                    let corpo;
+                  // Valutazione di tutti i rami (serve sia al riepilogo sia al dettaglio).
+                  const VAL = RAMI.map(r => {
                     if (r.sottorami) {
-                      const attivi = r.sottorami.filter(sr => sr.quando(c));
+                      const attivi = r.sottorami.filter(sr => sr.quando(c)).map(sr => ({ sr, vs: sr.nodi.map(valuta) }));
                       const spenti = r.sottorami.filter(sr => !sr.quando(c));
-                      corpo = attivi.map(sr => `<div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--primary-color);margin:2px 0 4px 2px">${esc(sr.titolo)}</div>${catena(sr.nodi)}`).join('')
-                        + spenti.map(sr => `<div style="margin-top:8px">${compresso(sr)}</div>`).join('');
-                    } else {
-                      corpo = catena(r.nodi);
+                      return { r, attivi, spenti, vs: attivi.flatMap(a => a.vs) };
                     }
-                    return `<div style="margin-bottom:6px"><div style="display:flex;align-items:center;gap:8px;margin:4px 0 6px 2px"><ha-icon icon="${r.icona}" style="--mdc-icon-size:20px;color:var(--primary-color)"></ha-icon><span style="font-size:15px;font-weight:700;color:var(--primary-text-color)">${esc(r.titolo)}</span></div>${corpo}</div>`;
+                    return { r, vs: r.nodi.map(valuta) };
+                  });
+
+                  // Riepilogo del percorso: un'etichetta per ogni nodo attivo con etichetta breve.
+                  const chip = (v) => {
+                    const t = BREVE[v.n.id];
+                    const testo = v.val || (v.es ? v.es.testo.replace(/\.$/, '') : '');
+                    return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:999px;background:color-mix(in srgb, ${v.col} 16%, transparent);font-size:12px;line-height:1.3"><span style="color:var(--secondary-text-color)">${esc(t)}</span><b style="color:${v.col}">${esc(testo)}</b></span>`;
+                  };
+                  const freccia = `<span style="color:var(--secondary-text-color);font-size:12px">›</span>`;
+                  const percorso = VAL.flatMap(x => x.vs).filter(v => v.attivo && BREVE[v.n.id]).map(chip).join(freccia);
+                  const problemi = VAL.flatMap(x => x.vs).filter(v => v.attivo && (v.tipo === 'attenzione' || v.tipo === 'errore'));
+                  const testata = `<div style="margin-bottom:12px">
+                    <div style="font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--secondary-text-color);margin-bottom:6px">Percorso attuale</div>
+                    <div style="display:flex;flex-wrap:wrap;gap:4px 4px;align-items:center">${percorso}</div>
+                    <div style="margin-top:8px;font-size:12.5px;color:${problemi.length ? 'var(--warning-color)' : 'var(--secondary-text-color)'}">${problemi.length ? `Da guardare: ${problemi.map(v => esc(v.n.domanda)).join(' · ')} (aperti qui sotto).` : 'Niente da segnalare. Tocca un passaggio per vedere perché.'}</div>
+                  </div>`;
+
+                  const ramoHtml = (x) => {
+                    const { r } = x;
+                    const corpo = r.sottorami
+                      ? x.attivi.map(a => `<div style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--primary-color);margin:2px 0 4px 2px">${esc(a.sr.titolo)}</div>${catena(a.vs)}`).join('')
+                        + x.spenti.map(sr => `<div style="margin-top:6px">${compresso(sr)}</div>`).join('')
+                      : catena(x.vs);
+                    return `<div style="margin-bottom:4px"><div style="display:flex;align-items:center;gap:8px;margin:6px 0 6px 2px">${ico(r.icona, 20, 'var(--primary-color)')}<span style="font-size:15px;font-weight:700;color:var(--primary-text-color)">${esc(r.titolo)}</span></div>${corpo}</div>`;
                   };
 
-                  return `<div style="display:flex;flex-direction:column;text-align:left;white-space:normal;line-height:1.35">${RAMI.map((r, i) => (i ? conn(true) : '') + ramoHtml(r)).join('')}
-                    <div style="margin-top:8px;font-size:11px;color:var(--secondary-text-color)">Tocca un nodo per aprire l'entità. <span style="color:var(--info-color)">■</span> spenta per scelta · <span style="color:var(--success-color)">■</span> ok · <span style="color:var(--warning-color)">■</span> attenzione · <span style="color:var(--error-color)">■</span> problema · grigio = ramo non preso</div></div>`;
+                  return `<div style="display:flex;flex-direction:column;text-align:left;white-space:normal;line-height:1.35">${testata}${VAL.map((x, i) => (i ? conn(true) : '') + ramoHtml(x)).join('')}
+                    <div style="margin-top:10px;font-size:11px;color:var(--secondary-text-color);display:flex;flex-wrap:wrap;gap:4px 10px"><span><span style="color:var(--info-color)">■</span> spenta per scelta</span><span><span style="color:var(--success-color)">■</span> ok</span><span><span style="color:var(--warning-color)">■</span> attenzione</span><span><span style="color:var(--error-color)">■</span> problema</span><span>grigio = non in uso</span></div></div>`;
                 ]]]
 
       # ---- Ultime decisioni ----

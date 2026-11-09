@@ -37,6 +37,13 @@ Salvare via WebSocket il JSON di backup più recente.
   SPLIT non fa parte del nome ACSe.
 
 - Nei blocchi markdown con tabelle usare `|-` in YAML: con `>-` le righe si uniscono e la tabella si rompe.
+- button-card con `tap_action: none` marca la card `disabled` e le dà
+  `pointer-events: none`: nessun tocco arriva all'HTML dei `custom_fields` (in JS con
+  `.click()` sembra funzionare, con il dito no). Se servono tocchi interni aggiungere
+  `pointer-events: auto` in `styles.card`. button-card inoltre fa `preventDefault` sui clic:
+  `<details>` non si apre da solo, quindi il `<summary>` dell'Albero lo apre in un
+  `onclick` e ricorda lo stato in `window.__ecmAlberoAperti` (la card si ridisegna a ogni
+  cambio di stato).
 - In HA una card si può nascondere solo in base allo stato di un'entità, non a un attributo: per questo il motore pubblica `binary_sensor.ecm_engine_prova_avviabile`.
 
 ## Com'è organizzata (dal 09/11 sera)
@@ -47,7 +54,11 @@ Salvare via WebSocket il JSON di backup più recente.
   disattivato o portano all'Albero apposta: il more-info di `input_select.stagione` o di
   un'automazione conterrebbe un comando.
 - **Albero**: albero decisionale in una `button-card` (JS in `custom_fields.albero`) più
-  una card `logbook` "Ultime decisioni" su 12 ore. Sostituisce la card markdown "Perché ECM
+  una card `logbook` "Ultime decisioni" su 12 ore. In cima il "Percorso attuale" (una
+  etichetta per passaggio, mappa `BREVE` nel JS); sotto i nodi chiusi (domanda e valore),
+  che si aprono al tocco; restano aperti di default solo quelli con attenzione o problema.
+  Il tocco **non** apre il more-info: per le automazioni mostrerebbe l'interruttore e
+  "Esegui azioni". Sostituisce la card markdown "Perché ECM
   sta facendo questo?" (`perche_ecm.j2` resta nel repository solo come riferimento storico:
   conteneva errori, vedi diario 09/11 sera).
 - **Impostazioni**: controlli Mushroom a pulsanti e select; bottoni stagione con conferma;

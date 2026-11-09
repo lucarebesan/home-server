@@ -36,6 +36,10 @@ Salvare via WebSocket il JSON di backup più recente.
   `ACSe V4` sono le richieste empiriche `CP HEAT V1`–`CP HEAT V4`. Lo stato dello
   SPLIT non fa parte del nome ACSe.
 
+- Testi (revisione Draftsmith del 09/11): automazione spenta a mano = "spenta per scelta",
+  accesa = "attiva"; nomi brevi ECM Giorno / ECM Notte / ECM Inverno / ECM Manuale / ACS
+  Manager (in Diagnostica con il numero, es. "10 · ECM Inverno"); "Motore ECM" per
+  ecm-engine; niente nomi di entità (`t_estate`, `ventilatore_compactp`) nei testi visibili.
 - Nei blocchi markdown con tabelle usare `|-` in YAML: con `>-` le righe si uniscono e la tabella si rompe.
 - button-card con `tap_action: none` marca la card `disabled` e le dà
   `pointer-events: none`: nessun tocco arriva all'HTML dei `custom_fields` (in JS con

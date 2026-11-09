@@ -261,7 +261,7 @@ views:
                   {%- if chi == 'man' -%}
                     Manuale {{ man.split(' ')[0] }}{{ '' if is_state(aut, 'on') else ' · non applicato' }}
                   {%- elif not is_state(aut, 'on') -%}
-                    Nilan da solo · ECM in pausa
+                    Nilan da solo · ECM spenta
                   {%- else -%}
                     {{ {'fc': 'Free cooling', 'eg': 'ECM Giorno', 'en': 'ECM Notte', 'inv': 'ECM Inverno'}[chi] }}
                   {%- endif -%}
@@ -392,9 +392,9 @@ views:
                   const fascia = states['sensor.ecm_fascia_climatica_attiva']?.state;
                   // In inverno EG/EN non girano: niente sigla per non suggerire una logica attiva
                   const inv = states['input_select.stagione']?.state === 'INVERNO';
-                  if (fc === 'ATTIVATO') return {k: 'FC', t: 'Free cooling', d: 'Raffrescamento con aria esterna', c: 'var(--teal-color)', i: 'mdi:snowflake'};
+                  if (fc === 'ATTIVATO') return {k: 'FC', t: 'Free cooling', d: '', c: 'var(--teal-color)', i: 'mdi:snowflake'};
                   if (man && man !== 'AUTO' && man !== 'FREE COOLING') return {k: 'MAN', t: 'Manuale', d: man, c: 'var(--purple-color)', i: 'mdi:hand-back-right'};
-                  if (ant === 'on') return {k: inv ? '' : 'EN', t: 'Notte · anticipo', d: 'Anticipo della fascia notturna', c: 'var(--indigo-color)', i: 'mdi:weather-night'};
+                  if (ant === 'on') return {k: inv ? '' : 'EN', t: 'Notte · anticipo', d: '', c: 'var(--indigo-color)', i: 'mdi:weather-night'};
                   if (fascia === 'NOTTE') return {k: inv ? '' : 'EN', t: 'Notte', d: '', c: 'var(--indigo-color)', i: 'mdi:weather-night'};
                   const nota = fc === 'PREPARAZIONE' ? 'Free cooling in preparazione' : (fc === 'FALLITO' ? 'Free cooling fallito' : '');
                   return {k: inv ? '' : 'EG', t: 'Giorno', d: nota, c: 'var(--amber-color)', i: 'mdi:white-balance-sunny'};
@@ -469,7 +469,7 @@ views:
                   if (Number(r.slice(1)) === Math.round(o)) return {t: 'Allineato', c: 'var(--success-color)', i: 'mdi:check-circle-outline'};
                   if (!l.write) return {t: 'WRITE spenta: l\'obiettivo non viene inviato', c: 'var(--warning-color)', i: 'mdi:pencil-off'};
                   if (l.inverno) return {t: 'In inverno l\'obiettivo E non viene applicato', c: 'var(--secondary-text-color)', i: 'mdi:information-outline'};
-                  if (!l.attiva) return {t: 'Obiettivo non applicato: logica ECM in pausa', c: 'var(--secondary-text-color)', i: 'mdi:pause-circle-outline'};
+                  if (!l.attiva) return {t: 'Obiettivo non applicato: automazione ECM spenta', c: 'var(--secondary-text-color)', i: 'mdi:pause-circle-outline'};
                   return {t: 'In transizione', c: 'var(--warning-color)', i: 'mdi:sync'};
                 ]]]
             custom_fields:
@@ -525,7 +525,7 @@ views:
           # Rimando all'albero decisionale (sostituisce il markdown lungo)
           - type: custom:button-card
             template: ecm_base
-            name: Perché? Apri l'albero decisionale
+            name: Albero decisionale
             icon: mdi:file-tree-outline
             show_icon: true
             show_name: true
@@ -558,19 +558,19 @@ views:
                   if (man && !['AUTO', 'FREE COOLING', 'unknown', 'unavailable'].includes(man)) {
                     const c = man.split(' ')[0];
                     t = `Manuale ${c}`;
-                    d = on('automation.09_ecm_manuale') ? 'Scelta manuale temporanea' : 'Selezionato ma non applicato: 09 - ECM MANUALE è spenta';
+                    d = on('automation.09_ecm_manuale') ? 'Scelta manuale temporanea' : 'Non applicato: ECM Manuale spenta per scelta';
                   } else {
                     let aut, nome;
                     if (st === 'ESTATE' && ['ATTIVATO', 'PREPARAZIONE'].includes(fc)) { aut = 'automation.01_ecm_fc_estate'; nome = 'Free cooling'; }
                     else if (st === 'ESTATE' && fa === 'GIORNO') { aut = 'automation.01_ecm_eg_estate_fascia_giorno'; nome = 'ECM Giorno'; }
                     else if (st === 'ESTATE') { aut = 'automation.01_ecm_en_estate_fascia_notturna'; nome = 'ECM Notte'; }
                     else { aut = 'automation.10_ecm_inverno'; nome = 'ECM Inverno'; }
-                    if (on(aut)) { t = nome; d = 'Logica automatica attiva'; }
-                    else { t = 'Il Nilan decide da solo'; d = `${nome} è in pausa per scelta: le macchine seguono le proprie impostazioni`; }
+                    if (on(aut)) { t = nome; d = ''; }
+                    else { t = 'Il Nilan decide da solo'; d = `${nome} spenta per scelta: Nilan e Toshiba seguono le proprie impostazioni`; }
                   }
                   return `<div style="text-align:left;margin-top:6px">
                     <div style="font-size:15px;font-weight:600;color:var(--primary-text-color)">Chi comanda: ${t}</div>
-                    <div style="font-size:12px;color:var(--secondary-text-color);white-space:normal">${d}</div></div>`;
+                    ${d ? `<div style="font-size:12px;color:var(--secondary-text-color);white-space:normal">${d}</div>` : ''}</div>`;
                 ]]]
               freccia: |
                 [[[ return `<ha-icon icon="mdi:chevron-right" style="--mdc-icon-size:22px;color:var(--secondary-text-color)"></ha-icon>`; ]]]
@@ -749,7 +749,7 @@ views:
           - type: custom:button-card
             template: ecm_kpi
             entity: input_number.ventilatore_compactp
-            name: Ventilazione
+            name: Ventilazione ECM
             icon: mdi:fan
             grid_options:
               columns: 6
@@ -828,7 +828,7 @@ views:
               columns: 6
             state_display: |
               [[[
-                const m = {RAFFRESCAMENTO: 'Freddo', RISCALDAMENTO: 'Caldo', DEUMIDIFICAZIONE: 'Dry', VENTILAZIONE: 'Ventola', AUTOMATICO: 'Auto'};
+                const m = {RAFFRESCAMENTO: 'COOL', RISCALDAMENTO: 'HEAT', DEUMIDIFICAZIONE: 'DRY', VENTILAZIONE: 'FAN', AUTOMATICO: 'AUTO'};
                 return entity ? (m[entity.state] || entity.state) : '—';
               ]]]
             state:
@@ -941,7 +941,7 @@ views:
                 const v = (x) => x === null ? '—' : `${Math.round(x)}°`;
                 const diff = (a, b) => a !== null && b !== null && Math.abs(a - b) > 0.5;
                 const att = (diff(cp, rcp) || diff(rs, rrs)) ? ` <ha-icon icon="mdi:sync" title="Richiesta non ancora applicata" style="--mdc-icon-size:14px;color:var(--warning-color)"></ha-icon>` : '';
-                return `<span style="${sub}">CP</span> ${v(cp)} <span style="${sub};margin-left:6px">Resist.</span> ${v(rs)}${att}`;
+                return `<span style="${sub}">CP</span> ${v(cp)} <span style="${sub};margin-left:6px">Resistenza</span> ${v(rs)}${att}`;
               ]]]
           - type: history-graph
             title: Bollitore · 12 ore
@@ -1147,7 +1147,7 @@ views:
           - type: custom:button-card
             template: ecm_kpi
             entity: sensor.ecm_potenza_appresa_configurazione_reale
-            name: Appreso
+            name: Potenza appresa
             icon: mdi:brain
             variables:
               decimals: 0
@@ -1225,7 +1225,7 @@ views:
         column_span: 2
         cards:
           - type: heading
-            heading: Perché ECM sta facendo questo?
+            heading: Albero decisionale
             icon: mdi:file-tree
           - type: custom:button-card
             show_icon: false
@@ -1389,7 +1389,7 @@ views:
                   c.anticipo = on('input_boolean.ecm_notturna_anticipo_attivo');
                   c.notte = c.fascia === 'NOTTE' || c.anticipo;
                   c.gestoreK = c.notte ? 'en' : 'eg';
-                  c.gestoreNome = c.notte ? 'ECM_N' : 'ECM_Giorno';
+                  c.gestoreNome = c.notte ? 'ECM Notte' : 'ECM Giorno';
                   c.tz = nu('sensor.ecm_temperatura_zona_attiva');
                   c.tg = nu('sensor.ecm_zona_giorno_temperatura_media');
                   c.tn = nu('sensor.ecm_zona_notte_temperatura_media');
@@ -1461,8 +1461,8 @@ views:
                   c.provaFine = st('input_datetime.ecm_acs_prova_caldo_fine').slice(11, 16);
                   c.acsModo = (() => {
                     if (on('input_boolean.ecm_acs_sessione_velocita_attiva')) return { k: 'Sessione CP HEAT', e: 'input_boolean.ecm_acs_sessione_velocita_attiva', t: 'Sessione CP HEAT V1/V3/V4 (20 min ciascuna, split spento): resistenza a 38 °C, accumulo sospeso.', tipo: 'info' };
-                    if (c.inverno && c.prova && on('input_boolean.ecm_acs_minimo_t12_attivo')) return { k: 'Minimo bollitore basso', e: 'input_boolean.ecm_acs_minimo_t12_attivo', t: `T12 era sotto 25 °C: Compact P in riscaldamento V${f1(c.provaVel)} per 15–20 min (fine ${c.provaFine}).`, tipo: 'info' };
-                    if (c.inverno && c.prova) return { k: 'Prova CP in caldo', e: 'input_boolean.ecm_acs_prova_caldo_attiva', t: `Compact P in riscaldamento V${f1(c.provaVel)} fino alle ${c.provaFine}, sorvegliata dalla guardia.`, tipo: 'info' };
+                    if (c.inverno && c.prova && on('input_boolean.ecm_acs_minimo_t12_attivo')) return { k: 'Minimo bollitore basso', e: 'input_boolean.ecm_acs_minimo_t12_attivo', t: `T12 era sotto 25 °C: CP in riscaldamento V${f1(c.provaVel)} per 15–20 min (fine ${c.provaFine}).`, tipo: 'info' };
+                    if (c.inverno && c.prova) return { k: 'Prova CP in caldo', e: 'input_boolean.ecm_acs_prova_caldo_attiva', t: `CP in riscaldamento V${f1(c.provaVel)} fino alle ${c.provaFine}, sorvegliata dalla guardia.`, tipo: 'info' };
                     if (c.freddoEstate) return { k: 'Zona fredda', e: 'sensor.ecm_protezione_freddo_zona_giorno', t: 'Una zona è in protezione freddo: ACS solo con la resistenza, CP al minimo 25 °C.', tipo: 'info' };
                     if (c.estate && c.acsSet === 47) return { k: 'Emergenza ACS', e: 'input_number.acs_set', t: 'T11 è sceso sotto 42 °C: il CP carica il bollitore fino a 47 °C.', tipo: 'attenzione' };
                     if (c.inverno && on('input_boolean.ecm_acs_backup_sera_attivo')) return { k: 'Preparazione serale', e: 'input_boolean.ecm_acs_backup_sera_attivo', t: `Resistenza a ${f1(c.acsR)} °C per avere T11 pronto 30 min prima delle ${c.oraUsoTxt}.`, tipo: 'info' };
@@ -1470,7 +1470,7 @@ views:
                     if (c.inverno && on('input_boolean.ecm_acs_inverno_ciclo_attivo')) return { k: 'Accumulo solare', e: 'input_boolean.ecm_acs_inverno_ciclo_attivo', t: `Resistenza con FV/batteria fino a T11 ${f1(nu('sensor.ecm_acs_target_t11_inverno'))} °C.`, tipo: 'info' };
                     if (c.inverno && on('input_boolean.ecm_acs_inverno_attesa_soc')) return { k: 'Attesa batteria', e: 'input_boolean.ecm_acs_inverno_attesa_soc', t: 'Accumulo fermato per calo della batteria: riparte quando recupera.', tipo: 'info' };
                     if (c.estate && (on('input_boolean.ecm_acs_ciclo_soc_attivo') || c.acsSet >= 40)) return { k: 'Carica col CP', e: 'input_number.acs_set', t: `Carica ACS col CP fino a ${f1(Math.min(c.acsSet, 50))} °C.`, tipo: 'info' };
-                    if (c.inverno) return { k: 'A riposo', e: 'input_number.acs_r_set', t: `Compressore ACS escluso (set 20), resistenza a ${f1(c.acsR)} °C di base.${c.prepFatta ? ` Preparazione serale già fatta alle ${c.prepOra}.` : ''}`, tipo: 'ok' };
+                    if (c.inverno) return { k: 'A riposo', e: 'input_number.acs_r_set', t: `CP ACS escluso (set 20), resistenza a ${f1(c.acsR)} °C di base.${c.prepFatta ? ` Preparazione serale già fatta alle ${c.prepOra}.` : ''}`, tipo: 'ok' };
                     return { k: 'A riposo', e: 'input_number.acs_set', t: `CP ACS a ${f1(c.acsSet)} °C, resistenza ${f1(c.acsR)} °C.`, tipo: 'ok' };
                   })();
                   // Esito: confronto richiesto/reale
@@ -1508,12 +1508,12 @@ views:
                       id: 'comandi', titolo: 'Chi comanda', icona: 'mdi:transit-connection-variant',
                       nodi: [
                         {
-                          id: 'write', domanda: '00-NILAN WRITE accesa?', entita: AUT.write,
+                          id: 'write', domanda: 'WRITE attiva?', entita: AUT.write,
                           valore: () => autTxt('write'),
-                          soglia: () => 'Unico livello che scrive su Nilan, Compact P e Toshiba',
+                          soglia: () => 'Unica automazione che scrive su Nilan e Toshiba',
                           esito: () => !autOn('write')
                             ? { tipo: 'errore', testo: 'No: nessun comando arriva alle macchine. Il Nilan decide da solo.' }
-                            : { tipo: 'ok', testo: 'Sì: verifica e scrive ogni 5 min e a ogni cambio di helper.' },
+                            : { tipo: 'ok', testo: 'Sì: verifica e scrive ogni 5 min e a ogni cambio di impostazione.' },
                           attivo: () => true,
                         },
                         {
@@ -1521,10 +1521,10 @@ views:
                           // ("Modalita temporanea ACS isolata"). Segue la costante WRITE_ACS_ISOLATA.
                           id: 'writeIsolata', domanda: 'WRITE in modalità ACS isolata?', entita: 'sensor.compactp_setpoint_aria',
                           valore: () => WRITE_ACS_ISOLATA ? 'SÌ' : 'NO',
-                          soglia: () => `setpoint aria reale ${f1(c.setAria)} °C · t_estate ${f1(nu('input_number.t_estate'))} · isteresi ${f1(nu('input_number.isteresi'))} (reale ${f1(c.hReale)})`,
+                          soglia: () => `setpoint aria reale ${f1(c.setAria)} °C · Set estate ${f1(nu('input_number.t_estate'))} · Isteresi CP ${f1(nu('input_number.isteresi'))} (reale ${f1(c.hReale)})`,
                           esito: () => WRITE_ACS_ISOLATA
-                            ? { tipo: 'scelta', testo: `Sì (scelta del 09/11): arrivano solo i setpoint ACS, la ventilazione della parte ACS e il setpoint aria fisso a 17 °C${c.prova ? ' (durante la prova CP in caldo: T10 + isteresi/2)' : ''}. Livello E, ventilatore_compactp, t_estate, isteresi e Toshiba non partono.` }
-                            : { tipo: 'ok', testo: 'No: la WRITE invia tutti gli helper ECM.' },
+                            ? { tipo: 'scelta', testo: `Sì (scelta del 09/11): arrivano solo i setpoint ACS, la ventilazione della parte ACS e il setpoint aria fisso a 17 °C${c.prova ? ' (durante la prova CP in caldo: T10 + isteresi/2)' : ''}. Livello E, ventilazione ECM, Set estate, Isteresi CP e Toshiba non vengono inviati.` }
+                            : { tipo: 'ok', testo: 'No: la WRITE invia tutte le impostazioni ECM.' },
                           attivo: () => autOn('write'),
                         },
                         {
@@ -1533,8 +1533,8 @@ views:
                           soglia: () => `AUTO = decidono le automazioni · durata manuale ${f1(c.durata)} min`,
                           esito: () => {
                             if (c.man === 'AUTO') return { tipo: 'ok', testo: 'No, AUTO.' };
-                            if (!autOn('manuale')) return { tipo: 'scelta', testo: `Selezionato «${c.man}», ma 09 - ECM MANUALE è spenta (scelta): la selezione non viene applicata.` };
-                            if (c.man === 'FREE COOLING') return { tipo: 'info', testo: 'Free cooling chiesto a mano: lo gestisce la 01 FreeCooling (solo in estate).' };
+                            if (!autOn('manuale')) return { tipo: 'scelta', testo: `Selezionato «${c.man}», ma ECM Manuale è spenta per scelta: la selezione non viene applicata.` };
+                            if (c.man === 'FREE COOLING') return { tipo: 'info', testo: 'Free cooling chiesto a mano: lo gestisce l\'automazione Free cooling (solo in estate).' };
                             return { tipo: 'attenzione', testo: `Manuale ${c.man}: torna AUTO dopo ${f1(c.durata)} min.${WRITE_ACS_ISOLATA ? ' Con la WRITE isolata il comando non arriva alle macchine.' : ''}` };
                           },
                           attivo: () => true,
@@ -1551,7 +1551,7 @@ views:
                           esito: () => {
                             const dovrebbe = c.t10 < c.sInv ? 'INVERNO' : (c.t10 > c.sEst ? 'ESTATE' : c.stagione);
                             if (!ok(c.t10)) return { tipo: 'errore', testo: 'T10 non valida: la stagione non può cambiare da sola.' };
-                            if (!autOn('stagione')) return { tipo: 'scelta', testo: `Cambio automatico da T10 spento (scelta): resta ${c.stagione} finché non la cambi a mano.${dovrebbe !== c.stagione ? ` Con il cambio acceso passerebbe a ${dovrebbe}.` : ''}` };
+                            if (!autOn('stagione')) return { tipo: 'scelta', testo: `Cambio automatico da T10 spento per scelta: resta ${c.stagione} finché non la cambi a mano.${dovrebbe !== c.stagione ? ` Con il cambio attivo passerebbe a ${dovrebbe}.` : ''}` };
                             return { tipo: 'ok', testo: c.inverno ? `INVERNO: torna ESTATE sopra ${f1(c.sEst)} °C.` : `ESTATE: passa a INVERNO sotto ${f1(c.sInv)} °C.` };
                           },
                           attivo: () => true,
@@ -1569,8 +1569,8 @@ views:
                               valore: () => c.fc,
                               soglia: () => `zona ${f1(c.tz)} − esterna ${f1(c.text)} = ${f1(c.deltaFc)} °C (serve ≥ ${f1(c.dfc)}) e zona sopra il minimo ${f1(c.tmin)}`,
                               esito: () => {
-                                if (c.fcAttivo) return { tipo: 'info', testo: `Free cooling ${c.fc}: aria esterna, CP spento. Decide la 01 FreeCooling.` };
-                                if (!autOn('fc')) return { tipo: 'scelta', testo: '01 FreeCooling spenta (scelta): nessun free cooling automatico.' };
+                                if (c.fcAttivo) return { tipo: 'info', testo: `Free cooling ${c.fc}: aria esterna, CP spento. Decide l'automazione Free cooling.` };
+                                if (!autOn('fc')) return { tipo: 'scelta', testo: 'Automazione Free cooling spenta per scelta: nessun free cooling automatico.' };
                                 return c.fcCondizioni ? { tipo: 'info', testo: 'Condizioni presenti: può partire al prossimo controllo (ogni minuto).' } : { tipo: 'ok', testo: 'No: l\'aria esterna non è abbastanza fresca.' };
                               },
                               attivo: () => c.estate,
@@ -1583,13 +1583,13 @@ views:
                               attivo: () => c.estate && !c.fcAttivo,
                             },
                             {
-                              id: 'gestore', domanda: 'Automazione della fascia accesa?', entita: AUT.eg,
+                              id: 'gestore', domanda: 'Automazione della fascia attiva?', entita: AUT.eg,
                               entitaFn: () => AUT[c.gestoreK],
                               valore: () => `${c.gestoreNome} ${autTxt(c.gestoreK)}`,
-                              soglia: () => c.notte ? 'ECM_N: livello E da temperatura, umidità e SOC previsto' : 'ECM_Giorno: livello E da temperatura zona, trend e SOC, ogni 5 min (cambi ogni 15)',
+                              soglia: () => c.notte ? 'ECM Notte: livello E da temperatura, umidità e SOC previsto' : 'ECM Giorno: livello E da temperatura zona, trend e SOC, ogni 5 min (cambi ogni 15)',
                               esito: () => autOn(c.gestoreK)
                                 ? { tipo: 'ok', testo: `${c.gestoreNome} decide il livello E.` }
-                                : { tipo: 'scelta', testo: `${c.gestoreNome} spenta (scelta): nessuno decide il livello E.` },
+                                : { tipo: 'scelta', testo: `${c.gestoreNome} spenta per scelta: nessuno decide il livello E.` },
                               attivo: () => c.estate && !c.fcAttivo,
                             },
                             {
@@ -1625,14 +1625,14 @@ views:
                           id: 'inverno', titolo: 'Inverno', quando: () => c.inverno, perche: () => `stagione ${c.stagione}`,
                           nodi: [
                             {
-                              id: 'inverno10', domanda: '10 - ECM INVERNO accesa?', entita: AUT.inverno,
+                              id: 'inverno10', domanda: 'ECM Inverno attiva?', entita: AUT.inverno,
                               valore: () => autTxt('inverno'),
                               soglia: () => `zona più fredda ${f2(c.tzMin)} °C · obiettivo ${f1(c.obiettivo10)} °C (${c.sole ? 'accumulo, FV in eccedenza' : 'limite inferiore'}) · stop da ${f1(c.limiteCaldo)} °C`,
                               esito: () => {
                                 const farebbe = c.riscalda10 ? 'scalderebbe (zona sotto l\'obiettivo)' : 'non scalderebbe';
-                                if (!autOn('inverno')) return { tipo: 'scelta', testo: `Spenta (scelta): nessuna logica ECM sul clima. Se fosse accesa ${farebbe}.` };
-                                const w = WRITE_ACS_ISOLATA ? ' Con la WRITE isolata Toshiba e t_estate non partono.' : '';
-                                return c.riscalda10 ? { tipo: 'info', testo: `Riscalda: Toshiba in riscaldamento e Compact P almeno V${c.fasciaGiornoOra ? 3 : 2}.${w}` } : { tipo: 'ok', testo: `Non serve riscaldare.${w}` };
+                                if (!autOn('inverno')) return { tipo: 'scelta', testo: `Spenta per scelta: nessuna logica ECM sul clima. Se fosse attiva ${farebbe}.` };
+                                const w = WRITE_ACS_ISOLATA ? ' Con la WRITE isolata Toshiba e Set estate non vengono inviati.' : '';
+                                return c.riscalda10 ? { tipo: 'info', testo: `Riscalda: Toshiba in riscaldamento e CP almeno V${c.fasciaGiornoOra ? 3 : 2}.${w}` } : { tipo: 'ok', testo: `Non serve riscaldare.${w}` };
                               },
                               attivo: () => c.inverno,
                             },
@@ -1651,7 +1651,7 @@ views:
                               id: 'toshiba', domanda: 'Split Toshiba', entita: 'sensor.toshiba_on_off_unita',
                               valore: () => st('sensor.toshiba_on_off_unita'),
                               soglia: () => `richiesto: ${st('input_boolean.toshiba_climatizzatore')} · ${st('input_select.toshiba_modo').toLowerCase()}`,
-                              esito: () => autOn('inverno') ? { tipo: 'info', testo: 'Lo comanda la 10 - ECM INVERNO.' } : { tipo: 'info', testo: 'Nessuna automazione lo comanda ora.' },
+                              esito: () => autOn('inverno') ? { tipo: 'info', testo: 'Lo comanda ECM Inverno.' } : { tipo: 'info', testo: 'Nessuna automazione lo comanda ora.' },
                               attivo: () => c.inverno,
                             },
                           ],
@@ -1665,7 +1665,7 @@ views:
                           id: 'vent', domanda: 'Velocità richiesta e reale', entita: 'sensor.compactp_ventilazione_selezionata',
                           valore: () => `V${f1(c.ventReq)} → ${c.ventReal}`,
                           soglia: () => WRITE_ACS_ISOLATA
-                            ? `Decide la WRITE (parte ACS): ventilazione solo con prova CP in caldo (inverno) o carica ACS (estate). ventilatore_compactp V${f1(c.ventHelper)} non viene inviato · ${c.statoCtrl.toLowerCase()}`
+                            ? `Decide la WRITE (parte ACS): ventilazione solo con prova CP in caldo (inverno) o carica ACS (estate). Ventilazione ECM V${f1(c.ventHelper)} non inviata · ${c.statoCtrl.toLowerCase()}`
                             : `Massimo tra clima, ricambio, lavanderia e ACS · ${c.statoCtrl.toLowerCase()}`,
                           esito: () => !autOn('write') ? { tipo: 'errore', testo: 'WRITE spenta: la velocità la decide il Nilan.' }
                             : c.ventRealN < 0 ? { tipo: 'errore', testo: 'Velocità reale non valida.' }
@@ -1680,15 +1680,15 @@ views:
                             (() => {
                               if (c.estate) {
                                 if (c.fcAttivo) return { n: 'Clima · Free cooling', v: `${c.fc}`, tipo: 'info' };
-                                return autOn(c.gestoreK) ? { n: `Clima · ${c.gestoreNome}`, v: 'ON', tipo: 'ok' } : { n: `Clima · ${c.gestoreNome}`, v: 'spenta (scelta)', tipo: 'scelta' };
+                                return autOn(c.gestoreK) ? { n: `Clima · ${c.gestoreNome}`, v: 'ON', tipo: 'ok' } : { n: `Clima · ${c.gestoreNome}`, v: 'spenta per scelta', tipo: 'scelta' };
                               }
-                              return autOn('inverno') ? { n: 'Clima · 10 inverno', v: c.riscalda10 ? `V${c.fasciaGiornoOra ? 3 : 2}` : 'nessuna', tipo: 'ok' } : { n: 'Clima · 10 inverno', v: 'spenta (scelta)', tipo: 'scelta' };
+                              return autOn('inverno') ? { n: 'Clima · ECM Inverno', v: c.riscalda10 ? `V${c.fasciaGiornoOra ? 3 : 2}` : 'nessuna', tipo: 'ok' } : { n: 'Clima · ECM Inverno', v: 'spenta per scelta', tipo: 'scelta' };
                             })(),
-                            autOn('ricambio') ? { n: 'Ricambio · 07', v: c.vRic > 0 ? `V${f1(c.vRic)}` : 'nessuna', tipo: 'ok' } : { n: 'Ricambio · 07', v: `spenta (scelta) · ultimo V${f1(c.vRic)}`, tipo: 'scelta' },
+                            autOn('ricambio') ? { n: 'Ricambio · 07', v: c.vRic > 0 ? `V${f1(c.vRic)}` : 'nessuna', tipo: 'ok' } : { n: 'Ricambio · 07', v: `spenta per scelta · ultimo V${f1(c.vRic)}`, tipo: 'scelta' },
                             (() => {
                               const u = `${f1(c.u)}%`;
-                              if (!ok(c.u) || !ok(c.batt) || c.batt < 10) return { n: 'Lavanderia · 06', v: `sensore non valido (${u}, batt. ${f1(c.batt)}%)`, tipo: 'errore' };
-                              if (!autOn('umidita')) return { n: 'Lavanderia · 06', v: `spenta (scelta) · ${u}, partirebbe sopra 75%`, tipo: 'scelta' };
+                              if (!ok(c.u) || !ok(c.batt) || c.batt < 10) return { n: 'Lavanderia · 06', v: `sensore non valido (${u}, batteria ${f1(c.batt)}%)`, tipo: 'errore' };
+                              if (!autOn('umidita')) return { n: 'Lavanderia · 06', v: `spenta per scelta · ${u}, partirebbe sopra 75%`, tipo: 'scelta' };
                               return c.lavOn ? { n: 'Lavanderia · 06', v: `V${f1(c.vLav)} · ${u}`, tipo: 'info' } : { n: 'Lavanderia · 06', v: `nessuna · ${u}`, tipo: 'ok' };
                             })(),
                             c.fanWrite > 0 ? { n: 'ACS · WRITE', v: `V${f1(c.fanWrite)}${c.prova ? ' (CP in caldo)' : ' (carica ACS)'}`, tipo: 'info' } : { n: 'ACS · WRITE', v: 'nessuna', tipo: 'ok' },
@@ -1702,7 +1702,7 @@ views:
                       id: 'acs', titolo: 'Acqua calda', icona: 'mdi:water-boiler',
                       nodi: [
                         {
-                          id: 'acs05', domanda: '05-ECM ACS MANAGER accesa?', entita: AUT.acs,
+                          id: 'acs05', domanda: 'ACS Manager attiva?', entita: AUT.acs,
                           valore: () => autTxt('acs'),
                           soglia: () => `T11 ${f1(c.t11)} °C · T12 ${f1(c.t12)} °C · max bollitore ${f1(c.tbMax)} °C`,
                           esito: () => autOn('acs') ? { tipo: 'ok', testo: 'Sì: decide set CP ACS e resistenza.' } : { tipo: 'attenzione', testo: 'Spenta: nessuno decide l\'ACS.' },
@@ -1764,7 +1764,7 @@ views:
                   const ico = (i, px, col, extra = '') => `<ha-icon icon="${i}" style="--mdc-icon-size:${px}px;width:${px}px;height:${px}px;flex:none;margin:0;color:${col};${extra}"></ha-icon>`;
                   const conn = (attivo) => `<div style="margin-left:14px;height:8px;border-left:2px ${attivo ? 'solid var(--primary-color)' : `dashed ${GRIGIO}`}"></div>`;
                   // Etichette brevi per il riepilogo del percorso (id nodo → etichetta). Nodi assenti = non nel riepilogo.
-                  const BREVE = { write: 'WRITE', writeIsolata: 'ACS isolata', manuale: 'Gestione', stagione: 'Stagione', fc: 'Free cooling', fascia: 'Fascia', gestore: 'Logica', banda: 'Zona', livello: 'Livello', inverno10: 'ECM inverno', nilan: 'Nilan', toshiba: 'Split', vent: 'Ventilazione', acsModo: 'ACS', allineato: 'Esito' };
+                  const BREVE = { write: 'WRITE', writeIsolata: 'ACS isolata', manuale: 'Gestione', stagione: 'Stagione', fc: 'Free cooling', fascia: 'Fascia', gestore: 'Logica', banda: 'Zona', livello: 'Livello', inverno10: 'ECM Inverno', nilan: 'Nilan', toshiba: 'Split', vent: 'Ventilazione', acsModo: 'ACS', allineato: 'Esito' };
 
                   // Valuta ogni nodo una volta sola.
                   const valuta = (n) => {
@@ -1886,7 +1886,7 @@ views:
             content: |-
               {%- set durata = states('input_number.ecm_manuale_durata_minuti') | int(20) -%}
               {%- if is_state('automation.09_ecm_manuale', 'off') -%}
-              <ha-alert alert-type="info">Gestione manuale sospesa di proposito (automazione 09 spenta): la scelta qui non viene applicata.</ha-alert>
+              <ha-alert alert-type="info">ECM Manuale spenta per scelta: la selezione qui non viene applicata.</ha-alert>
               {% endif -%}
               AUTO: decidono le automazioni ECM. Una combinazione E… avvia una prova a tempo ({{ durata }} min), poi torna AUTO. La usa anche il motore ECM per le sue prove.
 
@@ -1960,7 +1960,7 @@ views:
               {%- if is_state('automation.00_nilan_cambio_stagione_automatico_t10', 'on') -%}
               Cambia da sola con T10: inverno sotto {{ '%.1f' | format(s) | replace('.', ',') }} °C, estate sopra {{ '%.1f' | format(s + i) | replace('.', ',') }} °C.
               {%- else -%}
-              <ha-alert alert-type="info">Cambio automatico da T10 spento di proposito: la stagione resta quella scelta qui.</ha-alert>
+              <ha-alert alert-type="info">Cambio automatico da T10 spento per scelta: la stagione resta quella scelta qui.</ha-alert>
               {%- endif %}
 
           - type: heading
@@ -2012,9 +2012,9 @@ views:
               columns: full
             content: |-
               {%- if is_state('input_select.stagione', 'ESTATE') -%}
-              Estate: Max estate è il limite superiore; comfort, accumulo e limite inferiore stanno sotto di coefficiente × Δ comfort. Set estate è il setpoint aria della CompactP (meno l'offset di raffrescamento); Set inverno lo allinea ECM da solo.
+              Estate: Max estate è il limite superiore; comfort, accumulo e limite inferiore stanno sotto di coefficiente × Δ comfort. Set estate è il setpoint aria del CP (meno l'offset di raffrescamento); Set inverno lo allinea ECM da solo.
               {%- else -%}
-              Inverno: comfort, accumulo e limite superiore = Set inverno + coefficiente × Δ comfort. Min inverno è il limite inferiore. Set estate è il setpoint aria della CompactP.
+              Inverno: comfort, accumulo e limite superiore = Set inverno + coefficiente × Δ comfort. Min inverno è il limite inferiore. Set estate è il setpoint aria del CP.
               {%- endif %}
 
       # ── Uso quotidiano: acqua calda, orari, free cooling
@@ -2044,9 +2044,9 @@ views:
             grid_options:
               columns: full
             content: |-
-              Set ACS: acqua calda con il compressore CP. Set resistenza: acqua calda con la resistenza del bollitore.
-              {%- if is_state('input_select.stagione', 'INVERNO') %} In inverno scalda la resistenza; il compressore ACS resta escluso.{% endif %}
-              {%- if is_state('automation.05_ecm_acs_manager', 'on') %} Li regola 05-ECM ACS MANAGER ogni minuto: un valore messo a mano può essere cambiato subito.{% endif %}
+              Set ACS: acqua calda con il CP. Set resistenza: acqua calda con la resistenza del bollitore.
+              {%- if is_state('input_select.stagione', 'INVERNO') %} In inverno scalda la resistenza; il CP resta escluso.{% endif %}
+              {%- if is_state('automation.05_ecm_acs_manager', 'on') %} Li regola ACS Manager ogni minuto: un valore messo a mano può essere cambiato subito.{% endif %}
 
           - type: heading
             heading: Orari
@@ -2128,7 +2128,7 @@ views:
             grid_options:
               columns: full
             content: |-
-              Da Mattina a Sera è giorno per ECM e per il motore. La zona notte conta da un'ora prima di Notte fino a Mattina. Doccia serve solo alle luci del lavello in lavanderia.
+              Giorno: da Mattina a Sera, per ECM e per il motore ECM. Zona notte: da un'ora prima di Notte fino a Mattina. Doccia: la usano le luci del lavello in lavanderia, non ECM.
 
           - type: heading
             heading: Free cooling
@@ -2155,7 +2155,7 @@ views:
             content: |-
               {%- set d = states('input_number.delta_freecooling') | float(2.5) -%}
               {%- if is_state('automation.01_ecm_fc_estate', 'off') -%}
-              <ha-alert alert-type="info">Automazione free cooling spenta di proposito: qui non cambia nulla.</ha-alert>
+              <ha-alert alert-type="info">Automazione Free cooling spenta per scelta: qui non cambia nulla.</ha-alert>
               {% endif -%}
               Solo in estate. Lo stato lo aggiorna l'automazione; ATTIVATO a mano chiede l'avvio. Parte se in casa fa almeno {{ '%.1f' | format(d) | replace('.', ',') }} °C più che fuori, si ferma sotto {{ '%.1f' | format([d - 1, 0.5] | max) | replace('.', ',') }} °C.
 
@@ -2170,10 +2170,10 @@ views:
             grid_options:
               columns: full
             content: |-
-              <ha-alert alert-type="warning">Parametri tecnici: spostano le soglie usate da ECM e dal motore. Cambiali solo sapendo l'effetto.</ha-alert>
+              <ha-alert alert-type="warning">Spostano le soglie usate da ECM e dal motore ECM: cambiale solo se ne conosci l'effetto.</ha-alert>
 
           - type: heading
-            heading: Compressore CP
+            heading: Compressore
             heading_style: subtitle
             icon: mdi:heat-pump-outline
           - type: custom:mushroom-number-card
@@ -2219,7 +2219,7 @@ views:
               {%- set s = states('input_number.commutazione_estate_inverno') | float(22.5) -%}
               {%- set i = states('input_number.isteresi_commutazione_estate_inverno') | float(2) -%}
               Inverno sotto {{ '%.1f' | format(s) | replace('.', ',') }} °C, estate sopra soglia + isteresi ({{ '%.1f' | format(s + i) | replace('.', ',') }} °C). Le usa anche il motore ECM.
-              {%- if is_state('automation.00_nilan_cambio_stagione_automatico_t10', 'off') %} Il cambio automatico ora è spento di proposito.{% endif %}
+              {%- if is_state('automation.00_nilan_cambio_stagione_automatico_t10', 'off') %} Il cambio automatico è spento per scelta.{% endif %}
 
           - type: heading
             heading: Coefficienti ECM
@@ -2227,7 +2227,7 @@ views:
             icon: mdi:function-variant
           - type: custom:mushroom-number-card
             entity: input_number.ecm_coefficiente_comfort
-            name: Coeff. comfort
+            name: Comfort
             icon: mdi:tune-variant
             icon_color: grey
             display_mode: buttons
@@ -2242,7 +2242,7 @@ views:
               columns: 6
           - type: custom:mushroom-number-card
             entity: input_number.ecm_coefficiente_accumulo
-            name: Coeff. accumulo
+            name: Accumulo
             icon: mdi:tune-variant
             icon_color: grey
             display_mode: buttons
@@ -2257,7 +2257,7 @@ views:
               columns: 6
           - type: custom:mushroom-number-card
             entity: input_number.ecm_coefficiente_tmin
-            name: Coeff. limite
+            name: Limite
             icon: mdi:tune-variant
             icon_color: grey
             display_mode: buttons
@@ -2344,8 +2344,8 @@ views:
                 {%- elif (now() - s.last_reported).total_seconds() > 900 -%}{%- set ns.v = ns.v + ['Sonda ' ~ nome ~ ': dato vecchio di ' ~ ((now() - s.last_reported).total_seconds() // 60) | int ~ ' min'] -%}{%- endif -%}
               {%- endfor -%}
               {%- set eng = states('sensor.ecm_engine_stato') -%}
-              {%- if eng != 'online' -%}{%- set ns.p = ns.p + ['ecm-engine: ' ~ eng] -%}{%- endif -%}
-              {%- for x in state_attr('sensor.ecm_engine_avvisi', 'elenco') or [] -%}{%- set ns.v = ns.v + ['ecm-engine: ' ~ x] -%}{%- endfor -%}
+              {%- if eng != 'online' -%}{%- set ns.p = ns.p + ['Motore ECM: ' ~ eng] -%}{%- endif -%}
+              {%- for x in state_attr('sensor.ecm_engine_avvisi', 'elenco') or [] -%}{%- set ns.v = ns.v + ['Motore ECM: ' ~ x] -%}{%- endfor -%}
               {%- set lista = ['sensor.toshiba_on_off_unita', 'sensor.toshiba_modo_unita', 'sensor.toshiba_setpoint', 'sensor.toshiba_potenza_attiva',
                 'sensor.compactp_t10_temperatura_sensore_stanza', 'sensor.compactp_t2_temperatura_immissione', 'sensor.compactp_t11_temperatura_bollitore_parte_alta',
                 'sensor.compactp_t12_temperatura_bollitore_parte_bassa', 'sensor.compactp_stato_controllo', 'sensor.compactp_ventilazione_selezionata',
@@ -2388,7 +2388,7 @@ views:
               {%- endfor %}
               {%- set e = states.sensor.ecm_engine_stato %}
               {%- if e is not none %}
-              | ecm-engine | solo quando cambia | {{ '🟢 online' if e.state == 'online' else '🔴 ' ~ e.state }} |
+              | Motore ECM | solo quando cambia | {{ '🟢 online' if e.state == 'online' else '🔴 ' ~ e.state }} |
               {%- endif %}
               {%- set te = states.sensor.ecm_temperatura_esterna_affidabile %}
               {%- if te is not none %}
@@ -2432,7 +2432,7 @@ views:
       - type: grid
         cards:
           - type: heading
-            heading: ecm-engine e gateway
+            heading: Motore ECM e gateway
             icon: mdi:engine-outline
           - type: entities
             show_header_toggle: false
@@ -2468,7 +2468,7 @@ views:
             heading: Automazioni ECM
             icon: mdi:robot-outline
           - type: markdown
-            content: "🟢 attiva · ⚪ spenta per scelta (resta spenta) · 🔴 problema. Tocca una riga per i dettagli."
+            content: "🟢 attiva · ⚪ spenta per scelta · 🔴 problema"
           - type: entities
             show_header_toggle: false
             entities:
@@ -2477,11 +2477,11 @@ views:
               - &aut
                 type: custom:template-entity-row
                 entity: automation.01_ecm_eg_estate_fascia_giorno
-                name: EG · giorno estate
+                name: EG · ECM Giorno
                 state: |-
                   {%- set s = states(config.entity) -%}
                   {%- set scelta = ['automation.00_nilan_cambio_stagione_automatico_t10', 'automation.00_nilan_sync', 'automation.01_ecm_eg_estate_fascia_giorno', 'automation.01_ecm_en_estate_fascia_notturna', 'automation.01_ecm_fc_estate', 'automation.02_ecm_safety_guard', 'automation.04_ecm_watchdog', 'automation.04_ecm_watchdog_fc_zona', 'automation.06_ecm_humidity_override', 'automation.07_ecm_ricambio_aria_minimo_2', 'automation.09_ecm_manuale', 'automation.10_ecm_inverno', 'automation.99_ecm_test_nilan_write'] -%}
-                  {%- if s == 'on' -%}attiva{%- elif s == 'off' and config.entity in scelta -%}spenta (scelta){%- elif s == 'off' -%}spenta: verificare{%- else -%}non caricata{%- endif -%}
+                  {%- if s == 'on' -%}attiva{%- elif s == 'off' and config.entity in scelta -%}spenta per scelta{%- elif s == 'off' -%}spenta: verificare{%- else -%}non caricata{%- endif -%}
                 color: |-
                   {%- set s = states(config.entity) -%}
                   {%- if s == 'on' -%}var(--success-color){%- elif s == 'off' and config.entity in ['automation.00_nilan_cambio_stagione_automatico_t10', 'automation.00_nilan_sync', 'automation.01_ecm_eg_estate_fascia_giorno', 'automation.01_ecm_en_estate_fascia_notturna', 'automation.01_ecm_fc_estate', 'automation.02_ecm_safety_guard', 'automation.04_ecm_watchdog', 'automation.04_ecm_watchdog_fc_zona', 'automation.06_ecm_humidity_override', 'automation.07_ecm_ricambio_aria_minimo_2', 'automation.09_ecm_manuale', 'automation.10_ecm_inverno', 'automation.99_ecm_test_nilan_write'] -%}var(--disabled-text-color){%- else -%}var(--error-color){%- endif -%}
@@ -2490,14 +2490,14 @@ views:
                   {%- if t -%}{%- set m = ((now() - t).total_seconds() // 60) | int -%}
                   Ultima esecuzione: {{ 'adesso' if m < 1 else m ~ ' min fa' if m < 60 else (m // 60) ~ ' h fa' if m < 1440 else (t | as_local).strftime('%d/%m %H:%M') }}
                   {%- else -%}Mai eseguita{%- endif -%}
-              - {<<: *aut, entity: automation.01_ecm_en_estate_fascia_notturna, name: EN · notte estate}
-              - {<<: *aut, entity: automation.01_ecm_fc_estate, name: FC · free cooling estate}
+              - {<<: *aut, entity: automation.01_ecm_en_estate_fascia_notturna, name: EN · ECM Notte}
+              - {<<: *aut, entity: automation.01_ecm_fc_estate, name: FC · Free cooling}
               - {<<: *aut, entity: automation.01_ecm_ig_inverno_fascia_giorno, name: IG · giorno inverno}
-              - {<<: *aut, entity: automation.10_ecm_inverno, name: 10 · inverno}
+              - {<<: *aut, entity: automation.10_ecm_inverno, name: 10 · ECM Inverno}
               - {<<: *aut, entity: automation.06_ecm_humidity_override, name: 06 · override umidità}
               - {<<: *aut, entity: automation.07_ecm_ricambio_aria_minimo_2, name: 07 · ricambio aria minimo}
               - {<<: *aut, entity: automation.00_nilan_cambio_stagione_automatico_t10, name: Cambio stagione automatico (T10)}
-              - {<<: *aut, entity: automation.09_ecm_manuale, name: 09 · ECM manuale (prove motore)}
+              - {<<: *aut, entity: automation.09_ecm_manuale, name: 09 · ECM Manuale (prove motore)}
               - type: section
                 label: Sicurezza e watchdog
               - {<<: *aut, entity: automation.02_ecm_safety_guard, name: 02 · safety guard}
@@ -2509,7 +2509,7 @@ views:
               - {<<: *aut, entity: automation.00_nilan_sync, name: 00 · Nilan SYNC}
               - type: section
                 label: Acqua calda (ACS)
-              - {<<: *aut, entity: automation.05_ecm_acs_manager, name: 05 · ACS manager}
+              - {<<: *aut, entity: automation.05_ecm_acs_manager, name: 05 · ACS Manager}
               - {<<: *aut, entity: automation.ecm_acs_prova_caldo_guardia, name: Guardia prova ACS}
               - {<<: *aut, entity: automation.ecm_acs_minimo_bollitore_basso_cp_heat_v2, name: Minimo bollitore basso · CP HEAT V2}
               - {<<: *aut, entity: automation.ecm_acs_minimo_bollitore_basso_pulizia_stato, name: Minimo bollitore basso · pulizia stato}
@@ -2728,7 +2728,7 @@ views:
             icon: mdi:school-outline
           - type: markdown
             content: |-
-              {% for r in state_attr('sensor.ecm_engine_in_breve','righe') or ['Il motore di apprendimento non ha ancora dati.'] -%}
+              {% for r in state_attr('sensor.ecm_engine_in_breve','righe') or ['Il motore ECM non ha ancora dati.'] -%}
               - {{ r }}
               {% endfor %}
           - type: conditional
@@ -2754,7 +2754,7 @@ views:
               min: 0
               max: 100
           - type: markdown
-            content: Questa pagina mostra le misure di consumo e resa di ogni combinazione di Nilan e Toshiba. Servono per scegliere la combinazione che costa meno. Le misure si fanno con prove brevi, da 15 a 30 minuti.
+            content: Consumo e resa di ogni combinazione di Nilan e Toshiba, misurati con prove da 15 a 30 minuti. Servono a scegliere la combinazione che costa meno.
           - type: markdown
             title: Ultime prove
             content: |-
@@ -2858,11 +2858,9 @@ views:
               {%- set tab = state_attr('sensor.ecm_engine_resa_acs','tabella') or [] -%}
               {%- set acse_on = is_state('input_boolean.ecm_acs_prova_caldo_attiva','on') -%}
               {%- set acse_v = states('input_number.ecm_acs_prova_caldo_velocita') | int(0) -%}
-              Queste modalità descrivono lo **scopo ACS** e restano separate dalle combinazioni climatiche.
-
               | Modalità | Stato | Resa (°C/h) | Campioni |
               |---|---|---:|---:|
-              | **ACSr** | {{ 'ATTIVA' if is_state('sensor.compactp_resistenza_elettrica_acs','ON') else 'ferma' }} | T11 {{ state_attr(sr,'resistenza_t11_c_h') or '–' }} · T12 {{ state_attr(sr,'resistenza_t12_c_h') or '–' }} | {{ state_attr(sr,'resistenza_campioni') or 0 }} |
+              | **ACSr** | {{ 'attiva' if is_state('sensor.compactp_resistenza_elettrica_acs','ON') else 'ferma' }} | T11 {{ state_attr(sr,'resistenza_t11_c_h') or '–' }} · T12 {{ state_attr(sr,'resistenza_t12_c_h') or '–' }} | {{ state_attr(sr,'resistenza_campioni') or 0 }} |
               {% for v in [1, 2, 3, 4] -%}
               {%- set ns = namespace(rows=[]) -%}
               {%- for x in tab -%}
@@ -2870,7 +2868,7 @@ views:
                   {%- set ns.rows = ns.rows + [x] -%}
                 {%- endif -%}
               {%- endfor -%}
-              | **ACSe V{{ v }}** | {{ 'ATTIVA' if acse_on and acse_v == v else 'ferma' }} | {{ ('T12 ' ~ (ns.rows | map(attribute='resa_bollitore_basso_c_h') | list | join(' / '))) if ns.rows | count else 'da misurare' }} | {{ ns.rows | map(attribute='finestre') | sum if ns.rows | count else 0 }} |
+              | **ACSe V{{ v }}** | {{ 'attiva' if acse_on and acse_v == v else 'ferma' }} | {{ ('T12 ' ~ (ns.rows | map(attribute='resa_bollitore_basso_c_h') | list | join(' / '))) if ns.rows | count else 'da misurare' }} | {{ ns.rows | map(attribute='finestre') | sum if ns.rows | count else 0 }} |
               {% endfor %}
               ACSr = resistenza del bollitore. ACSe Vx = CP HEAT Vx.
 
@@ -2887,11 +2885,9 @@ views:
               {%- set tab = state_attr('sensor.ecm_engine_resa_acs','tabella') or [] -%}
               {%- set acse_on = is_state('input_boolean.ecm_acs_prova_caldo_attiva','on') -%}
               {%- set acse_v = states('input_number.ecm_acs_prova_caldo_velocita') | int(0) -%}
-              Queste modalità descrivono lo **scopo ACS** e restano separate dalle combinazioni climatiche.
-
               | Modalità | Azionamento | Stato | Resa osservata | Campioni |
               |---|---|---|---|---:|
-              | **ACSr** | Resistenza bollitore | {{ 'ATTIVA' if is_state('sensor.compactp_resistenza_elettrica_acs','ON') else 'ferma' }} | T11 {{ state_attr(sr,'resistenza_t11_c_h') or '–' }} °C/h · T12 {{ state_attr(sr,'resistenza_t12_c_h') or '–' }} °C/h | {{ state_attr(sr,'resistenza_campioni') or 0 }} |
+              | **ACSr** | Resistenza bollitore | {{ 'attiva' if is_state('sensor.compactp_resistenza_elettrica_acs','ON') else 'ferma' }} | T11 {{ state_attr(sr,'resistenza_t11_c_h') or '–' }} °C/h · T12 {{ state_attr(sr,'resistenza_t12_c_h') or '–' }} °C/h | {{ state_attr(sr,'resistenza_campioni') or 0 }} |
               {% for v in [1, 2, 3, 4] -%}
               {%- set ns = namespace(rows=[]) -%}
               {%- for x in tab -%}
@@ -2899,7 +2895,7 @@ views:
                   {%- set ns.rows = ns.rows + [x] -%}
                 {%- endif -%}
               {%- endfor -%}
-              | **ACSe V{{ v }}** | CP HEAT V{{ v }} | {{ 'ATTIVA' if acse_on and acse_v == v else 'ferma' }} | {{ (ns.rows | map(attribute='resa_bollitore_basso_c_h') | list | join(' / ') ~ ' °C/h T12') if ns.rows | count else 'da misurare' }} | {{ ns.rows | map(attribute='finestre') | sum if ns.rows | count else 0 }} |
+              | **ACSe V{{ v }}** | CP HEAT V{{ v }} | {{ 'attiva' if acse_on and acse_v == v else 'ferma' }} | {{ (ns.rows | map(attribute='resa_bollitore_basso_c_h') | list | join(' / ') ~ ' °C/h T12') if ns.rows | count else 'da misurare' }} | {{ ns.rows | map(attribute='finestre') | sum if ns.rows | count else 0 }} |
               {% endfor %}
           - type: markdown
             title: Da misurare

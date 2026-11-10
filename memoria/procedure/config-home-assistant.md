@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-10 (riscaldamento inverno corretto; commit HA `d29a722`).
+Ultima verifica: 2026-11-10 (matrice inverno definitiva; commit HA `335b878`).
 
 ## Prerequisiti
 
@@ -150,16 +150,25 @@ le automazioni ECM ancora in stato sconosciuto.
 Il primo commit HA `4b1dff7` è stato sostituito lo stesso giorno perché applicava
 al riscaldamento soglie generiche non concordate (20/21,2 °C), un'eccedenza FV
 fissa di 1000 W e CP HEAT come fonte ambiente. La versione vigente è il commit
-HA `d29a722`, nei file `10_ecm_inverno.yaml` e `packages/ecm_helper.yaml`; il ramo
-WRITE del commit precedente resta valido come arbitro.
+HA `d29a722`, poi aggiornata nella matrice dal commit HA `335b878`; i file sono
+`10_ecm_inverno.yaml` e `packages/ecm_helper.yaml`. Il ramo WRITE del commit
+precedente resta valido come arbitro.
 
 La `10` è accesa, gira ogni minuto solo in INVERNO e con `ecm_manuale` in AUTO e
-usa le medie zona a 10 minuti. Di giorno il minimo di entrambe le zone è
-`input_number.t_min_inverno` (20 °C alla verifica). Quando
-`sensor.ecm_fascia_climatica_attiva` vale NOTTE, il minimo della sola zona notte
-diventa T min − 1 °C; non esiste un helper separato per questo offset. Ogni zona
-ha una memoria di recupero distinta: se scende sotto il proprio minimo, continua
-fino a minimo +0,5 °C. Basta una zona in recupero per chiedere calore.
+usa le medie zona a 10 minuti. Tutte le soglie derivano dinamicamente da
+`input_number.t_min_inverno`, impostato a 20,5 °C alla verifica; non esistono
+helper separati per gli offset. La matrice definitiva è:
+
+| Fascia | Zona | Avvio sotto | Recupero fino a | Con T min 20,5 °C |
+|---|---|---:|---:|---:|
+| GIORNO | giorno | T min | T min + 0,5 | 20,5 → 21,0 °C |
+| GIORNO | notte | T min − 0,5 | T min | 20,0 → 20,5 °C |
+| NOTTE | giorno | T min − 1,0 | T min − 0,5 | 19,5 → 20,0 °C |
+| NOTTE | notte | T min − 1,5 | T min − 1,0 | 19,0 → 19,5 °C |
+
+Ogni zona ha una memoria di recupero distinta; basta una zona sotto il proprio
+limite per chiedere calore e il suo recupero resta attivo fino alla soglia della
+quarta colonna.
 
 Sopra il minimo non esiste più il vecchio target 21,2 °C. Se l'energia è
 favorevole, l'accumulo può proseguire fino al massimo comune modificabile
@@ -194,9 +203,10 @@ insufficiente e consentono di salire di velocità entro il limite di fascia.
 la velocità Toshiba e le macchine reali. La richiesta CP ambiente deve restare 0;
 una CP attiva deve essere spiegata da ACS, umidità o ricambio. Controllare anche
 W/ranking del motore, trend zona e nuovi errori nel log. Alla verifica delle
-15:05: `10` e WRITE accese, recuperi/accumulo OFF, ambiente OFF/0, Toshiba spento,
-zone 20,87/20,56 °C, SOC 10%, FV circa 72 W; CP HEAT V2 era attiva soltanto per
-il ricambio. Il primo ciclo reale sotto soglia resta da osservare.
+16:34: `10` e WRITE accese, fascia GIORNO, T min 20,5 °C, recuperi/accumulo OFF,
+ambiente OFF/0, Toshiba spento, zone 20,86/20,62 °C contro soglie 20,5/20,0;
+la CP in STEP 4 rispondeva a una richiesta indipendente. Il primo ciclo reale
+sotto soglia resta da osservare.
 
 **Ripristino:** spegnere `automation.10_ecm_inverno` e verificare Toshiba OFF;
 la `07` e la WRITE continuano ricambio/ACS. Il backup immediatamente precedente

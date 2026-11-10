@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-10 15:07 (gestione ECM inverno corretta e attiva; macchina e rete restano alla verifica del 09/11).
+Ultima verifica: 2026-11-10 16:36 (matrice inverno definitiva e T min 20,5 °C; macchina e rete restano alla verifica del 09/11).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -63,21 +63,22 @@ dettagli in `procedure/migrazione-minipc.md`.
   (soglia iniziale 40%), oppure la sera/notte se la proiezione lascia almeno il 15% al
   mattino; altrimenti passa ai richiami di 15 minuti a inizio ora. `05-ECM ACS MANAGER`
   resta accesa; le altre automazioni decisionali ECM generali, salvo `10`, restano spente.
-- HA: `10 - ECM INVERNO` corretta nel commit HA `d29a722` e accesa dal 10/11.
-  In AUTO usa le medie zona a 10 minuti: di giorno il minimo è
-  `input_number.t_min_inverno` (20 °C alla verifica) per entrambe; nella fascia
-  climatica NOTTE il minimo della sola zona notte è un grado più basso. Ogni
-  zona scesa sotto il proprio minimo resta in recupero fino a minimo +0,5 °C.
+- HA: `10 - ECM INVERNO` corretta nel commit HA `335b878` e accesa dal 10/11.
+  In AUTO usa le medie zona a 10 minuti e la matrice relativa a
+  `input_number.t_min_inverno` (20,5 °C alla verifica): in fascia GIORNO zona
+  giorno da T min a T min +0,5 e zona notte da T min −0,5 a T min; in fascia
+  NOTTE zona giorno da T min −1 a T min −0,5 e zona notte da T min −1,5 a
+  T min −1. Ogni zona mantiene separatamente il proprio recupero.
   Con energia favorevole può continuare fino al massimo comune modificabile
   `input_number.ecm_inverno_massimo_accumulo` (23,5 °C); il recupero sotto il
   minimo prevale sul budget energetico. Per il calore ambiente comanda solo
   Toshiba HEAT, lasciando a zero la richiesta CP ambiente: CP HEAT resta alle
   richieste indipendenti di ACS, umidità e ricambio. La velocità Split deriva
   dalle combinazioni E70/E80/E90 apprese, usa i trend separati 20/30/60 minuti,
-  resta invariata almeno 15 minuti ed è limitata a V2 di notte. Alle 15:05 non
-  chiedeva calore (zone 20,87/20,56 °C, SOC 10%, FV circa 72 W); Toshiba era
-  spento e CP HEAT V2 lavorava soltanto per il ricambio. Prove automatiche del
-  motore ancora spente.
+  resta invariata almeno 15 minuti ed è limitata a V2 di notte. Alle 16:34 non
+  chiedeva calore (fascia GIORNO, zone 20,86/20,62 °C contro soglie 20,5/20,0);
+  Toshiba era spento e la CP in STEP 4 rispondeva a una richiesta indipendente.
+  Prove automatiche del motore ancora spente.
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.
 
 ## Segreti (solo posizione)

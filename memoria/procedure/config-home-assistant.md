@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-10 (riscaldamento inverno; commit HA `4b1dff7`).
+Ultima verifica: 2026-11-10 (riscaldamento inverno corretto; commit HA `d29a722`).
 
 ## Prerequisiti
 
@@ -147,40 +147,61 @@ le automazioni ECM ancora in stato sconosciuto.
 
 ## Riscaldamento ambiente invernale dal 10/11
 
-Il commit HA `4b1dff7` modifica `10_ecm_inverno.yaml`, il ramo iniziale di
-`00_nilan_write.yaml` e `packages/ecm_helper.yaml`. La `10` è accesa, valuta
-ogni 5 minuti solo in INVERNO e con `ecm_manuale` in AUTO. La zona di riferimento
-è la più fredda fra le medie giorno/notte. Chiede calore sotto
-`sensor.ecm_limite_inferiore` (20 °C alla verifica) e spegne a obiettivo +0,3 °C.
-Di giorno, con FV meno consumo base casa almeno 1000 W, usa invece
-`sensor.ecm_target_accumulo` (21,2 °C alla verifica). Se una delle due zone o T10
-raggiunge la soglia estate meno 1 °C (23,5 °C alla verifica), o i dati non sono
-validi, azzera le richieste ambiente. La WRITE ripete la guardia sulle zone.
+Il primo commit HA `4b1dff7` è stato sostituito lo stesso giorno perché applicava
+al riscaldamento soglie generiche non concordate (20/21,2 °C), un'eccedenza FV
+fissa di 1000 W e CP HEAT come fonte ambiente. La versione vigente è il commit
+HA `d29a722`, nei file `10_ecm_inverno.yaml` e `packages/ecm_helper.yaml`; il ramo
+WRITE del commit precedente resta valido come arbitro.
 
-La `10` scrive soltanto helper: `input_boolean.ecm_riscaldamento_ambiente_attivo`,
-`input_number.ecm_ventilazione_riscaldamento_ambiente` (V2 normale; V3 di giorno
-con sole o deficit almeno 1 °C) e gli helper Toshiba HEAT (V1 normale, V2 con sole
-o deficit almeno 1 °C, V3 solo di giorno con deficit almeno 2 °C). Il setpoint
-Toshiba è 29 °C. La WRITE inoltra questi comandi fisici, con verifica di modo,
-velocità, setpoint e ON/OFF reali. Il setpoint aria CP segue la regola esistente
-T10/isteresi e viene scritto solo quando serve, a riposo 17 °C.
+La `10` è accesa, gira ogni minuto solo in INVERNO e con `ecm_manuale` in AUTO e
+usa le medie zona a 10 minuti. Di giorno il minimo di entrambe le zone è
+`input_number.t_min_inverno` (20 °C alla verifica). Quando
+`sensor.ecm_fascia_climatica_attiva` vale NOTTE, il minimo della sola zona notte
+diventa T min − 1 °C; non esiste un helper separato per questo offset. Ogni zona
+ha una memoria di recupero distinta: se scende sotto il proprio minimo, continua
+fino a minimo +0,5 °C. Basta una zona in recupero per chiedere calore.
 
-La `07` continua a controllare il proprio helper di ricambio. La WRITE usa la
-velocità maggiore fra ricambio e ambiente quando la `10` chiede CP HEAT.
-Durante ACSe la velocità CP richiesta dalla prova prevale sulla richiesta
-ambiente; Toshiba segue comunque la richiesta ambiente. Le stime di potenza
-del motore restano osservative: la resa termica delle combinazioni non è ancora
-abbastanza affidabile per sceglierle automaticamente.
+Sopra il minimo non esiste più il vecchio target 21,2 °C. Se l'energia è
+favorevole, l'accumulo può proseguire fino al massimo comune modificabile
+`input_number.ecm_inverno_massimo_accumulo`, inizialmente 23,5 °C; raggiungerlo in
+una delle due zone arresta subito la richiesta. Di giorno l'avvio usa i consensi
+stabili FV/batteria già condivisi con ACS; durante il ciclo verifica importazione
+rete, scarica batteria, FV e consumo base. Di notte stima il SOC al mattino con
+capacità 20 kWh, profilo orario appreso della casa (se completo), consumo della
+combinazione Split e riserva del 15%. `nilan_mattina` resta per ora il ripiego:
+l'apprendimento dell'istante in cui il FV torna sopra 400 W è ancora da fare.
+Il recupero sotto il minimo prevale sempre sulla disponibilità energetica.
 
-**Verifica:** controllare stato e `last_triggered` delle automazioni `10` e WRITE,
-gli helper ambiente, la velocità e il setpoint reali CP, ON/OFF e potenza Toshiba,
-oltre a nuove eccezioni nei log di HA. Alla prima verifica del 10/11 alle 14:13
-la `10` era `on`, helper ambiente OFF/0, Toshiba spento: entrambe le zone erano
-sopra 20 °C. Il primo ciclo reale sotto soglia resta da osservare.
+Per il calore ambiente la `10` richiede **solo Toshiba HEAT** e mantiene
+`input_number.ecm_ventilazione_riscaldamento_ambiente` a 0. La CP continua a
+essere arbitrata separatamente per ACS, umidità e ricambio. I test del 10/11
+hanno misurato circa 500/530/600 W aggiuntivi per CP HEAT V2/V3/V4 senza
+dimostrare un riscaldamento ambiente sufficiente. Le coppie CP+Split hanno oggi
+soltanto W stimati per somma, non una resa incrementale misurata: non sono
+selezionabili automaticamente finché prove comparative non dimostrano che il
+calore aggiuntivo giustifica quei consumi.
+
+La velocità Toshiba viene scelta fra E70/E80/E90 usando
+`sensor.ecm_engine_migliore_caldo` e la tabella appresa (costo termico,
+affidabilità e flag da confermare); il ripiego è V3 di giorno e V2 di notte.
+Nella fascia NOTTE non supera V2. Una scelta resta attiva almeno 15 minuti, salvo
+massimo o sicurezza. Dopo la finestra minima rivaluta ranking e trend separati
+20/30/60 minuti delle zone in recupero; due trend non positivi rendono la resa
+insufficiente e consentono di salire di velocità entro il limite di fascia.
+
+**Verifica:** leggere stato e `last_triggered` di `10` e WRITE, i tre helper
+`ecm_inverno_recupero_*`, `ecm_inverno_accumulo_attivo`, la richiesta ambiente,
+la velocità Toshiba e le macchine reali. La richiesta CP ambiente deve restare 0;
+una CP attiva deve essere spiegata da ACS, umidità o ricambio. Controllare anche
+W/ranking del motore, trend zona e nuovi errori nel log. Alla verifica delle
+15:05: `10` e WRITE accese, recuperi/accumulo OFF, ambiente OFF/0, Toshiba spento,
+zone 20,87/20,56 °C, SOC 10%, FV circa 72 W; CP HEAT V2 era attiva soltanto per
+il ricambio. Il primo ciclo reale sotto soglia resta da osservare.
 
 **Ripristino:** spegnere `automation.10_ecm_inverno` e verificare Toshiba OFF;
-la `07` e la WRITE continuano il ricambio/ACS. Se serve tornare ai tre file
-precedenti, backup in `/config/tmp/backup_ecm_inverno_20261110/`. Dopo la copia,
-eseguire `check_config`, ricaricare `input_boolean`, `input_number` e `automation`
-e verificare che la `10` resti spenta. Non usare un ripristino del vecchio ramo
-generale ECM per questa sola modifica.
+la `07` e la WRITE continuano ricambio/ACS. Il backup immediatamente precedente
+è in `/tmp/backup_ecm_inverno_corretto_20261110/` sul server; quello precedente
+al commit `4b1dff7` resta in `/config/tmp/backup_ecm_inverno_20261110/`. Dopo una
+copia eseguire `check_config`, ricaricare `input_boolean`, `input_number`,
+`input_datetime` e `automation`, lasciando la `10` spenta finché il ripristino
+non è verificato.

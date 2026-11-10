@@ -13,6 +13,21 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 - Ogni 60 s legge da HA (una richiesta `POST /api/template`) e salva un campione in `~/ecm-engine/data/engine.db` (SQLite, conservazione 400 giorni). Dal 09/11 salva anche temperatura del bollitore alto/basso (`t11`, `t12`) e marcatore della prova ACS indiretta (`acs_heat_test`); per i campioni precedenti queste colonne restano vuote. Potenza CP/SPLIT, aria immessa, zone e temperatura esterna erano già registrate. **Dal 09/11 16:56 (commit `70ff339`):** T1 dopo EGWK e T4 dopo lo scambiatore passivo (`t1`, `t4`), bypass apre/chiude e serranda (`bypass_apre`, `bypass_chiude`, `serranda`, 0/1) e i termometri MIJA di soggiorno, studio, matrimoniale, Ale, Leo e bagno (`t_<stanza>`, `bat_<stanza>`, `age_<stanza>` = secondi dall'ultima lettura ricevuta, `ok_<stanza>` = valido come nel package HA: valore e batteria numerici, batteria ≥ 10%; l'età è registrata ma non entra nella validità), più `u_bagno`. Chiavi stanza: `sogg`, `studio`, `matr`, `ale`, `leo`, `bagno`. L'età ha la grana del ciclo di pubblicazione di ble_monitor (il 09/11 tutte le stanze avevano la stessa età).
 - Le due temperature del bollitore sono salvate in **ogni** campione, con il codice della combinazione CP/SPLIT quando classificabile: valgono anche per CP HEAT V3 + SPLIT HEAT V1 e per il normale riscaldamento, non soltanto per le prove marcate `acs_heat_test`. Per il nuovo calcolo della resa ACS e i suoi filtri vedere la sezione dedicata più sotto. La tabella `samples` conserva una riga per timestamp: i nuovi minuti si aggiungono, mentre import o riparazioni dello stesso minuto possono sostituire quella riga (`INSERT OR REPLACE`). Le colonne che il datalogger non conosce (`t11`, `t12`, `acs_heat_test`, `acs_source_ok` e le colonne aria/termometri, elenco `LIVE_ONLY_COLS` in `store.py`) vengono conservate da `gw_repair` e da `gw_import --replace-before`: una colonna aggiunta al campionamento dal vivo va inserita anche in quell'elenco.
 - Ogni 15 minuti ricalcola l'apprendimento (circa 3,5 s su 180 mila campioni) e aggiorna le entità.
+- **Modifica preparata il 10/11, ancora da distribuire:** `power_learner.py`
+  apprende i W di CP e SPLIT separatamente dai campioni corretti per ACS e
+  temperatura esterna. Raggruppa ogni macchina secondo il proprio stato:
+  cambiare velocità CP non azzera l'assestamento dello SPLIT, e viceversa.
+  Per ciascun gruppo scarta i primi 5 minuti dai calcoli e richiede almeno
+  10 minuti utili; i campioni di avvio restano nel database. La tabella
+  `dettaglio` conterrà tutte le combinazioni della stagione, incluse quelle
+  senza periodi termici: W diretti quando la coppia è stata misurata, oppure
+  W stimati sommando i componenti nella stessa fascia esterna. Se manca un
+  componente, W resta vuoto. La stima per somma non attribuisce la resa
+  termica della coppia né modifica il ranking per costo, che usa ancora
+  periodi misurati. `origine_W`, `W_stimati`, `minuti_cp`, `minuti_split` e
+  `criterio_affidabilita` rendono esplicita la provenienza e il significato
+  dell'indice. La prova reale del 10/11 nella fascia 10–15 °C dà 26 W
+  disponibili su 30 righe; mancano le quattro coppie con CP OFF V4.
 - Pubblica in HA via MQTT discovery: `sensor.ecm_engine_*` (stato, in breve, migliore caldo/freddo, apprendimento, prova proposta, prova in corso, ultime prove, da misurare, dettaglio, avvisi), `binary_sensor.ecm_engine_prova_avviabile`, `button.ecm_engine_avvia_prova`, `switch.ecm_engine_prove_automatiche`.
 - Le entità sono mostrate nella tab "Apprendimento" della dashboard ECM v2.
 - "Da misurare" (`sensor.ecm_engine_da_misurare`) elenca **tutte** le combinazioni della stagione (inverno 28, estate 49; V1 esclusa) in tre sezioni, attributo `sezione` di ogni riga: "Provabili adesso" (nell'ordine in cui il motore le proporrebbe), "Non provabili adesso" (con `motivo`), "Già misurate" (100%). Lo stato è il numero di combinazioni ancora da misurare. Di notte (fuori `input_datetime.nilan_mattina`–`nilan_serale`, oggi 08:30–20:30) le prove con Nilan V4 o Toshiba velocità alta non si possono fare: finiscono in "Non provabili adesso". Le etichette dicono "caldo alta", non "alto".

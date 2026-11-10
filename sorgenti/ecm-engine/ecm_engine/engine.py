@@ -8,8 +8,9 @@ from . import config
 from .acs_learner import AcsLearner
 from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
+from .power_learner import PowerLearner
 from .rules import MANUALE_IGNOTO, Ctx, abort_reason, codes_for_season, excluded_candidates, ordered_candidates, propose, start_blockers
-from .segmenter import segment
+from .segmenter import correct_acs, fix_text, segment
 from .texts import (SEZ_FATTE, best_attrs, best_line, blocco_testo, da_misurare_rows, detail_rows, storico_rows,
                     summary_lines)
 
@@ -103,6 +104,7 @@ class Engine:
         self.lock = threading.RLock()
         self.snap: dict | None = None
         self.stats: dict = {}
+        self.power_stats: dict = {}
         self.proposal = None
         self.missing_since: dict[str, float] = {}
         self.ha_error: str | None = None
@@ -337,6 +339,7 @@ class Engine:
         self.store.purge(since)
         n = [0]
         acs_learner = AcsLearner()
+        power_learner = PowerLearner()
 
         # una sola lettura del database (disco lento): ogni campione va anche alla resa ACS
         def counted(rows):
@@ -344,14 +347,21 @@ class Engine:
                 n[0] += 1
                 acs_learner.feed(r)
                 yield r
-        periods = segment(counted(self.store.iter_samples_since(since)))
+        def feed_power(rows):
+            for r in rows:
+                power_learner.feed(r)
+                yield r
+        corrected = correct_acs(fix_text(counted(self.store.iter_samples_since(since))))
+        periods = segment(feed_power(corrected), prepared=True)
         stats = aggregate(periods)
+        power_stats = power_learner.result()
         acs = acs_learner.result()
         log.info("apprendimento: %d campioni, %d periodi, %d statistiche in %.1f s",
                  n[0], len(periods), len(stats), time.monotonic() - t0)
         with self.lock:
             self.pub.set_state('resa_acs', len(acs['tabella']), acs)
             self.stats = stats
+            self.power_stats = power_stats
             self._update_proposal()
             self._publish_learn()
             self._publish_status()
@@ -374,7 +384,7 @@ class Engine:
                            best_attrs(self.stats, "COOL", f))
         self.pub.set_state("apprendimento_caldo", pct_h)
         self.pub.set_state("apprendimento_freddo", pct_c)
-        rows = detail_rows(self.stats, f, c.stagione)
+        rows = detail_rows(self.stats, f, c.stagione, self.power_stats)
         self.pub.set_state("dettaglio", len(rows), {"fascia_esterna": f, "tabella": rows})
         self._publish_da_misurare(c)
 

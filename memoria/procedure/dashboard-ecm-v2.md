@@ -1,6 +1,6 @@
 # Dashboard ECM v2
 
-Ultima verifica: 2026-11-09 22:55 (card ACSe con finestre complete e stime provvisorie).
+Ultima verifica: 2026-11-10 (nomi CP/SPLIT nella tabella desktop "Combinazioni misurate" verificati via template HA e deploy WebSocket).
 
 ## Scopo
 
@@ -31,6 +31,18 @@ Salvare via WebSocket il JSON di backup più recente.
 ## Note
 
 - La card "Da misurare" (tab Apprendimento) divide le righe per l'attributo `sezione` pubblicato da `ecm-engine` (vedi `ecm-engine.md`).
+- Le due card responsive "Combinazioni misurate" hanno ciascuna una macro Jinja
+  `nome_combo`: quando cambia la nomenclatura CP/SPLIT, aggiornarle entrambe.
+  I nomi lunghi restano nell'attributo `descrizione` del sensore del motore; la
+  conversione avviene solo nella dashboard.
+- **Modifica preparata il 10/11, ancora da distribuire insieme al motore:**
+  le card diventano "Combinazioni e consumi" e mostrano tutte le righe
+  proposte, anche quelle senza un periodo termico. `Origine W` distingue
+  misura diretta, somma CP+SPLIT e dato mancante; `Indice dati` specifica
+  se la percentuale riguarda coerenza dei W (sola ventilazione) o delle
+  variazioni di temperatura (caldo/freddo). La card non inventa la resa
+  delle coppie mai provate. Validare sia la versione mobile sia desktop
+  con `/api/template` prima del salvataggio Lovelace.
 - Nella stessa tab la card "Modalità ACS inverno" mantiene separate le finalità ACS
   dalle combinazioni climatiche: `ACSr` è la resistenza del bollitore; `ACSe V1`–
   `ACSe V4` sono le richieste empiriche `CP HEAT V1`–`CP HEAT V4`. Lo stato dello

@@ -4,6 +4,7 @@ from datetime import datetime
 
 from .combo import U_V1_OFF, descrizione, tipo_of
 from .learner import EFF_MIN, ranking
+from .power_learner import combo_w
 from .rules import AUTO_MAX_PER_DAY, MARGINE, MARGINE_HEAT_START
 
 _BLOCCHI_ZONA = ("zona troppo calda per scaldare", "zona troppo fredda per raffrescare",
@@ -65,20 +66,39 @@ def _descr_riga(s, stagione) -> str:
     return d
 
 
-def detail_rows(stats, f, stagione) -> list[dict]:
+def detail_rows(stats, f, stagione, power_stats=None) -> list[dict]:
     rows = []
     tipi = TIPI_STAGIONE.get((stagione or "").strip().upper())
-    sel = (s for s in stats.values() if s.fascia == f and (tipi is None or s.tipo in tipi))
-    for s in sorted(sel, key=lambda s: (s.code, s.tipo)):
-        rows.append({
-            "codice": f"E{s.code}", "descrizione": _descr_riga(s, stagione),
-            "W": round(s.p_tot),
-            "W_cp_on": round(s.p_cp_on) if s.p_cp_on is not None else None, "duty": round(s.duty_cp, 2),
-            "zg": round(s.eff_zg, 2), "zn": round(s.eff_zn, 2),
-            "costo": round(s.costo) if s.costo is not None else None,
-            "periodi": s.periodi, "affidabilita": round(s.affidabilita, 2),
-            "fascia": s.fascia, "da_confermare": s.affidabilita < SOGLIA,
-        })
+    sel = [s for s in stats.values() if s.fascia == f and (tipi is None or s.tipo in tipi)]
+    measured = {s.code: s for s in sel}
+    if power_stats is None:
+        entries = [(s.code, s) for s in sorted(sel, key=lambda s: (s.code, s.tipo))]
+    else:
+        from .rules import codes_for_season
+        entries = [(code, measured.get(code))
+                   for code in sorted(set(codes_for_season(stagione, False)) | set(measured))]
+    for code, s in entries:
+        row = {
+            "codice": f"E{code}", "descrizione": _descr_riga(s, stagione) if s else descrizione(code, stagione),
+            "W": round(s.p_tot) if s else None,
+            "W_cp_on": round(s.p_cp_on) if s and s.p_cp_on is not None else None,
+            "duty": round(s.duty_cp, 2) if s else None,
+            "zg": round(s.eff_zg, 2) if s else None,
+            "zn": round(s.eff_zn, 2) if s else None,
+            "costo": round(s.costo) if s and s.costo is not None else None,
+            "periodi": s.periodi if s else 0, "affidabilita": round(s.affidabilita, 2) if s else 0.0,
+            "fascia": f, "da_confermare": s is None or s.affidabilita < SOGLIA,
+        }
+        if power_stats is not None:
+            estimate, cp, tosh = combo_w(power_stats, code, f, stagione)
+            if s is None:
+                row["W"] = estimate
+            row["origine_W"] = "misura diretta" if s else ("somma CP+SPLIT" if estimate is not None else "dati mancanti")
+            row["W_stimati"] = estimate
+            row["minuti_cp"] = cp.minuti if cp else 0
+            row["minuti_split"] = tosh.minuti if tosh else 0
+            row["criterio_affidabilita"] = "W" if (s.tipo if s else tipo_of(code, stagione)) == "NEUTRO" else "temperatura"
+        rows.append(row)
     return rows
 
 

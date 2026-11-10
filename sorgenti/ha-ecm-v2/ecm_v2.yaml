@@ -2861,9 +2861,9 @@ views:
             heading: Dettaglio
             icon: mdi:table
 
-          # Combinazioni misurate: versione corta per il telefono
+          # Combinazioni e consumi: versione corta per il telefono
           - type: markdown
-            title: Combinazioni misurate
+            title: Combinazioni e consumi
             visibility:
               - condition: screen
                 media_query: "(max-width: 1023px)"
@@ -2897,17 +2897,17 @@ views:
               {% if t | count == 0 -%}
               Nessuna combinazione misurata con questa temperatura esterna.
               {%- else -%}
-              | Combinazione | W | °C/h giorno · notte | W per 1 °C/h | Affid. |
-              |---|---:|---:|---:|---:|
+              | Combinazione | W | Origine W | °C/h giorno · notte | W per 1 °C/h | Indice dati |
+              |---|---:|---|---:|---:|---:|
               {% for r in t -%}
-              | {{ '⚠ ' if r.da_confermare else '' }}{{ nome_combo(r.descrizione) }} | {{ r.W }} | {{ r.zg }} · {{ r.zn }} | {{ r.costo if r.costo is not none else '–' }} | {{ ([r.affidabilita, 1] | min * 100) | round | int }}% |
+              | {{ '⚠ ' if r.da_confermare else '' }}{{ nome_combo(r.descrizione) }} | {{ r.W if r.W is not none else '–' }} | {{ r.origine_W or 'misura diretta' }} | {{ r.zg if r.zg is not none else '–' }} · {{ r.zn if r.zn is not none else '–' }} | {{ r.costo if r.costo is not none else '–' }} | {{ ([r.affidabilita, 1] | min * 100) | round | int }}% {{ r.criterio_affidabilita or '' }} |
               {% endfor %}
-              ⚠ = pochi dati, valori da confermare. W per 1 °C/h: più è basso, meno costa scaldare o raffrescare. Tabella completa sullo schermo grande.
+              ⚠ = dati da confermare. L'indice valuta la coerenza dei W per la sola ventilazione e della temperatura per il riscaldamento/raffrescamento. "Somma CP+SPLIT" stima i watt da misure separate; la resa della coppia richiede una prova.
               {%- endif %}
 
-          # Combinazioni misurate: tabella completa per schermi larghi
+          # Combinazioni e consumi: tabella completa per schermi larghi
           - type: markdown
-            title: Combinazioni misurate
+            title: Combinazioni e consumi
             visibility:
               - condition: screen
                 media_query: "(min-width: 1024px)"
@@ -2916,17 +2916,37 @@ views:
             content: |-
               {%- set d = 'sensor.ecm_engine_dettaglio' -%}
               {%- set t = state_attr(d,'tabella') or [] -%}
+              {%- macro nome_combo(s) -%}
+                {%- set n = s
+                  | replace('Nilan ferma', 'CP OFF V0')
+                  | replace('Nilan solo ventilazione', 'CP OFF')
+                  | replace('Toshiba spento', 'SPLIT OFF')
+                  | replace('Toshiba caldo bassa', 'SPLIT HEAT V1')
+                  | replace('Toshiba caldo media', 'SPLIT HEAT V2')
+                  | replace('Toshiba caldo alta', 'SPLIT HEAT V3')
+                  | replace('Toshiba freddo bassa', 'SPLIT COOL V1')
+                  | replace('Toshiba freddo media', 'SPLIT COOL V2')
+                  | replace('Toshiba freddo alta', 'SPLIT COOL V3')
+                  | replace('Toshiba deumidifica bassa', 'SPLIT DRY V1')
+                  | replace('Toshiba deumidifica media', 'SPLIT DRY V2')
+                  | replace('Toshiba deumidifica alta', 'SPLIT DRY V3') -%}
+                {%- if '(freddo)' in n or ('(caldo)' not in n and is_state('input_select.stagione', 'ESTATE')) -%}
+                  {{- n | replace('Nilan pompa di calore', 'CP COOL') | replace(' (freddo)', '') | replace(' (caldo)', '') -}}
+                {%- else -%}
+                  {{- n | replace('Nilan pompa di calore', 'CP HEAT') | replace(' (caldo)', '') | replace(' (freddo)', '') -}}
+                {%- endif -%}
+              {%- endmacro -%}
               Temperatura esterna: **{{ state_attr(d,'fascia_esterna') or '–' }} °C**
 
               {% if t | count == 0 -%}
               Nessuna combinazione misurata con questa temperatura esterna.
               {%- else -%}
-              | | Combinazione | W medi | W a compressore acceso | Compressore acceso | °C/h zona giorno | °C/h zona notte | W per 1 °C/h | Periodi misurati | Affidabilità |
-              |---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+              | | Combinazione | W medi | Origine W | W a compressore acceso | Compressore acceso | °C/h zona giorno | °C/h zona notte | W per 1 °C/h | Periodi misurati | Indice dati |
+              |---|---|---:|---|---:|---:|---:|---:|---:|---:|---:|
               {% for r in t -%}
-              | {{ '⚠ ' if r.da_confermare else '' }}{{ r.codice }} | {{ r.descrizione }} | {{ r.W }} | {{ r.W_cp_on if r.W_cp_on is not none else '–' }} | {{ (r.duty * 100) | round | int }}% | {{ r.zg }} | {{ r.zn }} | {{ r.costo if r.costo is not none else '–' }} | {{ r.periodi }} | {{ ([r.affidabilita, 1] | min * 100) | round | int }}% |
+              | {{ '⚠ ' if r.da_confermare else '' }}{{ r.codice }} | {{ nome_combo(r.descrizione) }} | {{ r.W if r.W is not none else '–' }} | {{ r.origine_W or 'misura diretta' }} | {{ r.W_cp_on if r.W_cp_on is not none else '–' }} | {{ ((r.duty * 100) | round | int) ~ '%' if r.duty is not none else '–' }} | {{ r.zg if r.zg is not none else '–' }} | {{ r.zn if r.zn is not none else '–' }} | {{ r.costo if r.costo is not none else '–' }} | {{ r.periodi }} | {{ ([r.affidabilita, 1] | min * 100) | round | int }}% {{ r.criterio_affidabilita or '' }} |
               {% endfor %}
-              ⚠ = pochi dati, valori da confermare. W per 1 °C/h: più è basso, meno costa scaldare o raffrescare.
+              ⚠ = dati da confermare. L'indice valuta la coerenza dei W per la sola ventilazione e della temperatura per il caldo/freddo. W per 1 °C/h: più è basso, meno costa scaldare o raffrescare. "Somma CP+SPLIT" stima i watt da misure separate; la resa della coppia rimane da misurare.
               {%- endif %}
 
           # Modalità ACS inverno: versione corta per il telefono

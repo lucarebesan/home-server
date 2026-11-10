@@ -234,9 +234,10 @@ def _usable(r: dict) -> bool:
 
 
 def segment(samples, gap_s: int = 180, settle_s: int = 300,
-            min_useful_s: int = 600) -> list[Period]:
+            min_useful_s: int = 600, prepared: bool = False) -> list[Period]:
     out, group = [], []
-    for r in correct_acs(fix_text(samples)):
+    rows = samples if prepared else correct_acs(fix_text(samples))
+    for r in rows:
         ok = _usable(r)
         if group and ok and r["code"] == group[-1]["code"] \
                 and r.get("test_id") == group[-1].get("test_id") \

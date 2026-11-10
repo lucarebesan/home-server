@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-09 22:47 (ricambio minimo invernale e gestione umidità attivi; macchina e rete restano alla verifica delle 16:09).
+Ultima verifica: 2026-11-10 14:15 (gestione ECM inverno attiva; macchina e rete restano alla verifica del 09/11).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -50,10 +50,11 @@ dettagli in `procedure/migrazione-minipc.md`.
 ## Attività pianificate
 
 - Crontab di `home`: rinnovo del certificato alle 04:17 (vedi `procedure/duckdns-certificato.md`).
-- `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti; dal 09/11 campiona anche bollitore alto/basso e marcatore della prova ACS indiretta. Prove automatiche verificate spente il 09/11.
-- HA: `00-NILAN WRITE` è accesa dal 09/11 in modalità temporanea ACS più ricambio
-  minimo invernale. Il ramo generale ECM resta escluso, ma dal commit HA `8e950d6`
-  inoltra anche la richiesta della `07` alla sola Compact P, con priorità ACS.
+- `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti; dal 09/11 campiona anche bollitore alto/basso e marcatore della prova ACS indiretta. Dal 10/11 pubblica stime W separate CP/SPLIT; la resa termica delle coppie resta da misurare. Prove automatiche verificate spente il 10/11.
+- HA: `00-NILAN WRITE` è accesa in modalità isolata ACS, ricambio minimo e
+  riscaldamento ambiente invernale (commit HA `4b1dff7`); il vecchio ramo ECM
+  generale resta escluso. Arbitra la Compact P fra ACSe, ricambio e richiesta
+  ambiente della `10`, e inoltra allo SPLIT la richiesta ambiente separata.
   `07-ECM RICAMBIO ARIA MINIMO` è accesa: sceglie automaticamente V2/V3/V4 di giorno,
   soltanto V2/V3 di notte, mai V1; decide CP HEAT/OFF dalla temperatura esterna e può
   acquisirla con un campionamento preventivo V2. `06-ECM HUMIDITY OVERRIDE`, aggiornata
@@ -61,8 +62,13 @@ dettagli in `procedure/migrazione-minipc.md`.
   almeno 90 minuti e poi continua di giorno se il FV copre il carico con batteria buona
   (soglia iniziale 40%), oppure la sera/notte se la proiezione lascia almeno il 15% al
   mattino; altrimenti passa ai richiami di 15 minuti a inizio ora. `05-ECM ACS MANAGER`
-  resta accesa; le altre automazioni decisionali ECM generali restano spente.
-- HA: `10 - ECM INVERNO` ogni 5 minuti, solo in INVERNO (creata e spenta l'8/11, in attesa dell'ok di Luca).
+  resta accesa; le altre automazioni decisionali ECM generali, salvo `10`, restano spente.
+- HA: `10 - ECM INVERNO` accesa dal 10/11, ogni 5 minuti in INVERNO e con
+  `ecm_manuale` in AUTO. Usa la zona più fredda: obiettivo 20 °C oppure 21,2 °C
+  con eccedenza FV di almeno 1000 W; spegne a obiettivo +0,3 °C. Richiede
+  CP HEAT V2/V3 e Toshiba HEAT V1–V3 attraverso WRITE. Alle 14:15 era attiva
+  ma non chiedeva calore ambiente (zone 20,90/20,66 °C). Prove automatiche
+  del motore ancora spente; la `10` non usa ancora un ottimizzatore di resa.
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.
 
 ## Segreti (solo posizione)

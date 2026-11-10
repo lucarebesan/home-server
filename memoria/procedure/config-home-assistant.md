@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-09 (isolamento ACS; commit HA `249e12e`).
+Ultima verifica: 2026-11-10 (riscaldamento inverno; commit HA `4b1dff7`).
 
 ## Prerequisiti
 
@@ -57,10 +57,13 @@ Ultima verifica: 2026-11-09 (isolamento ACS; commit HA `249e12e`).
 ## Isolamento ACS temporaneo dal 09/11
 
 Il commit HA `8e156b3` lascia attiva `00-NILAN WRITE` con un blocco iniziale che
-scrive solo ACS e, durante una prova temporizzata, CP HEAT; il vecchio ramo
-ECM è irraggiungibile. `05 ECM ACS MANAGER` gestisce anche la copertura
+scrive ACS e, durante una prova temporizzata, CP HEAT; il vecchio ramo
+ECM è irraggiungibile. Dal 09/11 il ramo isolato accetta anche il ricambio
+invernale della `07`, e dal 10/11 il riscaldamento ambiente della `10`.
+`05 ECM ACS MANAGER` gestisce anche la copertura
 serale con resistenza; `packages/ecm_acs_prova_caldo.yaml` contiene guardia
-e helper. Le altre automazioni decisionali ECM restano spente: l'elenco e i
+e helper. Le altre automazioni decisionali ECM, salvo `06`, `07` e `10`,
+restano spente: l'elenco e i
 risultati della prima prova sono nel diario del 09/11.
 
 Dal commit HA `423b2da` il blocco ACS della WRITE opera in entrambe le
@@ -134,10 +137,50 @@ la formula di setpoint/isteresi di `09`; la guardia ferma dopo la scadenza
 o se l'aria immessa resta sotto le medie delle zone. Verificare dopo lo stop
 compressore OFF, ventilazione OFF e setpoint aria di arresto.
 
-Per sospendere subito la gestione automatica, spegnere prima
+Per sospendere subito tutte le scritture automatiche, spegnere prima
 `automation.nilan_write` via API HA e verificare le macchine. Prima di
 ripristinare la vecchia WRITE generale, lasciare l'automazione spenta,
 ripristinare i file dal commit precedente `7ba3f03` in una copia di lavoro,
 eseguire `check_config` e `automation.reload`, poi decidere esplicitamente
 quali decisori ECM riaccendere. Non riaccendere la vecchia WRITE con tutte
 le automazioni ECM ancora in stato sconosciuto.
+
+## Riscaldamento ambiente invernale dal 10/11
+
+Il commit HA `4b1dff7` modifica `10_ecm_inverno.yaml`, il ramo iniziale di
+`00_nilan_write.yaml` e `packages/ecm_helper.yaml`. La `10` è accesa, valuta
+ogni 5 minuti solo in INVERNO e con `ecm_manuale` in AUTO. La zona di riferimento
+è la più fredda fra le medie giorno/notte. Chiede calore sotto
+`sensor.ecm_limite_inferiore` (20 °C alla verifica) e spegne a obiettivo +0,3 °C.
+Di giorno, con FV meno consumo base casa almeno 1000 W, usa invece
+`sensor.ecm_target_accumulo` (21,2 °C alla verifica). Se una delle due zone o T10
+raggiunge la soglia estate meno 1 °C (23,5 °C alla verifica), o i dati non sono
+validi, azzera le richieste ambiente. La WRITE ripete la guardia sulle zone.
+
+La `10` scrive soltanto helper: `input_boolean.ecm_riscaldamento_ambiente_attivo`,
+`input_number.ecm_ventilazione_riscaldamento_ambiente` (V2 normale; V3 di giorno
+con sole o deficit almeno 1 °C) e gli helper Toshiba HEAT (V1 normale, V2 con sole
+o deficit almeno 1 °C, V3 solo di giorno con deficit almeno 2 °C). Il setpoint
+Toshiba è 29 °C. La WRITE inoltra questi comandi fisici, con verifica di modo,
+velocità, setpoint e ON/OFF reali. Il setpoint aria CP segue la regola esistente
+T10/isteresi e viene scritto solo quando serve, a riposo 17 °C.
+
+La `07` continua a controllare il proprio helper di ricambio. La WRITE usa la
+velocità maggiore fra ricambio e ambiente quando la `10` chiede CP HEAT.
+Durante ACSe la velocità CP richiesta dalla prova prevale sulla richiesta
+ambiente; Toshiba segue comunque la richiesta ambiente. Le stime di potenza
+del motore restano osservative: la resa termica delle combinazioni non è ancora
+abbastanza affidabile per sceglierle automaticamente.
+
+**Verifica:** controllare stato e `last_triggered` delle automazioni `10` e WRITE,
+gli helper ambiente, la velocità e il setpoint reali CP, ON/OFF e potenza Toshiba,
+oltre a nuove eccezioni nei log di HA. Alla prima verifica del 10/11 alle 14:13
+la `10` era `on`, helper ambiente OFF/0, Toshiba spento: entrambe le zone erano
+sopra 20 °C. Il primo ciclo reale sotto soglia resta da osservare.
+
+**Ripristino:** spegnere `automation.10_ecm_inverno` e verificare Toshiba OFF;
+la `07` e la WRITE continuano il ricambio/ACS. Se serve tornare ai tre file
+precedenti, backup in `/config/tmp/backup_ecm_inverno_20261110/`. Dopo la copia,
+eseguire `check_config`, ricaricare `input_boolean`, `input_number` e `automation`
+e verificare che la `10` resti spenta. Non usare un ripristino del vecchio ramo
+generale ECM per questa sola modifica.

@@ -485,7 +485,7 @@ def test_tick_learn_segments_outside_lock(tmp_path, monkeypatch):
     free = []
     real = eng.segment
 
-    def spy(rows):
+    def spy(rows, **kwargs):
         def probe():
             ok = e.lock.acquire(blocking=False)
             free.append(ok)
@@ -493,7 +493,7 @@ def test_tick_learn_segments_outside_lock(tmp_path, monkeypatch):
                 e.lock.release()
         th = threading.Thread(target=probe)
         th.start(); th.join()
-        return real(rows)
+        return real(rows, **kwargs)
     monkeypatch.setattr(eng, "segment", spy)
     e.tick_learn()
     assert free == [True]

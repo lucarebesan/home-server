@@ -43,15 +43,18 @@ class Proposal:
     motivo: str
 
 
-def is_night(c: Ctx) -> bool:
+def notte_fra(t: time, mattina: time, serale: time) -> bool:
     """Giorno = tra mattina e serale (anche se serale è dopo mezzanotte).
     Se mattina == serale non c'è notte."""
-    t = c.now.time()
-    if c.mattina == c.serale:
+    if mattina == serale:
         return False
-    if c.mattina < c.serale:
-        return not (c.mattina <= t < c.serale)
-    return not (t >= c.mattina or t < c.serale)
+    if mattina < serale:
+        return not (mattina <= t < serale)
+    return not (t >= mattina or t < serale)
+
+
+def is_night(c: Ctx) -> bool:
+    return notte_fra(c.now.time(), c.mattina, c.serale)
 
 
 def codes_for_season(stagione: str, night: bool) -> list[int]:

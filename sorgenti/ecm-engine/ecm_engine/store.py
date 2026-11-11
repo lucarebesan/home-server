@@ -30,7 +30,12 @@ CREATE TABLE IF NOT EXISTS tests (
   id INTEGER PRIMARY KEY AUTOINCREMENT, code INTEGER, durata_min INTEGER, origine TEXT,
   inizio INTEGER, fine INTEGER, esito TEXT);
 CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);
+CREATE TABLE IF NOT EXISTS ombra (
+  ts INTEGER PRIMARY KEY, confronto TEXT, motivo_confronto TEXT, py_vel INTEGER, ha_vel INTEGER,
+  motivo TEXT, fonte_stato TEXT, sotto_zg INTEGER, sotto_zn INTEGER);
 """
+OMBRA_COLS = ["ts", "confronto", "motivo_confronto", "py_vel", "ha_vel", "motivo", "fonte_stato",
+              "sotto_zg", "sotto_zn"]
 
 
 def _norm_onoff(v) -> int | None:
@@ -139,4 +144,27 @@ class Store:
     def set_setting(self, key: str, value: str) -> None:
         with self._lock:
             self.db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES (?,?)", (key, value))
+            self.db.commit()
+
+    # ---------- decisore in ombra
+    def add_ombra(self, row: dict) -> None:
+        with self._lock:
+            self.db.execute(f"INSERT OR REPLACE INTO ombra ({','.join(OMBRA_COLS)}) "
+                            f"VALUES ({','.join('?' * len(OMBRA_COLS))})", [row.get(c) for c in OMBRA_COLS])
+            self.db.commit()
+
+    def ombra_since(self, ts: int) -> list[dict]:
+        with self._lock:
+            return [dict(r) for r in self.db.execute("SELECT * FROM ombra WHERE ts >= ? ORDER BY ts", (ts,))]
+
+    def energia_since(self, ts: int) -> tuple[float, float]:
+        """kWh Toshiba e kWh importati dalla rete dai campioni al minuto."""
+        with self._lock:
+            r = self.db.execute("SELECT COALESCE(SUM(p_tosh), 0), COALESCE(SUM(imp), 0) FROM samples "
+                                "WHERE ts >= ?", (ts,)).fetchone()
+        return r[0] / 60000, r[1] / 60000
+
+    def purge_ombra(self, older_than_ts: int) -> None:
+        with self._lock:
+            self.db.execute("DELETE FROM ombra WHERE ts < ?", (older_than_ts,))
             self.db.commit()

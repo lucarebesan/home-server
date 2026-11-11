@@ -77,3 +77,8 @@ NUMERIC_KEYS = ["tosh_rps", "p_cp", "p_tosh", "t_zg", "t_zn", "t10", "t2", "t11"
                 "soc", "pv", "load", "imp", "discharge", "charge", "lim_inf", "lim_sup",
                 "commutazione", "isteresi_comm", "t1", "t4", "u_bagno",
                 *(f"{p}_{k}" for k in ROOMS for p in ("t", "bat", "lr"))]
+
+# decisore in ombra (ambiente invernale): entità in più, vedi decisore/parametri.py
+from .decisore.parametri import ENTITA as _ENTITA_DECISORE, NUMERICHE as _NUM_DECISORE  # noqa: E402
+ENTITIES.update(_ENTITA_DECISORE)
+NUMERIC_KEYS += _NUM_DECISORE

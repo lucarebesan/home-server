@@ -124,6 +124,42 @@ Quando HA ha perso letture di stato (minuti `cp non classificato` / `toshiba non
 - `docker logs ecm-engine` senza `Traceback`; riga di log con la durata dell'apprendimento.
 - Campioni recenti in `engine.db` (l'ultimo ha meno di 2 minuti).
 
+## Decisore in ombra: ambiente invernale (dal 11/11, non ancora installato)
+
+Codice in `sorgenti/ecm-engine/ecm_engine/decisore/`, spec
+`docs/specs/2026-11-11-decisore-ombra-ambiente-inverno.md`. È il passo 1 del decisore ECM
+unico: ogni minuto ricalcola la decisione della `10` (Toshiba spento o HEAT V1–V3, motivo),
+la confronta con lo stato reale Toshiba e registra divergenze e metriche. **Non chiama
+servizi HA e non scrive helper**; un suo errore non interrompe campionamento e prove.
+
+- Pipeline pura `decidi(contesto, appresi, stato) -> piano`: domanda (matrice soglie,
+  latch di recupero, accumulo, massimo), candidati E0/E70/E80/E90 con risorse dichiarate,
+  vincoli rigidi (notte ≤ V2, massimo, permanenza 15 minuti dallo stato reale), energia
+  applicata a ogni candidato, punteggio a livelli. Il piano porta già `seq` e
+  `valido_fino` (lease 180 s) per il contratto futuro con HA.
+- Parità di stato: se gli helper di recupero/accumulo della `10` sono leggibili, il
+  decisore parte dai loro valori (`fonte_stato = ha`), altrimenti dai propri latch.
+- Una divergenza conta dopo 3 cicli consecutivi. Non confrontabile con stagione diversa
+  da INVERNO, `09` non in AUTO, prova in corso, `10` spenta, Toshiba in modo diverso.
+- Persistenza: tabella `ombra` in `engine.db` (una riga al minuto, conservazione come i
+  campioni), stato in `settings.decisore_stato` (JSON versionato).
+- Entità: `sensor.ecm_engine_ombra_ambiente` (`concorde`/`divergente`/`non
+  confrontabile`, attributi solo ai cambi) e `sensor.ecm_engine_ombra_metriche` (minuti
+  divergenti oggi; attributi: minuti confrontabili, minuti sotto soglia per zona, kWh
+  Toshiba, kWh rete, cambi di velocità reali), aggiornato ogni 15 minuti.
+
+**Prima del deploy (sulla rete di casa, sola lettura):** leggere
+`/config/automations/nilan/10_ecm_inverno.yaml` e `packages/ecm_helper.yaml` e allineare
+in `decisore/parametri.py` i valori marcati `DA VERIFICARE`: entity_id dei latch di
+recupero, del consenso FV/batteria, soglie di prelievo e scarica durante l'accumulo,
+margine di avvio dell'accumulo, quota notturna nel SOC previsto, uso dell'affidabilità
+nel ranking. Verificare anche se la `10` imposta il setpoint Toshiba. Poi deploy come
+sopra, con l'ok dell'utente.
+
+**Verifica dopo il deploy:** `sensor.ecm_engine_ombra_ambiente` presente e aggiornato,
+righe nuove in `ombra`, nessun `decisore in ombra fallito` nel log, nessuna chiamata di
+servizio nuova nel logbook HA.
+
 ## Apprendimento ACS per combinazione (09/11)
 
 Implementato in `ecm_engine/acs_learner.py`, pubblicazione MQTT nel sensore

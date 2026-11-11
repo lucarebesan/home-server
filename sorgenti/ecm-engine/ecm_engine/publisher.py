@@ -23,6 +23,8 @@ SENSORS = [
     ("avvisi", "Avvisi", "mdi:alert", None),
     ("ultime_prove", "Ultime prove", "mdi:history", None),
     ("da_misurare", "Da misurare", "mdi:format-list-numbered", None),
+    ("ombra_ambiente", "Ombra ambiente inverno", "mdi:ghost-outline", None),
+    ("ombra_metriche", "Ombra minuti divergenti oggi", "mdi:chart-box-outline", "min"),
 ]
 
 

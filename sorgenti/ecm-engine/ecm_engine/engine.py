@@ -6,6 +6,9 @@ from datetime import datetime, time as dtime
 
 from . import config
 from .acs_learner import AcsLearner
+from .decisore.energia import ProfiloCarico
+from .decisore.ombra import Ombra
+from .decisore.parametri import PROFILO_GIORNI
 from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
 from .power_learner import PowerLearner
@@ -115,6 +118,7 @@ class Engine:
         self.snap_ts: float | None = None
         self.auto_block_until: float = 0.0
         self.last_states: dict = {}
+        self.ombra: Ombra | None = None   # creata al primo campione; un errore non tocca il resto
 
     # ---------- contesto
     def _ctx(self) -> Ctx | None:
@@ -175,8 +179,18 @@ class Engine:
                     log.exception("pubblicazione da misurare fallita")
                 self._supervise()
                 self._auto_start()
+                self._ombra_passo(now)
             finally:
                 self._publish_status()
+
+    # ---------- decisore in ombra (non comanda nulla)
+    def _ombra_passo(self, now: int) -> None:
+        try:
+            if self.ombra is None:
+                self.ombra = Ombra(self.store, self.pub, now)
+            self.ombra.passo(self.snap, now, self.store.open_test(), self.stats, self.power_stats)
+        except Exception:
+            log.exception("decisore in ombra fallito")
 
     # ---------- prove
     def start_test(self, origine: str) -> str | None:
@@ -340,12 +354,14 @@ class Engine:
         n = [0]
         acs_learner = AcsLearner()
         power_learner = PowerLearner()
+        profilo = ProfiloCarico(dal_ts=now - PROFILO_GIORNI * 86400)
 
         # una sola lettura del database (disco lento): ogni campione va anche alla resa ACS
         def counted(rows):
             for r in rows:
                 n[0] += 1
                 acs_learner.feed(r)
+                profilo.feed(r)
                 yield r
         def feed_power(rows):
             for r in rows:
@@ -365,6 +381,13 @@ class Engine:
             self._update_proposal()
             self._publish_learn()
             self._publish_status()
+            if self.ombra is not None:
+                try:
+                    self.ombra.profilo = profilo.result()
+                    self.store.purge_ombra(since)
+                    self.ombra.metriche(now)
+                except Exception:
+                    log.exception("metriche ombra fallite")
 
     def _publish_learn(self) -> None:
         c = self._ctx()

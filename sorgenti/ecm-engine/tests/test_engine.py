@@ -596,3 +596,21 @@ def test_tick_learn_legge_i_campioni_una_volta_sola(tmp_path):
     e.tick_learn()
     assert len(calls) == 1
     assert pub.states["resa_acs"][0] == 0 and pub.states["resa_acs"][1]["tabella"] == []
+
+
+def test_ombra_registra_a_ogni_campione_senza_comandi(tmp_path):
+    e, api, pub, clock = mk(tmp_path, 1_762_855_200)
+    e.tick_sample()
+    assert len(e.store.ombra_since(0)) == 1
+    assert api.calls == []                       # l'ombra non chiama servizi HA
+    assert "ombra_ambiente" in pub.states
+
+
+def test_errore_ombra_non_ferma_il_campionamento(tmp_path, monkeypatch):
+    from ecm_engine.decisore.ombra import Ombra
+    def boom(*a, **k):
+        raise RuntimeError("guasto simulato")
+    monkeypatch.setattr(Ombra, "passo", boom)
+    e, api, pub, clock = mk(tmp_path, 1_762_855_200)
+    e.tick_sample()
+    assert len(e.store.samples_since(0)) == 1 and pub.states["stato"][0] == "online"

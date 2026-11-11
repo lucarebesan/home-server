@@ -6,31 +6,43 @@ from .parametri import BATTERIA_WH, DUTY_NOTTE, IMPORT_MAX_W, RISERVA_SOC, SCARI
 from .tipi import Contesto
 
 
+def _dati_validi(c: Contesto) -> bool:
+    """Stessi sei dati numerici richiesti dalla 10 prima di valutare l'energia."""
+    return all(v is not None for v in
+               (c.soc, c.pv, c.consumo_base, c.charge, c.discharge, c.imp))
+
+
 def giudica(c: Contesto, vel: int, w: float, accumulo_attivo: bool) -> tuple[bool, str]:
     """(ammesso, motivo) per un candidato acceso con consumo w."""
     if vel == 0:
         return True, ""
+    if not _dati_validi(c):
+        return False, "dati energia mancanti"
     if c.notte:
-        if c.soc is None or c.carico_notte_wh is None:
+        if c.carico_notte_wh is None:
             return False, "dati energia notturni mancanti"
         wh = c.carico_notte_wh + w * c.ore_al_mattino * DUTY_NOTTE
         soc_prev = c.soc - wh / BATTERIA_WH * 100
         if soc_prev < RISERVA_SOC:
             return False, f"SOC previsto al mattino {soc_prev:.0f}% sotto riserva {RISERVA_SOC:.0f}%"
+        if c.imp > IMPORT_MAX_W:
+            return False, f"prelievo da rete {c.imp:.0f} W"
+        if c.prelievo_rete_stabile:
+            return False, "prelievo da rete stabile"
         return True, f"SOC previsto al mattino {soc_prev:.0f}%"
     if not accumulo_attivo:
-        if c.consenso_fv is None:
-            if c.pv is None or c.load is None:
-                return False, "dati energia mancanti"
-            ok = c.pv - c.load >= w
-            return ok, "eccedenza FV sufficiente" if ok else "eccedenza FV insufficiente"
-        return (True, "consenso FV/batteria") if c.consenso_fv else (False, "nessun consenso FV/batteria")
-    if c.imp is None or c.discharge is None:
-        return False, "dati energia mancanti"
+        ok = bool(c.consenso_fv) and not c.prelievo_rete_stabile
+        return (True, "consenso FV/batteria") if ok else (False, "nessun consenso FV/batteria")
     if c.imp > IMPORT_MAX_W:
         return False, f"prelievo da rete {c.imp:.0f} W"
-    if c.discharge > SCARICA_MAX_W and (c.pv or 0) < (c.load or 0):
+    if c.discharge > SCARICA_MAX_W:
         return False, f"scarica batteria {c.discharge:.0f} W"
+    if c.prelievo_rete_stabile:
+        return False, "prelievo da rete stabile"
+    if c.pv <= c.consumo_base:
+        return False, "FV non superiore al consumo base"
+    if c.soc <= RISERVA_SOC:
+        return False, f"SOC {c.soc:.0f}% non sopra riserva {RISERVA_SOC:.0f}%"
     return True, "bilancio favorevole"
 
 

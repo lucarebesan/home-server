@@ -34,6 +34,9 @@ def domanda(c: Contesto, prev: Stato, accumulo_possibile: bool = False):
     info = {"soglie": s, "massimo": al_massimo, "valore_massimo": massimo,
             "sotto": {z: t[z] < s[z][0] for z in ZONE}}
     st = replace(prev, rec_zg=latch["zg"], rec_zn=latch["zn"])
+    if al_massimo:
+        # La 10 azzera entrambi i latch e l'accumulo prima di arrestare subito.
+        return replace(st, rec_zg=False, rec_zn=False, accumulo=False), None, info
     in_rec = tuple(z for z in ZONE if latch[z])
     if in_rec:
         motivo = ", ".join(f"{NOME[z]} {t[z]:.2f} °C sotto {s[z][1]} °C" for z in in_rec)

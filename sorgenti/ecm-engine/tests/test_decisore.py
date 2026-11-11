@@ -9,7 +9,8 @@ def ctx(**kw):
     base = dict(ts=T0, notte=False, t_min=20.5, massimo=23.5, t_zg=21.2, t_zn=20.8,
                 trend_zg={20: 0.1, 30: 0.1, 60: 0.1}, trend_zn={20: 0.1, 30: 0.1, 60: 0.1},
                 vel_reale=0, vel_reale_dal=T0 - 3600, soc=60.0, pv=0.0, load=500.0, imp=0.0,
-                discharge=300.0, consenso_fv=False, ore_al_mattino=10.0, carico_notte_wh=4000.0,
+                consumo_base=500.0, discharge=300.0, charge=0.0, consenso_fv=False,
+                prelievo_rete_stabile=False, ore_al_mattino=10.0, carico_notte_wh=4000.0,
                 risorse_occupate=frozenset(), latch_ha=None)
     base.update(kw)
     return Contesto(**base)
@@ -41,8 +42,10 @@ def test_zona_notte_di_notte_ha_soglie_sue():
 
 
 def test_massimo_di_una_zona():
-    _, _, info = ambiente.domanda(ctx(t_zg=23.5, t_zn=20.0), Stato())
-    assert info["massimo"]
+    st, richiesta, info = ambiente.domanda(ctx(t_zg=23.5, t_zn=20.0),
+                                           Stato(rec_zg=True, rec_zn=True, accumulo=True))
+    assert info["massimo"] and richiesta is None
+    assert not st.rec_zg and not st.rec_zn and not st.accumulo
 
 
 def test_accumulo_proposto_solo_senza_recupero():
@@ -61,10 +64,20 @@ def test_energia_giorno_avvio_usa_consenso():
 
 
 def test_energia_giorno_continuazione_ferma_su_rete():
-    ok, _ = energia.giudica(ctx(imp=50, discharge=0), 2, 900, accumulo_attivo=True)
+    ok, _ = energia.giudica(ctx(imp=50, discharge=0, pv=600), 2, 900, accumulo_attivo=True)
     assert ok
-    ok, motivo = energia.giudica(ctx(imp=800, discharge=0), 2, 900, accumulo_attivo=True)
+    ok, motivo = energia.giudica(ctx(imp=301, discharge=0, pv=600), 2, 900, accumulo_attivo=True)
     assert not ok and "rete" in motivo
+
+
+def test_energia_giorno_usa_soglie_e_consensi_della_10():
+    ok, _ = energia.giudica(ctx(consenso_fv=True), 2, 1100, accumulo_attivo=False)
+    assert ok
+    ok, motivo = energia.giudica(ctx(consenso_fv=True, prelievo_rete_stabile=True),
+                                 2, 1100, accumulo_attivo=False)
+    assert not ok and "consenso" in motivo
+    ok, motivo = energia.giudica(ctx(imp=300, discharge=251, pv=600), 2, 1100, accumulo_attivo=True)
+    assert not ok and "scarica" in motivo
 
 
 def test_energia_notte_soc_previsto():
@@ -73,6 +86,15 @@ def test_energia_notte_soc_previsto():
     assert not ok and "SOC" in motivo
     ok, _ = energia.giudica(ctx(notte=True, soc=100.0, ore_al_mattino=5.0), 2, 900, accumulo_attivo=False)
     assert ok
+
+
+def test_energia_notte_blocca_rete_e_dati_incompleti():
+    ok, motivo = energia.giudica(ctx(notte=True, soc=100.0, ore_al_mattino=1.0, imp=301),
+                                 2, 1100, accumulo_attivo=False)
+    assert not ok and "rete" in motivo
+    ok, motivo = energia.giudica(ctx(notte=True, soc=100.0, ore_al_mattino=1.0, charge=None),
+                                 2, 1100, accumulo_attivo=False)
+    assert not ok and "mancanti" in motivo
 
 
 def test_profilo_carico_mediana_per_ora():
@@ -98,6 +120,11 @@ def test_recupero_sceglie_la_piu_economica_appresa():
     a = Appresi(costo={1: 3000.0, 2: 2500.0, 3: 3300.0}, w={1: 700, 2: 950, 3: 1270})
     p = decidi(ctx(t_zg=20.3), a, Stato())
     assert p.vel == 2 and p.code == 80
+
+
+def test_migliore_caldo_prevale_anche_se_da_confermare():
+    a = Appresi(costo={2: 2000.0}, w={}, preferita=1)
+    assert decidi(ctx(t_zg=20.3), a, Stato()).vel == 1
 
 
 def test_recupero_prevale_sul_budget():
@@ -134,11 +161,25 @@ def test_trend_insufficienti_fanno_salire_di_una():
     assert p.vel == 1
 
 
+def test_trend_incompleti_non_fanno_salire():
+    a = Appresi(costo={1: 2000.0}, w={})
+    st = Stato(rec_zg=True)
+    incompleti = {20: 0.0, 30: -0.1, 60: None}
+    p = decidi(ctx(t_zg=20.6, vel_reale=1, vel_reale_dal=T0 - 1200,
+                   trend_zg=incompleti), a, st)
+    assert p.vel == 1
+
+
 def test_accumulo_richiede_energia():
     p = decidi(ctx(consenso_fv=False), NESSUNO, Stato())
     assert p.vel == 0
     p = decidi(ctx(consenso_fv=True), NESSUNO, Stato())
     assert p.vel > 0 and p.richiesta.servizio == "accumulo" and p.stato.accumulo
+
+
+def test_accumulo_puo_partire_senza_margine_sotto_il_massimo():
+    p = decidi(ctx(consenso_fv=True, t_zg=23.49, t_zn=23.49), NESSUNO, Stato())
+    assert p.richiesta.servizio == "accumulo" and p.vel > 0
 
 
 def test_accumulo_si_ferma_al_massimo():

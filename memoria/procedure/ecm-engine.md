@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-10 14:07 (modello W indipendente CP/SPLIT installato; primo apprendimento riuscito e campionamento attivo).
+Ultima verifica: 2026-11-11 14:18 (ombra inverno allineata alla `10` live e 262 test superati; codice non installato).
 
 ## Scopo
 
@@ -138,7 +138,11 @@ servizi HA e non scrive helper**; un suo errore non interrompe campionamento e p
   applicata a ogni candidato, punteggio a livelli. Il piano porta già `seq` e
   `valido_fino` (lease 180 s) per il contratto futuro con HA.
 - Parità di stato: se gli helper di recupero/accumulo della `10` sono leggibili, il
-  decisore parte dai loro valori (`fonte_stato = ha`), altrimenti dai propri latch.
+  decisore parte dai loro valori (`fonte_stato = ha`), altrimenti dai propri latch. I
+  latch sono `ecm_inverno_recupero_zona_giorno` e `_zona_notte`;
+  `ecm_inverno_recupero_minimo_attivo` è solo il loro OR aggregato, non un terzo latch.
+- Per evitare differenze d'ingresso, l'ombra legge direttamente gli stessi sensori della
+  `10`: fascia climatica attiva, medie zona a 10 minuti e trend separati 20/30/60.
 - Una divergenza conta dopo 3 cicli consecutivi. Non confrontabile con stagione diversa
   da INVERNO, `09` non in AUTO, prova in corso, `10` spenta, Toshiba in modo diverso.
 - Persistenza: tabella `ombra` in `engine.db` (una riga al minuto, conservazione come i
@@ -148,13 +152,24 @@ servizi HA e non scrive helper**; un suo errore non interrompe campionamento e p
   divergenti oggi; attributi: minuti confrontabili, minuti sotto soglia per zona, kWh
   Toshiba, kWh rete, cambi di velocità reali), aggiornato ogni 15 minuti.
 
-**Prima del deploy (sulla rete di casa, sola lettura):** leggere
-`/config/automations/nilan/10_ecm_inverno.yaml` e `packages/ecm_helper.yaml` e allineare
-in `decisore/parametri.py` i valori marcati `DA VERIFICARE`: entity_id dei latch di
-recupero, del consenso FV/batteria, soglie di prelievo e scarica durante l'accumulo,
-margine di avvio dell'accumulo, quota notturna nel SOC previsto, uso dell'affidabilità
-nel ranking. Verificare anche se la `10` imposta il setpoint Toshiba. Poi deploy come
-sopra, con l'ok dell'utente.
+**Verifica live del 11/11, in sola lettura:** i parametri precedentemente marcati
+`DA VERIFICARE` sono stati allineati. Accumulo diurno: avvio con consenso stabile di
+carica disponibile o batteria piena e senza prelievo stabile; mantenimento con SOC >15%,
+rete ≤300 W, scarica ≤250 W, FV sopra il consumo base e senza prelievo stabile. Non c'è
+margine di avvio sotto il massimo. Di notte la `10` assume Toshiba acceso per tutta la
+notte residua; se il profilo base casa non ha copertura 100% usa il consumo base attuale
+costante. W di ripiego V1/V2/V3: 1000/1100/1270 W. Il ranking usa prima
+`migliore_caldo` se restituisce E70/E80/E90 anche se da confermare, altrimenti la tabella
+con `da_confermare=false` e affidabilità almeno 0,4. La `10` imposta il setpoint Toshiba
+a 29 °C all'avvio; un setpoint dinamico resta una proposta, non implementata.
+
+**Scelte intenzionalmente diverse dalla `10`:** l'ombra misura la permanenza dal cambio
+reale Toshiba, mentre la `10` usa l'ora dell'ultima scelta comandata; il limite V2
+notturno è rigido nell'ombra e l'energia è valutata per ogni candidato. Queste differenze
+sono parte dell'architettura approvata e vanno interpretate come tali nel confronto.
+
+Prima del deploy resta necessario l'ok esplicito di Luca e Mattia. Suite locale del
+11/11: **262 test superati**. Poi eseguire deploy e verifiche come sopra.
 
 **Verifica dopo il deploy:** `sensor.ecm_engine_ombra_ambiente` presente e aggiornato,
 righe nuove in `ombra`, nessun `decisore in ombra fallito` nel log, nessuna chiamata di

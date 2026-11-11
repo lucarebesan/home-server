@@ -1,21 +1,19 @@
 """Ombra dell'ambiente invernale: dal campione HA al contesto, decisione, confronto con la
 realtà, persistenza e metriche. Non chiama servizi HA."""
 import logging
-from collections import deque
 from dataclasses import replace
 from datetime import datetime, time as dtime, timedelta
 
 from ..learner import fascia
-from ..rules import notte_fra
+from ..texts import best_stat
 from . import energia
 from .arbitro import decidi
-from .parametri import DIVERGENZA_CICLI, MEDIA_S, TREND_FINESTRE_MIN
+from .parametri import DIVERGENZA_CICLI
 from .tipi import Appresi, Contesto, Stato
 
 log = logging.getLogger(__name__)
 VEL = {"BASSA": 1, "MEDIA": 2, "ALTA": 3}
-AFFIDABILITA_MIN = 0.4   # DA VERIFICARE: come la 10 usa il flag "da confermare"
-STORIA_S = 3600 + MEDIA_S + 120
+AFFIDABILITA_MIN = 0.4
 ON_OFF = {"on": True, "off": False}
 
 
@@ -34,10 +32,16 @@ def appresi_da(stats: dict, power_stats: dict, f: str) -> Appresi:
         s = stats.get((10 * (6 + v), "HEAT", f))
         if s is not None and s.costo is not None and s.affidabilita >= AFFIDABILITA_MIN:
             costo[v] = s.costo
-        p = power_stats.get(("INVERNO", "tosh", 6 + v, f))
-        if p is not None:
-            w[v] = p.W
-    return Appresi(costo=costo, w=w)
+        if s is not None:
+            # La tabella letta dalla 10 espone W misurati del periodo prima della stima separata.
+            w[v] = s.p_tot
+        else:
+            p = power_stats.get(("INVERNO", "tosh", 6 + v, f))
+            if p is not None:
+                w[v] = p.W
+    migliore = best_stat(stats, "HEAT", f)
+    preferita = (migliore.code // 10 - 6) if migliore and migliore.code in (70, 80, 90) else None
+    return Appresi(costo=costo, w=w, preferita=preferita)
 
 
 def _ora(v, default: dtime) -> dtime:
@@ -56,41 +60,33 @@ class Ombra:
     def __init__(self, store, pub, now: int):
         self.store, self.pub = store, pub
         self.stato = Stato.from_json(store.get_setting("decisore_stato", ""))
-        self.storia: deque = deque()
-        for r in store.samples_since(now - STORIA_S):
-            self.storia.append((r["ts"], r.get("t_zg"), r.get("t_zn")))
-        self.profilo: dict = {}
         self.divergenze = 0
         self.ultimo_contesto: Contesto | None = None
         self.ultimo_piano = None
         self._pubblicato = None
 
-    # ---------- medie e trend dai campioni del motore
-    def _media(self, idx: int, fino: int) -> float | None:
-        v = [x[idx] for x in self.storia if fino - MEDIA_S < x[0] <= fino and x[idx] is not None]
-        return round(sum(v) / len(v), 3) if v else None
-
-    def _trend(self, idx: int, now: int, adesso: float | None) -> dict:
-        out = {}
-        for w in TREND_FINESTRE_MIN:
-            prima = self._media(idx, now - w * 60)
-            out[w] = None if adesso is None or prima is None else round(adesso - prima, 3)
-        return out
-
     def _contesto(self, snap: dict, now: int) -> Contesto:
         dt = datetime.fromtimestamp(now)
         mattina = _ora(snap.get("mattina"), dtime(8, 30))
-        notte = notte_fra(dt.time(), mattina, _ora(snap.get("serale"), dtime(22, 0)))
+        # La 10 usa il sensore che applica nilan_notturna - 1 h, non nilan_serale.
+        notte = snap.get("fascia_climatica") == "NOTTE"
         prossima = datetime.combine(dt.date(), mattina)
         if prossima <= dt:
             prossima += timedelta(days=1)
         ore = (prossima - dt).total_seconds() / 3600 if notte else 0.0
+        consumo_base = _num(snap.get("consumo_base"))
         carico = None
         if notte:
-            carico = energia.carico_fino_a(self.profilo, dt, prossima)
-            if carico is None and _num(snap.get("load")) is not None:
-                carico = snap["load"] * ore   # profilo incompleto: carico attuale costante
-        zg, zn = self._media(1, now), self._media(2, now)
+            if (_num(snap.get("copertura_profilo")) or 0) >= 100 and consumo_base is not None:
+                profilo = {h: (_num(snap.get(f"profilo_h{h:02d}"))
+                                if _num(snap.get(f"profilo_h{h:02d}")) is not None else consumo_base)
+                           for h in range(24)}
+                carico = energia.carico_fino_a(profilo, dt, prossima)
+            if carico is None and consumo_base is not None:
+                carico = consumo_base * ore   # come la 10 quando la copertura è sotto 100%
+        zg, zn = _num(snap.get("t_zg_10m")), _num(snap.get("t_zn_10m"))
+        trend_zg = {m: _num(snap.get(f"trend_zg_{m}")) for m in (20, 30, 60)}
+        trend_zn = {m: _num(snap.get(f"trend_zn_{m}")) for m in (20, 30, 60)}
         vel = vel_toshiba(snap)
         if vel != self.stato.ultimo_vel:
             self.stato = replace(self.stato, ultimo_vel=vel, vel_dal=now)
@@ -98,10 +94,13 @@ class Ombra:
                  (("rec_zg", "rec_zg"), ("rec_zn", "rec_zn"), ("accumulo", "accumulo_ha"))}
         return Contesto(
             ts=now, notte=notte, t_min=_num(snap.get("t_min_inv")), massimo=_num(snap.get("massimo_acc")),
-            t_zg=zg, t_zn=zn, trend_zg=self._trend(1, now, zg), trend_zn=self._trend(2, now, zn),
+            t_zg=zg, t_zn=zn, trend_zg=trend_zg, trend_zn=trend_zn,
             vel_reale=vel, vel_reale_dal=self.stato.vel_dal, soc=_num(snap.get("soc")),
-            pv=_num(snap.get("pv")), load=_num(snap.get("load")), imp=_num(snap.get("imp")),
-            discharge=_num(snap.get("discharge")), consenso_fv=ON_OFF.get(str(snap.get("consenso_fv"))),
+            pv=_num(snap.get("pv")), load=_num(snap.get("load")), consumo_base=consumo_base,
+            imp=_num(snap.get("imp")), discharge=_num(snap.get("discharge")), charge=_num(snap.get("charge")),
+            consenso_fv=(snap.get("consenso_carica") == "on"
+                         or snap.get("consenso_batteria_piena") == "on"),
+            prelievo_rete_stabile=snap.get("prelievo_rete_stabile") == "on",
             ore_al_mattino=ore, carico_notte_wh=carico,
             latch_ha=latch if None not in latch.values() else None)
 
@@ -123,9 +122,6 @@ class Ombra:
 
     # ---------- un ciclo
     def passo(self, snap: dict, now: int, open_test, stats: dict, power_stats: dict) -> dict:
-        self.storia.append((now, _num(snap.get("t_zg")), _num(snap.get("t_zn"))))
-        while self.storia and self.storia[0][0] < now - STORIA_S:
-            self.storia.popleft()
         c = self._contesto(snap, now)
         t_ext = next((v for v in (_num(snap.get("t_ext_aff")), _num(snap.get("t_ext"))) if v is not None), None)
         appresi = appresi_da(stats, power_stats, fascia(t_ext)) if t_ext is not None else Appresi({}, {})

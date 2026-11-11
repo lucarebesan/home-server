@@ -27,9 +27,12 @@ class Contesto:
     soc: float | None
     pv: float | None
     load: float | None
+    consumo_base: float | None
     imp: float | None
     discharge: float | None
+    charge: float | None
     consenso_fv: bool | None
+    prelievo_rete_stabile: bool
     ore_al_mattino: float
     carico_notte_wh: float | None
     risorse_occupate: frozenset = frozenset()
@@ -40,6 +43,7 @@ class Contesto:
 class Appresi:
     costo: dict                    # velocità Toshiba -> W per °C/h (solo misurati)
     w: dict                        # velocità Toshiba -> W misurati
+    preferita: int | None = None   # codice di migliore_caldo se è E70/E80/E90
 
 
 @dataclass(frozen=True)

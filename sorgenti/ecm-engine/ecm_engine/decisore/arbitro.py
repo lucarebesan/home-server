@@ -22,14 +22,20 @@ def _w(appresi: Appresi, vel: int) -> float:
 def _trend_insufficiente(c: Contesto, zone) -> bool:
     for z in zone:
         tr = c.trend_zg if z == "zg" else c.trend_zn
-        if sum(1 for v in tr.values() if v is not None and v <= 0) >= TREND_NON_POSITIVI:
+        valori = [tr.get(m) for m in (20, 30, 60)]
+        # La 10 richiede tutte e tre le finestre numeriche prima di salire.
+        if all(v is not None for v in valori) and sum(v <= 0 for v in valori) >= TREND_NON_POSITIVI:
             return True
     return False
 
 
 def _preferita(c: Contesto, appresi: Appresi, cap: int, richiesta, permanenza_finita: bool) -> int:
     noti = {v: appresi.costo[v] for v in range(1, cap + 1) if appresi.costo.get(v) is not None}
-    base = min(noti, key=lambda v: (noti[v], v)) if noti else min(VEL_RIPIEGO[c.notte], cap)
+    if appresi.preferita:
+        # La 10 usa prima il codice di migliore_caldo, anche se marcato da confermare.
+        base = min(appresi.preferita, cap)
+    else:
+        base = min(noti, key=lambda v: (noti[v], v)) if noti else min(VEL_RIPIEGO[c.notte], cap)
     if (richiesta and richiesta.servizio == "recupero" and permanenza_finita
             and c.vel_reale and _trend_insufficiente(c, richiesta.zone)):
         base = max(base, min(c.vel_reale + 1, cap))

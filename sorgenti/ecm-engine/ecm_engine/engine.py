@@ -6,9 +6,7 @@ from datetime import datetime, time as dtime
 
 from . import config
 from .acs_learner import AcsLearner
-from .decisore.energia import ProfiloCarico
 from .decisore.ombra import Ombra
-from .decisore.parametri import PROFILO_GIORNI
 from .combo import classify, descrizione, label_09, tipo_of, vent_idx
 from .learner import aggregate, fascia, learning_pct
 from .power_learner import PowerLearner
@@ -354,14 +352,12 @@ class Engine:
         n = [0]
         acs_learner = AcsLearner()
         power_learner = PowerLearner()
-        profilo = ProfiloCarico(dal_ts=now - PROFILO_GIORNI * 86400)
 
         # una sola lettura del database (disco lento): ogni campione va anche alla resa ACS
         def counted(rows):
             for r in rows:
                 n[0] += 1
                 acs_learner.feed(r)
-                profilo.feed(r)
                 yield r
         def feed_power(rows):
             for r in rows:
@@ -383,7 +379,6 @@ class Engine:
             self._publish_status()
             if self.ombra is not None:
                 try:
-                    self.ombra.profilo = profilo.result()
                     self.store.purge_ombra(since)
                     self.ombra.metriche(now)
                 except Exception:

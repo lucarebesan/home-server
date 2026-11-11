@@ -18,9 +18,14 @@ class Pub:
 
 
 SNAP = dict(stagione="INVERNO", manuale="AUTO", auto_10="on", t_min_inv=20.5, massimo_acc=23.5,
-            mattina="08:30:00", serale="20:30:00", t_zg=21.2, t_zn=20.8, tosh_on="SPENTO",
+            mattina="08:30:00", serale="20:30:00", fascia_climatica="GIORNO",
+            t_zg=21.2, t_zn=20.8, t_zg_10m=21.2, t_zn_10m=20.8,
+            trend_zg_20=0.1, trend_zg_30=0.1, trend_zg_60=0.1,
+            trend_zn_20=0.1, trend_zn_30=0.1, trend_zn_60=0.1, tosh_on="SPENTO",
             tosh_modo="RISCALDAMENTO", tosh_vent="MEDIA", soc=60.0, pv=0.0, load=500.0, imp=0.0,
-            discharge=300.0, consenso_fv="off", rec_zg="off", rec_zn="off", accumulo_ha="off", p_tosh=10.0)
+            consumo_base=500.0, discharge=300.0, charge=0.0, consenso_carica="off",
+            consenso_batteria_piena="off", prelievo_rete_stabile="off", copertura_profilo=0.0,
+            rec_zg="off", rec_zn="off", rec_minimo_ha="off", accumulo_ha="off", p_tosh=10.0)
 
 
 def mk(tmp_path):
@@ -47,8 +52,16 @@ def test_appresi_da_stats_e_power():
           (90, "HEAT", "10-15"): Stat(90, "HEAT", "10-15", 1, 30, 1270, 0, 1, .3, .3, .3, 2500.0, 0.2)}
     pw = {("INVERNO", "tosh", 8, "10-15"): PowerStat(910.0, 100, 4)}
     a = appresi_da(st, pw, "10-15")
-    assert a.costo == {2: 3000.0}          # E90 poco affidabile: non entra nel ranking
-    assert a.w == {2: 910.0}
+    assert a.costo == {2: 3000.0}          # E90 poco affidabile: non entra nel ranking appreso
+    assert a.preferita == 2                # migliore_caldo preferisce prima il dato affidabile
+    assert a.w == {2: 900, 3: 1270}        # come la colonna W della tabella letta dalla 10
+
+
+def test_migliore_caldo_da_confermare_resta_preferito():
+    st = {(70, "HEAT", "10-15"): Stat(70, "HEAT", "10-15", 1, 30, 1000, 0, 1,
+                                           .2, .2, .2, 5000.0, 0.2)}
+    a = appresi_da(st, {}, "10-15")
+    assert a.costo == {} and a.preferita == 1
 
 
 def test_concorde_e_persistenza(tmp_path):
@@ -63,7 +76,7 @@ def test_concorde_e_persistenza(tmp_path):
 def test_divergenza_solo_dopo_tre_cicli(tmp_path):
     o, _, _ = mk(tmp_path)
     # zona giorno 20.0 con latch HA di recupero: Python vuole accendere, Toshiba spento
-    rows = [o.passo(dict(SNAP, t_zg=20.0, rec_zg="on"), T0 + 60 * i, None, {}, {}) for i in range(4)]
+    rows = [o.passo(dict(SNAP, t_zg_10m=20.0, rec_zg="on"), T0 + 60 * i, None, {}, {}) for i in range(4)]
     assert [r["confronto"] for r in rows] == ["transitorio", "transitorio", "divergente", "divergente"]
     assert rows[-1]["fonte_stato"] == "ha" and rows[-1]["sotto_zg"] == 1
 
@@ -76,13 +89,30 @@ def test_non_confrontabile(tmp_path):
     assert run(o, 1, stagione="ESTATE")["confronto"] == "non confrontabile"
 
 
-def test_media_dieci_minuti_e_trend(tmp_path):
+def test_usa_le_stesse_medie_e_trend_ha_della_10(tmp_path):
     o, _, _ = mk(tmp_path)
-    for i in range(61):
-        o.passo(dict(SNAP, t_zg=20.0 + 0.01 * i), T0 + 60 * i, None, {}, {})
+    o.passo(dict(SNAP, t_zg=30.0, t_zg_10m=20.55,
+                 trend_zg_20=0.2, trend_zg_30=-0.1, trend_zg_60=0.4), T0, None, {}, {})
     c = o.ultimo_contesto
-    assert abs(c.t_zg - 20.555) < 0.01            # media degli ultimi 10 minuti
-    assert c.trend_zg[20] == 0.2 and c.trend_zg[60] > 0.5
+    assert c.t_zg == 20.55                         # non ricalcola la media dal sensore istantaneo
+    assert c.trend_zg == {20: 0.2, 30: -0.1, 60: 0.4}
+
+
+def test_fascia_usa_il_sensore_della_10(tmp_path):
+    o, _, _ = mk(tmp_path)
+    o.passo(dict(SNAP, fascia_climatica="NOTTE"), T0, None, {}, {})
+    assert o.ultimo_contesto.notte
+
+
+def test_profilo_notturno_e_ripiego_come_la_10(tmp_path):
+    o, _, _ = mk(tmp_path)
+    profilo = {f"profilo_h{h:02d}": 400.0 for h in range(24)}
+    o.passo(dict(SNAP, fascia_climatica="NOTTE", copertura_profilo=100.0, **profilo),
+             T0, None, {}, {})
+    assert o.ultimo_contesto.carico_notte_wh == o.ultimo_contesto.ore_al_mattino * 400
+    o.passo(dict(SNAP, fascia_climatica="NOTTE", copertura_profilo=99.0, consumo_base=550.0),
+             T0 + 60, None, {}, {})
+    assert o.ultimo_contesto.carico_notte_wh == o.ultimo_contesto.ore_al_mattino * 550
 
 
 def test_permanenza_dal_cambio_reale(tmp_path):
@@ -95,7 +125,7 @@ def test_permanenza_dal_cambio_reale(tmp_path):
 def test_metriche(tmp_path):
     o, store, pub = mk(tmp_path)
     store.add_sample({"ts": T0, "p_tosh": 1200.0, "imp": 600.0, "valido": 1})
-    run(o, 4, t_zg=20.0, rec_zg="on")
+    run(o, 4, t_zg_10m=20.0, rec_zg="on")
     m = o.metriche(T0 + 300)
     assert m["minuti_confrontabili"] == 4 and m["minuti_divergenti"] == 2
     assert m["minuti_sotto_soglia_zg"] == 4 and m["kwh_toshiba"] == 0.02 and m["kwh_rete"] == 0.01
@@ -105,5 +135,5 @@ def test_metriche(tmp_path):
 def test_t_ext_zero_vale(tmp_path):
     o, _, _ = mk(tmp_path)
     st = {(80, "HEAT", "<5"): Stat(80, "HEAT", "<5", 5, 100, 900, 0, 1, .3, .3, .3, 3000.0, 1.0)}
-    o.passo(dict(SNAP, t_ext_aff=0.0, t_ext=12.0, t_zg=20.0, rec_zg="on"), T0, None, st, {})
+    o.passo(dict(SNAP, t_ext_aff=0.0, t_ext=12.0, t_zg_10m=20.0, rec_zg="on"), T0, None, st, {})
     assert o.ultimo_piano.vel == 2

@@ -1,14 +1,14 @@
 # Dashboard ECM v2
 
-Ultima verifica: 2026-11-10 14:07 (card "Combinazioni e consumi" mobile e desktop installate via WebSocket e confrontate con la build).
+Ultima verifica: 2026-11-13 (nuova vista Costi e consumi preparata solo nel sorgente locale; deploy da verificare).
 
 ## Scopo
 
-Dashboard storage separata dalla Overview, `url_path` `ecm-v2`. Tab: Stato, Albero, Impostazioni, Diagnostica, Apprendimento (dal 09/11 sera; prima senza Albero). La vista ECM della Overview (`lovelace.lovelace`) resta intatta.
+Dashboard storage separata dalla Overview, `url_path` `ecm-v2`. Tab installate all'ultima verifica live: Stato, Albero, Impostazioni, Diagnostica, Apprendimento. Nel sorgente locale è pronta anche `Costi e consumi`, con dati e limiti descritti in `costi-energia.md`. La vista ECM della Overview (`lovelace.lovelace`) resta intatta.
 
 ## Sorgente
 
-`sorgenti/ha-ecm-v2/ecm_v2.yaml` in questo repository (fonte di verità). `build.py` (richiede `node` e PyYAML: `uv run --with pyyaml python build.py`) lo converte in JSON e controlla i template JavaScript; i template Jinja vanno provati a parte con `POST /api/template`.
+`sorgenti/ha-ecm-v2/ecm_v2.yaml` in questo repository (fonte di verità). `build.py` (richiede `node` e PyYAML: `uv run --with pyyaml python build.py`) lo converte in JSON e controlla i template JavaScript; legge anche `billing_invoices.json` per la tabella delle bollette. I template Jinja vanno provati a parte con `POST /api/template`.
 
 File generati (`lovelace.ecm_v2`, `entities_v2.txt`) e backup locali (`*.bak*`, dump Lovelace) sono esclusi da git.
 

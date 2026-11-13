@@ -3081,3 +3081,32 @@ views:
               Nessun avviso.
               {%- endfor %}
 
+  # ───────────────────────── COSTI E CONSUMI ─────────────────────────
+  - title: Costi e consumi
+    path: costi
+    icon: mdi:cash-multiple
+    type: sections
+    max_columns: 2
+    sections:
+      - type: grid
+        cards:
+          - type: markdown
+            title: Bollette verificate
+            content: __BILLING_HISTORY__
+          - type: markdown
+            title: Previsione della bolletta
+            content: |-
+              La stima al giorno corrente e a fine periodo richiede i **kWh prelevati dalla rete**, distinti dal consumo totale della casa che comprende fotovoltaico e batteria.
+
+              Il contatore di prelievo va prima confrontato con le letture del distributore. Finché non è verificato, non mostro un importo in tempo reale.
+      - type: grid
+        cards:
+          - type: markdown
+            title: Condizioni economiche
+            content: |-
+              **Fino al 30 novembre 2026:** offerta bioraria attuale, corrispettivo energia (perdite incluse) F1 **0,09449 €/kWh**, F23 **0,08866 €/kWh**; commercializzazione **12 €/mese**.
+
+              **Dal 1° dicembre 2026:** rinnovo comunicato dal fornitore, applicabile se non viene scelta un'altra offerta: F1 **0,14663 €/kWh**, F23 **0,14091 €/kWh** (perdite incluse); commercializzazione **12 €/mese**. La domiciliazione applica uno sconto del 5% al corrispettivo energia in entrambe le condizioni.
+
+              A parità di 1.853 kWh della bolletta dicembre–gennaio precedente, la nuova componente energia comporterebbe circa **101 € in più IVA inclusa**. È un confronto a parità di consumi e altre tariffe, non la previsione della bolletta futura: dispacciamento, rete e oneri possono cambiare.
+

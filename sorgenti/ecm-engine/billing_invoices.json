@@ -1,0 +1,7 @@
+[
+  {"period":"2025-12/2026-01","f1_kwh":574,"f23_kwh":1279,"consumption":"281.23","fixed":"28.02","power":"40.84","excise":"42.06","taxable_adjustments":"0","non_taxable_adjustments":"0","canone":"18","total":"449.37"},
+  {"period":"2026-02/2026-03","f1_kwh":198,"f23_kwh":353,"consumption":"85.04","fixed":"28.05","power":"39.54","excise":"12.51","taxable_adjustments":"-20.00","non_taxable_adjustments":"0","canone":"18","total":"177.65"},
+  {"period":"2026-04/2026-05","f1_kwh":29,"f23_kwh":69,"consumption":"14.56","fixed":"28.05","power":"39.54","excise":"2.23","taxable_adjustments":"0","non_taxable_adjustments":"0","canone":"18","total":"110.82"},
+  {"period":"2026-06/2026-07","f1_kwh":38,"f23_kwh":73,"consumption":"17.06","fixed":"28.03","power":"39.54","excise":"2.52","taxable_adjustments":"0","non_taxable_adjustments":"0","canone":"18","total":"113.87"},
+  {"period":"2026-08/2026-09","f1_kwh":25,"f23_kwh":109,"consumption":"21.26","fixed":"28.02","power":"39.54","excise":"3.04","taxable_adjustments":"0","non_taxable_adjustments":"0","canone":"18","total":"119.05"}
+]

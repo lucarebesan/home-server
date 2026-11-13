@@ -1,10 +1,10 @@
 # Dashboard ECM v2
 
-Ultima verifica: 2026-11-13 (nuova vista Costi e consumi preparata solo nel sorgente locale; deploy da verificare).
+Ultima verifica: 2026-11-13 21:35 (vista Costi e consumi installata via WebSocket e riletta identica alla build).
 
 ## Scopo
 
-Dashboard storage separata dalla Overview, `url_path` `ecm-v2`. Tab installate all'ultima verifica live: Stato, Albero, Impostazioni, Diagnostica, Apprendimento. Nel sorgente locale è pronta anche `Costi e consumi`, con dati e limiti descritti in `costi-energia.md`. La vista ECM della Overview (`lovelace.lovelace`) resta intatta.
+Dashboard storage separata dalla Overview, `url_path` `ecm-v2`. Tab installate all'ultima verifica live: Stato, Albero, Impostazioni, Diagnostica, Apprendimento, Costi e consumi. Dati e limiti della nuova vista `/ecm-v2/costi` sono descritti in `costi-energia.md`. La vista ECM della Overview (`lovelace.lovelace`) resta intatta.
 
 ## Sorgente
 
@@ -27,6 +27,8 @@ Aprire `/ecm-v2/stato`, `/ecm-v2/albero` e le altre tab e controllare che le car
 ## Ripristino
 
 Salvare via WebSocket il JSON di backup più recente.
+
+Backup prima della vista Costi e consumi: `/home/home/backup-ecm-v2-costi-20261113-213436.json`. Prima del salvataggio del 13/11 la configurazione live coincideva integralmente con la build priva della sola nuova vista; dopo il salvataggio la configurazione riletta coincide integralmente con la build completa. Risposta WebSocket `success: true`; verifica visiva ancora da fare.
 
 ## Note
 

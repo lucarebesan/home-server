@@ -1,6 +1,6 @@
 # Costi e consumi elettrici
 
-Ultima verifica: 2026-11-13 (cinque fatture e comunicazione di rinnovo esaminate; sorgenti locali, nessun deploy).
+Ultima verifica: 2026-11-13 21:35 (vista installata in HA e riletta identica alla build; contatore di prelievo identificato).
 
 ## Fonti e dati
 
@@ -17,4 +17,8 @@ Ultima verifica: 2026-11-13 (cinque fatture e comunicazione di rinnovo esaminate
 
 ## Stato
 
-La vista `Costi e consumi` è **solo nel sorgente locale** della dashboard. Mostra bollette verificate e condizioni/scenario; la previsione resta esplicitamente non disponibile finché il prelievo di rete non è riconciliato. Il server non era raggiungibile dalla postazione durante il lavoro del 13/11: stato live, sensore e deploy non verificati. Nessuna automazione o container è stato modificato.
+La vista `Costi e consumi` è installata in `/ecm-v2/costi` dal 13/11 alle 21:34. Mostra bollette verificate e condizioni/scenario; la previsione resta esplicitamente non disponibile finché il prelievo di rete non è calibrato. Configurazione riletta identica alla build, senza riavvii o modifiche alle automazioni. Verifica visiva nel browser ancora da fare.
+
+**Contatore verificato in HA:** `sensor.growatt_inverter_growatt_today_s_grid_import`, kWh, `total_increasing`; la potenza istantanea è `sensor.growatt_inverter_growatt_total_import_power`. Non è emerso un contatore cumulativo di importazione fra le entità Growatt in kWh. Le statistiche a lungo termine del contatore giornaliero sono disponibili da luglio 2026 e si leggono tramite WebSocket `recorder/statistics_during_period` per quella singola entità, senza query dirette al database.
+
+**Confronto ancora provvisorio:** i `change` mensili risultano 88,1 kWh ad agosto contro 90 fatturati e 39,7 a settembre contro 44 fatturati (127,8 contro 134 sul bimestre, circa −4,6%). Luglio contiene solo 34,4 kWh contro 52 fatturati: verificare l'inizio effettivo e la copertura prima di usarlo. Non basta attribuire tutto lo scarto a una costante dell'inverter: vanno controllati copertura, reset, risoluzione del contatore e confini del periodo. Una previsione anticipata può essere mostrata come provvisoria con questo scarto esplicito; per separare F1/F23 serve analisi delle statistiche orarie.

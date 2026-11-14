@@ -9,6 +9,7 @@ import fcntl
 import hashlib
 import inspect
 import json
+import math
 import os
 from pathlib import Path
 import signal
@@ -26,6 +27,8 @@ LOCK_FILE = Path.home() / "ecm-thermal-session.lock"
 CONTAINER_STORE = True
 PLAN = [(0, 2, 80), (0, 1, 70), (2, 1, 74), (2, 2, 84),
         (2, 3, 94), (3, 3, 95), (3, 2, 85), (3, 1, 75)]
+CONSUMPTION_PLAN = [(2, 1, 74), (3, 1, 75), (3, 2, 85),
+                    (3, 3, 95), (2, 2, 84), (2, 3, 94)]
 WRITERS = [
     "automation.nilan_write", "automation.10_ecm_inverno",
     "automation.05_ecm_acs_manager", "automation.06_ecm_humidity_override",
@@ -60,6 +63,8 @@ SENSORS = {
     "auto_tests": "switch.ecm_engine_prove_automatiche",
     "acs_test": "input_boolean.ecm_acs_prova_caldo_attiva",
     "ceiling": "input_number.ecm_inverno_massimo_accumulo",
+    "season": "input_select.stagione",
+    "free_cooling": "input_select.free_cooling",
 }
 
 
@@ -85,6 +90,11 @@ def snapshot():
     entities = dict(SENSORS, **{e: e for e in WRITERS})
     fields = [repr(k) + ":states(" + repr(e) + ")" for k, e in entities.items()]
     fields.append("'cp_changed':(expand('sensor.compactp_compressore') | map(attribute='last_changed') "
+                  "| map('as_timestamp') | first | default(none))")
+    for key in ("soc", "pv", "load", "zg", "zn", "t11", "t12"):
+        fields.append(repr("reported_"+key) + ":(expand(" + repr(SENSORS[key])
+                      + ") | map(attribute='last_reported') | map('as_timestamp') | first | default(none))")
+    fields.append("'reported_gateway':(expand('sensor.nilan_batch') | map(attribute='last_reported') "
                   "| map('as_timestamp') | first | default(none))")
     template = "{{ {" + ",".join(fields) + "}|tojson }}"
     value = request("/api/template", {"template": template})
@@ -182,6 +192,26 @@ def insert_closed_phase(path, payload):
     return test_id
 
 
+def power_coverage(start, end, code):
+    with sqlite3.connect("file:"+str(DB)+"?mode=ro", uri=True, timeout=5) as db:
+        rows, good, operating = db.execute(
+            "SELECT COUNT(*),COALESCE(SUM(p_cp IS NOT NULL AND p_cp>=0 AND "
+            "p_tosh IS NOT NULL AND p_tosh>=0),0),"
+            "COALESCE(SUM(code=? AND valido=1 AND p_tosh>=50 AND (?=0 OR p_cp>=100)),0) "
+            "FROM samples WHERE ts>=? AND ts<?",
+            (code, int(code % 10 in (4, 5, 6, 8)), int(start), int(end))).fetchone()
+    return {"rows": rows, "good": good, "operating": operating}
+
+
+def accepted_phase(minutes, duration, result, coverage):
+    valid_end = result == "completata" or any(marker in result for marker in (
+        "FV insufficiente", "batteria al 40%", "limite termico", "limite bollitore"))
+    minimum = 28*60 if minutes == 30 else minutes*60
+    required = max(1, math.ceil(duration/60*0.9))
+    return (valid_end and duration >= minimum and coverage["good"] >= required
+            and coverage.get("operating", 0) >= 10)
+
+
 def record_phase(folder, data, start, end, code, result):
     """Solo test già CHIUSI: nessun test aperto interferisce con la guardia ECM."""
     key = str(int(start))
@@ -189,6 +219,13 @@ def record_phase(folder, data, start, end, code, result):
         return
     payload = {"code": code, "minutes": data["minutes"], "start": int(start),
                "end": int(end), "result": result}
+    payload["coverage"] = power_coverage(start, end, code)
+    payload["accepted"] = accepted_phase(data["minutes"], end-start, result, payload["coverage"])
+    payload["original_result"] = result
+    if payload["accepted"] and result != "completata":
+        payload["result"] = f"completata con tolleranza ({(end-start)/60:.1f} min)"
+    elif not payload["accepted"] and result == "completata":
+        payload["result"] = "da ripetere: dati elettrici o funzionamento della combinazione insufficienti"
     data.setdefault("phase_results", {})[key] = payload
     save(folder, data)
     if CONTAINER_STORE:
@@ -239,20 +276,28 @@ def restore(folder):
                     status="ripristinata" if not errors else "errore_ripristino")
         save(folder, data)
         event(folder, "ripristino", errors=errors)
-        notify("Prove terminate. Gestione ordinaria ripristinata." if not errors else
+        reason = data.get("result")
+        notice = "Prove completate. Gestione ordinaria ripristinata." if reason == "completata" else (
+            "Prove interrotte: " + str(reason or "arresto del processo") + ". Gestione ordinaria ripristinata.")
+        notify(notice if not errors else
                "Prove terminate; verificare il ripristino: " + "; ".join(errors))
         if errors:
             raise RuntimeError("ripristino incompleto")
         cleanup_watch(folder)
 
 
-def run(folder, minutes, combined, wait_minutes=45, start_phase=1):
+def run(folder, minutes, combined, wait_minutes=45, start_phase=1, plan_name="standard", codes=None):
     folder.mkdir(parents=True, exist_ok=True)
     with LOCK_FILE.open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         if (folder / "session.json").exists():
             raise RuntimeError("sessione già esistente: non riutilizzare la cartella")
-        plan = (PLAN if combined else PLAN[:2])[start_phase-1:]
+        base_plan = CONSUMPTION_PLAN if plan_name == "consumption" else (PLAN if combined else PLAN[:2])
+        plan = base_plan[start_phase-1:]
+        if codes is not None:
+            if len(codes) != len(set(codes)) or not set(codes).issubset({p[2] for p in base_plan}):
+                raise RuntimeError("codici prova non validi")
+            plan = [p for p in base_plan if p[2] in codes]
         if not plan:
             raise RuntimeError("nessuna fase da eseguire")
         (folder / "worker.json").write_text(json.dumps({
@@ -280,7 +325,7 @@ def run(folder, minutes, combined, wait_minutes=45, start_phase=1):
                        "La gestione ordinaria resta attiva durante l'attesa.")
                 waiting_notice = True
             if time.time() >= wait_until:
-                notify("Prove non avviate: condizioni iniziali non raggiunte entro 45 minuti. Gestione ordinaria attiva.")
+                notify(f"Prove non avviate: condizioni iniziali non raggiunte entro {wait_minutes} minuti. Gestione ordinaria attiva.")
                 raise RuntimeError("condizioni iniziali non raggiunte; nessuna automazione sospesa")
             time.sleep(min(60, max(0, wait_until-time.time())))
         if initial["manual"] != "AUTO" or initial["auto_tests"] != "off" or initial["acs_test"] != "off":
@@ -298,7 +343,7 @@ def run(folder, minutes, combined, wait_minutes=45, start_phase=1):
         if max(float(initial["zg"]), float(initial["zn"])) >= ceiling:
             raise RuntimeError("limite termico già raggiunto")
         data = {"created": stamp(), "minutes": minutes, "plan": plan, "initial": initial,
-                "start_phase": start_phase,
+                "start_phase": start_phase, "plan_name": plan_name,
                 "suspended": [e for e in WRITERS if initial[e] == "on"],
                 "status": "preparazione", "ceiling": ceiling}
         save(folder, data)
@@ -356,6 +401,9 @@ def run(folder, minutes, combined, wait_minutes=45, start_phase=1):
                     energy_changed = (num(snap["pv"]) is None or num(snap["load"]) is None
                                       or num(snap["soc"]) is None
                                       or num(snap["pv"]) < num(snap["load"]))
+                    if any(num(snap.get("reported_"+k)) is not None and
+                           time.time()-num(snap["reported_"+k]) > 180 for k in ("soc", "pv", "load")):
+                        energy_changed = True
                     if energy_changed:
                         energy_bad_since = energy_bad_since or time.time()
                         if time.time()-energy_bad_since >= 120:
@@ -369,7 +417,7 @@ def run(folder, minutes, combined, wait_minutes=45, start_phase=1):
                                f"FV {snap['pv']} W, carico {snap['load']} W. "
                                "Arresto se il FV resta insufficiente per due minuti.")
                     cp_matches = snap["cp_fan"] == ("OFF" if not cp else f"STEP {cp}")
-                    cp_matches = cp_matches and snap["cp_comp"] == ("ON" if cp else "OFF")
+                    cp_matches = cp_matches and (snap["cp_mode"] == "RISCALDAMENTO" if cp else snap["cp_comp"] == "OFF")
                     if cp_matches:
                         cp_bad_since = None
                     else:
@@ -410,6 +458,9 @@ if __name__ == "__main__":
     parser.add_argument("--minutes", type=int, choices=(30, 40), default=40)
     parser.add_argument("--combined", action="store_true")
     parser.add_argument("--start-phase", type=int, choices=range(1, 9), default=1)
+    parser.add_argument("--plan", choices=("standard", "consumption"), default="standard")
+    parser.add_argument("--codes", help="codici da eseguire, separati da virgole")
+    parser.add_argument("--wait-minutes", type=int, choices=range(46), default=45)
     args = parser.parse_args()
     signal.signal(signal.SIGTERM, interrupted)
     signal.signal(signal.SIGINT, interrupted)
@@ -419,7 +470,9 @@ if __name__ == "__main__":
         watch(args.folder)
     else:
         try:
-            run(args.folder, args.minutes, args.combined, start_phase=args.start_phase)
+            run(args.folder, args.minutes, args.combined, wait_minutes=args.wait_minutes,
+                start_phase=args.start_phase, plan_name=args.plan,
+                codes=[int(c) for c in args.codes.split(",")] if args.codes else None)
         finally:
             if not (args.folder / "session.json").exists():
                 cleanup_watch(args.folder)

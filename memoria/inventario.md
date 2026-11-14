@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-10 16:36 (matrice inverno definitiva e T min 20,5 °C; macchina e rete restano alla verifica del 09/11).
+Ultima verifica: 2026-11-14 (campagna automatica consumi armata; altre voci climatiche alla verifica del 10/11 e macchina/rete al 09/11).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -51,6 +51,7 @@ dettagli in `procedure/migrazione-minipc.md`.
 
 - Crontab di `home`: rinnovo del certificato alle 04:17 (vedi `procedure/duckdns-certificato.md`).
 - `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti; dal 09/11 campiona anche bollitore alto/basso e marcatore della prova ACS indiretta. Dal 10/11 pubblica stime W separate CP/SPLIT; la resa termica delle coppie resta da misurare. Prove automatiche verificate spente il 10/11.
+- Dal 14/11 è armata una **campagna automatica consumi delle sei coppie CP HEAT/SPLIT HEAT**, con cron separato e ripresa persistente. È indipendente dall'interruttore "Prove automatiche" del motore, che resta spento. Stato, soglie, percorsi e disattivazione dopo sei acquisizioni in `procedure/ecm-engine.md`, sezione "Campagna automatica consumi"; prima di un comando climatico controllare se esiste un tentativo attivo.
 - HA: `00-NILAN WRITE` è accesa in modalità isolata ACS, ricambio minimo e
   riscaldamento ambiente invernale (commit HA `4b1dff7`); il vecchio ramo ECM
   generale resta escluso. Arbitra la Compact P fra ACSe, ricambio e richiesta

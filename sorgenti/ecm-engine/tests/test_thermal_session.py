@@ -50,6 +50,7 @@ class ThermalSessionTest(unittest.TestCase):
         module.service = lambda *args: calls.append(("service", *args))
         module.notify = lambda *args: None
         module.cleanup_watch = lambda *args: None
+        module.power_coverage = lambda *args: {"rows": 0, "good": 0}
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             module.DB, module.LOCK_FILE = root / "engine.db", root / "test.lock"
@@ -86,6 +87,20 @@ class ThermalSessionTest(unittest.TestCase):
 
     def test_resume_starts_with_v1_without_repeating_v2(self):
         self.check_stop("battery", start_phase=2)
+
+    def test_28_minute_tolerance_requires_valid_data_and_allowed_stop(self):
+        spec = importlib.util.spec_from_file_location(
+            "thermal_accept_test", os.environ.get("THERMAL_SESSION_SOURCE", str(Path(__file__).parents[1] / "scripts/thermal_session.py")))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        reason = "interrotta: FV insufficiente per due minuti"
+        for duration, expected in ((1200, False), (1679, False), (1680, True), (1740, True), (1800, True)):
+            self.assertEqual(module.accepted_phase(30, duration, reason, {"good": 30, "operating": 20}), expected)
+        self.assertFalse(module.accepted_phase(30, 1680, reason, {"good": 25, "operating": 20}))
+        self.assertFalse(module.accepted_phase(30, 1740, "intervento manuale", {"good": 30, "operating": 20}))
+        self.assertFalse(module.accepted_phase(30, 1800, "completata", {"good": 30, "operating": 0}))
+        self.assertTrue(all(cp in (2, 3) for cp, _, _ in module.CONSUMPTION_PLAN))
+        self.assertEqual(len({p[2] for p in module.CONSUMPTION_PLAN}), 6)
 
     def test_closed_phase_retry_keeps_one_record_and_matches_only_valid_code(self):
         spec = importlib.util.spec_from_file_location(

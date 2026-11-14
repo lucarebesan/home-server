@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-14 (programma temporaneo delle prove dirette verificato; per l'ombra inverno resta la verifica dell'11/11).
+Ultima verifica: 2026-11-14 17:10 (campagna automatica delle sei coppie consumi armata; per l'ombra inverno resta la verifica dell'11/11).
 
 ## Scopo
 
@@ -119,6 +119,69 @@ Prima di interrompere a mano, leggere il PID in `worker.json` e verificarne il
 comando in `/proc/PID/cmdline`; inviare SIGTERM al processo, poi verificare
 `restored: true` e gli stati reali. La guardia cron resta disponibile in caso di
 errore. Non avviare due sessioni: il lock globale impedisce prove concorrenti.
+
+## Campagna automatica consumi, autorizzata il 14/11
+
+Luca ha autorizzato esplicitamente l'avvio senza chiedergli di partire, tutte
+le sei coppie a seguire e le riprese automatiche più tardi o un altro giorno.
+Ha escluso la prova invernale di sola ventilazione V4. Questo aggiorna la
+precedente indicazione di riprendere le prove solo un altro giorno.
+
+- Controller: `sorgenti/ecm-engine/scripts/thermal_campaign.py`, distribuito come
+  `/home/home/thermal_campaign.py`, con il runner `/home/home/thermal_session.py`.
+  Campagna: `/home/home/ecm-tests/consumi-auto-6/campaign.json`. `completed`
+  conserva le combinazioni acquisite, `active` la cartella del tentativo corrente;
+  ogni tentativo ha snapshot, eventi, risultati e ripristino propri. Stato
+  iniziale verificato: **attesa, 0/6 acquisite**, nessun test avviato al setup.
+- Piano nell'ordine: **E74** CP HEAT V2 + SPLIT V1; **E75** CP HEAT V3 + SPLIT V1;
+  **E85** CP HEAT V3 + SPLIT V2; **E95** CP HEAT V3 + SPLIT V3;
+  **E84** CP HEAT V2 + SPLIT V2; **E94** CP HEAT V2 + SPLIT V3.
+  Solo HEAT, nessuna prova di ventilazione a freddo. I test Toshiba soli già
+  completati il 14/11 restano il riferimento e non vengono ripetuti.
+- Obiettivo **30 minuti consecutivi**, tolleranza esplicitamente concordata
+  **28 minuti** per un arresto energetico/termico. Sotto 28 minuti la combinazione
+  rimane da fare e al prossimo avvio riparte da zero; i dati parziali restano.
+  Richiesti almeno 90% di campioni elettrici presenti e 10 campioni con codice
+  fisico atteso e macchine effettivamente in funzione. Errori di dati/comandi o
+  interventi manuali non rendono completa una prova solo per il tempo trascorso.
+  `phase_results` espone durata, copertura e `accepted`; le accettate a 28–29
+  minuti sono etichettate anche nello storico come completate con tolleranza.
+- Una sola riga cron di `home`, tag `ECM_CONSUMPTION_d065ffe3f37e`, esegue `tick`
+  ogni minuto. Le partenze sono nella finestra **09:00–16:00 Europe/Rome**;
+  il controller continua a sorvegliare/ripristinare una prova già partita fuori
+  da tale finestra. Il server lavora senza chat o PC dell'utente aperti.
+- Prima dell'avvio: condizioni buone stabili per almeno **5 minuti**, SOC >40%,
+  dati energia e sorgente gateway riportati da non più di 180 s, raccolta ECM
+  recente (ultimo campione entro 120 s), stagione INVERNO, AUTO, niente altre prove,
+  WRITE e `10` attive. Le automazioni spente a mano non vengono riaccese per
+  l'avvio. Restano il minimo di 15 minuti CP già accesa, i limiti bollitore e un
+  margine iniziale di 0,5 °C sotto il massimo delle zone (comunque ≤23,5 °C).
+- Il FV deve coprire sia il carico attuale sia quello previsto per la prova:
+  base casa = carico − CP − SPLIT, limite inferiore zero; richiesta prudente
+  base + **2400 W** per le macchine + **300 W** di margine. Sono valori di
+  avvio, non consumi dichiarati delle combinazioni. La freschezza CP/SPLIT usa
+  `sensor.nilan_batch`: l'età di un template temperatura invariato non dimostra
+  che la sua lettura sia vecchia.
+- In prova restano gli arresti SOC ≤40%, FV sotto il carico per 120 s, limiti
+  termici e guardie già documentate. Le pause native del compressore vengono
+  registrate; non si forza il suo riavvio. Alla sospensione si ripristina la
+  gestione ordinaria, si attende almeno **15 minuti**, poi si richiedono di nuovo
+  5 minuti di condizioni stabili. Le combinazioni già acquisite vengono escluse
+  dal nuovo piano, anche se i risultati completati non sono contigui.
+- Il controller usa anche la guardia del runner per recuperare un processo morto
+  o scaduto. Un intervento manuale o un errore inatteso sospende la campagna da
+  verificare; gli stop energetici/termici ammettono la ripresa automatica.
+  Dopo tutte e sei le acquisizioni si disabilita e rimuove la propria riga cron.
+  Progressi e motivi di stop sono nelle notifiche persistenti HA e nei file.
+- Verifica: **11 test** mirati passati sul server (6 runner + 5 controller), inclusi
+  soglie 20/28/29 minuti, dati insufficienti, nessuna ventilazione V4, cinque minuti
+  prima del dispatch, ordine delle sei coppie, checkpoint non contigui, ripresa
+  energetica e rispetto delle automazioni/manovre manuali. Query in sola lettura
+  sul DB reale verificata; non sono stati alterati permessi né riavviati container.
+
+Per fermare le future partenze porre `enabled=false` nel JSON; se c'è un tentativo
+attivo, fermarne anche il PID verificato come nella procedura del runner e
+controllare `restored=true`. Il cron viene rimosso dal controller alla chiusura.
 
 ## Dati caricati
 

@@ -59,12 +59,14 @@ dettagli in `procedure/migrazione-minipc.md`.
   `07-ECM RICAMBIO ARIA MINIMO` è accesa: sceglie automaticamente V2/V3/V4 di giorno,
   soltanto V2/V3 di notte, mai V1; decide CP HEAT/OFF dalla temperatura esterna e può
   acquisirla con un campionamento preventivo V2. `06-ECM HUMIDITY OVERRIDE`, aggiornata
-  nel commit HA `a9e3578`, è attiva: sopra il 75% avvia autonomamente un blocco
+  nel commit HA `a25c615`, è attiva: sopra il 75% avvia autonomamente un blocco
   continuo fino a 90 minuti, V4 di giorno e V3 di sera/notte, con arresto sotto il
   70%; dopo 2 ore può fare richiami continui di 60 minuti, poi distanziati di 3 ore.
   Il ricambio `07` resta prioritario e autonomo: se ventila durante una pausa, quel
   lavoro rinvia il blocco umidità successivo senza alterare tempi o velocità della `07`.
-  Non usa mai V1. Dettagli e ripristino in `procedure/config-home-assistant.md`.
+  Il rientro sotto il 70% azzera la sequenza per un nuovo episodio; non esiste
+  più lo stop fisso delle 17:30. Non usa mai V1. Dettagli e ripristino in
+  `procedure/config-home-assistant.md`.
   `05-ECM ACS MANAGER`
   resta accesa; le altre automazioni decisionali ECM generali, salvo `10`, restano spente.
 - HA: `10 - ECM INVERNO` corretta nel commit HA `335b878` e accesa dal 10/11.

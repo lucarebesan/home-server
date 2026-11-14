@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-14 (umidità lavanderia a blocchi lunghi; commit HA `a9e3578`).
+Ultima verifica: 2026-11-14 (umidità lavanderia a blocchi lunghi; commit HA `a25c615`).
 
 ## Prerequisiti
 
@@ -56,7 +56,7 @@ Ultima verifica: 2026-11-14 (umidità lavanderia a blocchi lunghi; commit HA `a9
 
 ## Umidità lavanderia a blocchi lunghi dal 14/11
 
-La `06-ECM HUMIDITY OVERRIDE` del commit HA `a9e3578` sostituisce i richiami di
+La `06-ECM HUMIDITY OVERRIDE` del commit HA `a25c615` sostituisce i richiami di
 15 minuti a inizio ora, che facevano scendere l'umidità solo temporaneamente.
 Con sensore lavanderia valido (batteria almeno 10%), il superamento stabile del
 75% avvia da solo un primo blocco continuo: V4 nella fascia giorno
@@ -76,9 +76,11 @@ anche come trattamento dell'umidità e non viene duplicato.
 Helper aggiunti in `packages/ecm_helper.yaml`:
 `input_boolean.ecm_umidita_richiamo_lungo_eseguito` distingue la pausa iniziale
 da quella ricorrente; `input_datetime.ecm_umidita_ultimo_blocco_fine` conserva
-la fine dell'ultimo blocco o dell'ultima ventilazione `07` conteggiata. Alle
-17:30 la `06` azzera la sequenza giornaliera. CP HEAT/OFF e l'eventuale
-campionamento della temperatura esterna restano responsabilità della `07`.
+la fine dell'ultimo blocco o dell'ultima ventilazione `07` conteggiata. Il
+rientro sotto il 70% azzera ciclo e richiami, così un nuovo superamento del 75%
+riceve un nuovo blocco iniziale. Non esiste un azzeramento a orario fisso.
+CP HEAT/OFF e l'eventuale campionamento della temperatura esterna restano
+responsabilità della `07`.
 
 **Verifica:** con umidità sotto soglia devono risultare `06`, `07` e WRITE ON,
 richiesta umidità OFF, velocità umidità 0 e primo ciclo non esaurito. Dopo una

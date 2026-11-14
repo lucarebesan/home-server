@@ -56,7 +56,7 @@ o “Prove automatiche” per usarlo: il ramo WRITE isolato non realizza quel ma
 (verifica del 13/11 nel diario). Il programma scrive con il servizio esistente
 `shell_command.nilan_write`, senza creare automazioni HA o riavviare container.
 
-- Copia eseguita sul server: `/home/home/thermal_session.py`; sessione corrente:
+- Copia eseguita sul server: `/home/home/thermal_session.py`; sessione iniziale:
   `/home/home/ecm-tests/20261114-toshiba-cp/`. `session.json` descrive fase,
   scadenza, stato iniziale e ripristino; prima dell'avvio esiste solo `waiting.json`.
   `events.jsonl` conserva dati e cambi fase. **Questa prova esterna non appare nel
@@ -94,6 +94,13 @@ o “Prove automatiche” per usarlo: il ramo WRITE isolato non realizza quel ma
   `/home/home/ecm-tests/20261114-toshiba-cp-ripresa/`: prima V1/E70, poi le sei coppie.
   V2 della prima sessione è stata recuperata nello storico come test 1, con i soli
   campioni originali della finestra effettiva, senza ripeterla.
+- **Esito verificato il 14/11 alle 16:15:** nessuna prova diretta rimasta attiva.
+  V2 e V1 completate (39 campioni validi ciascuna). Prima coppia CP HEAT V2 +
+  SPLIT HEAT V1 interrotta dopo 9 minuti per FV sotto il carico per due minuti;
+  ripristino riuscito alle 14:16:58 e righe cron temporanee rimosse. Per riprendere
+  le sei coppie usare una nuova sessione `--combined --start-phase 3`: il tratto
+  parziale della prima coppia non sostituisce la prova da 40 minuti. Apprendimento
+  passivo ECM e automazioni ACS continuano con la gestione ordinaria.
 - Il processo è avviato separato dalla sessione SSH; una riga **temporanea** del
   crontab di `home` invoca `watch SESSION` ogni minuto. La guardia verifica PID,
   comando, boot e scadenza massima e ripristina se il processo termina. Si

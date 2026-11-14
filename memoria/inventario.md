@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-14 (campagna automatica consumi armata; altre voci climatiche alla verifica del 10/11 e macchina/rete al 09/11).
+Ultima verifica: 2026-11-14 17:16 (campagna consumi armata e gestione umidità a blocchi lunghi; macchina/rete al 09/11).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -59,10 +59,13 @@ dettagli in `procedure/migrazione-minipc.md`.
   `07-ECM RICAMBIO ARIA MINIMO` è accesa: sceglie automaticamente V2/V3/V4 di giorno,
   soltanto V2/V3 di notte, mai V1; decide CP HEAT/OFF dalla temperatura esterna e può
   acquisirla con un campionamento preventivo V2. `06-ECM HUMIDITY OVERRIDE`, aggiornata
-  nel commit HA `534cf90`, è attiva dal 09/11 alle 22:46: garantisce
-  almeno 90 minuti e poi continua di giorno se il FV copre il carico con batteria buona
-  (soglia iniziale 40%), oppure la sera/notte se la proiezione lascia almeno il 15% al
-  mattino; altrimenti passa ai richiami di 15 minuti a inizio ora. `05-ECM ACS MANAGER`
+  nel commit HA `a9e3578`, è attiva: sopra il 75% avvia autonomamente un blocco
+  continuo fino a 90 minuti, V4 di giorno e V3 di sera/notte, con arresto sotto il
+  70%; dopo 2 ore può fare richiami continui di 60 minuti, poi distanziati di 3 ore.
+  Il ricambio `07` resta prioritario e autonomo: se ventila durante una pausa, quel
+  lavoro rinvia il blocco umidità successivo senza alterare tempi o velocità della `07`.
+  Non usa mai V1. Dettagli e ripristino in `procedure/config-home-assistant.md`.
+  `05-ECM ACS MANAGER`
   resta accesa; le altre automazioni decisionali ECM generali, salvo `10`, restano spente.
 - HA: `10 - ECM INVERNO` corretta nel commit HA `335b878` e accesa dal 10/11.
   In AUTO usa le medie zona a 10 minuti e la matrice relativa a

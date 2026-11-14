@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-10 (matrice inverno definitiva; commit HA `335b878`).
+Ultima verifica: 2026-11-14 (umidità lavanderia a blocchi lunghi; commit HA `a9e3578`).
 
 ## Prerequisiti
 
@@ -53,6 +53,44 @@ Ultima verifica: 2026-11-10 (matrice inverno definitiva; commit HA `335b878`).
 - Il database del recorder (`/config/home-assistant_v2.db`, circa 3 GB su HDD lento) va interrogato solo in sola lettura (`file:...?mode=ro`), un'entità alla volta, senza `COUNT(*)` né scansioni complete: fanno salire l'I/O di tutto il server.
 - Lo storico del recorder dura 7 giorni; le statistiche orarie (`statistics`) restano più a lungo.
 - Le dashboard storage si possono aggiornare senza riavvio via WebSocket `lovelace/config/save`: vedi `dashboard-ecm-v2.md`.
+
+## Umidità lavanderia a blocchi lunghi dal 14/11
+
+La `06-ECM HUMIDITY OVERRIDE` del commit HA `a9e3578` sostituisce i richiami di
+15 minuti a inizio ora, che facevano scendere l'umidità solo temporaneamente.
+Con sensore lavanderia valido (batteria almeno 10%), il superamento stabile del
+75% avvia da solo un primo blocco continuo: V4 nella fascia giorno
+`nilan_mattina`–`nilan_serale`, V3 fuori fascia, mai V1. Il blocco termina sotto
+il 70% oppure dopo 90 minuti. Dopo la fine attende almeno 120 minuti; se serve
+ancora, avvia un blocco di 60 minuti. I richiami successivi sono separati da
+almeno 180 minuti. Un cambio di fascia durante il blocco adegua V4/V3 al minuto
+successivo.
+
+La `06` pubblica solo `emc_richiesta_ventilazione_umidita` e la velocità
+richiesta. La `07` conserva la priorità operativa e arbitra con il massimo tra
+ricambio e umidità. Se la `07` ventila mentre la `06` è in pausa, la `06` non
+parte né modifica la velocità: aggiorna la fine del lavoro utile e ricomincia la
+propria pausa dalla cessazione del ricambio. In questo modo il ricambio conta
+anche come trattamento dell'umidità e non viene duplicato.
+
+Helper aggiunti in `packages/ecm_helper.yaml`:
+`input_boolean.ecm_umidita_richiamo_lungo_eseguito` distingue la pausa iniziale
+da quella ricorrente; `input_datetime.ecm_umidita_ultimo_blocco_fine` conserva
+la fine dell'ultimo blocco o dell'ultima ventilazione `07` conteggiata. Alle
+17:30 la `06` azzera la sequenza giornaliera. CP HEAT/OFF e l'eventuale
+campionamento della temperatura esterna restano responsabilità della `07`.
+
+**Verifica:** con umidità sotto soglia devono risultare `06`, `07` e WRITE ON,
+richiesta umidità OFF, velocità umidità 0 e primo ciclo non esaurito. Dopo una
+doccia controllare nel logbook la partenza autonoma della `06`, V4 di giorno o
+V3 di notte, CP HEAT/OFF scelto dalla `07`, durata reale e andamento
+dell'umidità. Non avviare manualmente la ventilazione durante la prova.
+
+**Ripristino:** i file precedenti sono in
+`/config/tmp/backup_umidita_blocchi_20261114_1720/`. Copiare nel container
+`06_ecm_humidity_override.yaml` e `ecm_helper.yaml`, eseguire `check_config`,
+ricaricare nell'ordine `input_boolean`, `input_datetime`, `automation` e
+verificare le richieste prima di lasciare la `06` attiva.
 
 ## Isolamento ACS temporaneo dal 09/11
 

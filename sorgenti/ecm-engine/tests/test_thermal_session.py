@@ -13,11 +13,12 @@ import unittest
 
 @unittest.skipUnless(os.name == "posix", "il runner usa lock POSIX sul server Linux")
 class ThermalSessionTest(unittest.TestCase):
-    def check_stop(self, reason):
+    def check_stop(self, reason, start_phase=1):
         spec = importlib.util.spec_from_file_location(
             "thermal_test", os.environ.get("THERMAL_SESSION_SOURCE", str(Path(__file__).parents[1] / "scripts/thermal_session.py")))
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
+        module.CONTAINER_STORE = False
         clock = [1800000000.0]
         module.time = types.SimpleNamespace(
             time=lambda: clock[0], sleep=lambda s: clock.__setitem__(0, clock[0]+s))
@@ -59,7 +60,7 @@ class ThermalSessionTest(unittest.TestCase):
                     "CREATE TABLE samples(ts INTEGER PRIMARY KEY,code INTEGER,valido INTEGER,test_id INTEGER);")
             expected = {"battery": "batteria", "pv": "FV insufficiente", "waiting": "condizioni iniziali"}[reason]
             with self.assertRaisesRegex(RuntimeError, expected), contextlib.redirect_stdout(io.StringIO()):
-                module.run(root / "session", 40, True, wait_minutes=1)
+                module.run(root / "session", 40, True, wait_minutes=1, start_phase=start_phase)
             if reason == "waiting":
                 self.assertEqual(calls, [])
                 self.assertFalse((root / "session/session.json").exists())
@@ -71,6 +72,7 @@ class ThermalSessionTest(unittest.TestCase):
             self.assertIn(("write", 1999108, "Id3", 0), calls)
             with sqlite3.connect(module.DB) as db:
                 self.assertEqual(db.execute("SELECT COUNT(*) FROM tests WHERE fine IS NULL").fetchone()[0], 0)
+                self.assertEqual(db.execute("SELECT code FROM tests").fetchone()[0], 80 if start_phase == 1 else 70)
             self.assertEqual(clock[0]-1800000000, 0 if reason == "battery" else 120)
 
     def test_battery_limit_stops_and_restores(self):
@@ -81,6 +83,29 @@ class ThermalSessionTest(unittest.TestCase):
 
     def test_waiting_does_not_suspend_automations(self):
         self.check_stop("waiting")
+
+    def test_resume_starts_with_v1_without_repeating_v2(self):
+        self.check_stop("battery", start_phase=2)
+
+    def test_closed_phase_retry_keeps_one_record_and_matches_only_valid_code(self):
+        spec = importlib.util.spec_from_file_location(
+            "thermal_store_test", os.environ.get("THERMAL_SESSION_SOURCE", str(Path(__file__).parents[1] / "scripts/thermal_session.py")))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "test.db"
+            with sqlite3.connect(path) as db:
+                db.executescript(
+                    "CREATE TABLE tests(id INTEGER PRIMARY KEY,code INTEGER,durata_min INTEGER,origine TEXT,inizio INTEGER,fine INTEGER,esito TEXT);"
+                    "CREATE TABLE samples(ts INTEGER PRIMARY KEY,code INTEGER,valido INTEGER,test_id INTEGER);"
+                    "INSERT INTO samples VALUES(100,80,1,NULL),(101,70,1,NULL),(102,80,0,NULL),(103,80,1,999);")
+            payload = dict(code=80, minutes=40, start=100, end=104, result="completata")
+            first = module.insert_closed_phase(path, payload)
+            self.assertEqual(module.insert_closed_phase(path, payload), first)
+            with sqlite3.connect(path) as db:
+                self.assertEqual(db.execute("SELECT COUNT(*) FROM tests").fetchone()[0], 1)
+                self.assertEqual(db.execute("SELECT test_id FROM samples ORDER BY ts").fetchall(),
+                                 [(first,), (None,), (None,), (999,)])
 
 
 if __name__ == "__main__":

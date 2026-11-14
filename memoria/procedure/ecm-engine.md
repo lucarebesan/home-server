@@ -62,8 +62,8 @@ o “Prove automatiche” per usarlo: il ramo WRITE isolato non realizza quel ma
   `events.jsonl` conserva dati e cambi fase. **Questa prova esterna non appare nel
   sensore “Prova in corso” del motore:** la fase corrente è nelle notifiche
   persistenti HA e nel file di sessione.
-- Avvio entro 45 minuti con batteria **>40%**, FV almeno pari al carico e Toshiba
-  fermo. Se la CP è accesa, si aspetta che il compressore abbia lavorato almeno
+- Avvio entro 45 minuti con batteria **>40%**, FV almeno pari al carico e macchine
+  già in modo HEAT; Toshiba può essere già acceso. Se la CP è accesa, si aspetta che il compressore abbia lavorato almeno
   15 minuti prima di isolarla. Nessuna automazione è sospesa durante l'attesa.
 - Otto fasi da 40 minuti: CP OFF + SPLIT V2, poi V1; CP HEAT V2 + SPLIT V1/V2/V3;
   CP HEAT V3 + SPLIT V3/V2/V1. Setpoint tecnico Toshiba 29 °C; CP aria 17 °C nelle
@@ -83,7 +83,17 @@ o “Prove automatiche” per usarlo: il ramo WRITE isolato non realizza quel ma
   per ultima. Ogni fase viene inserita nel database ECM **già chiusa** e associata
   ai soli campioni validi del codice fisico atteso: nessun test aperto attiva la
   supervisione concorrente del motore. Le prove concluse/interrotte appariranno
-  quindi nello storico del motore.
+  quindi nello storico del motore. Il DB sul server è **root:root 0644**:
+  `home` non può scriverlo direttamente. Il salvataggio usa `docker exec`
+  nel container `ecm-engine` e la sua `DB_PATH`, senza cambiare i permessi.
+  La transazione è idempotente e non riassegna campioni di altre combinazioni.
+  Il risultato di fase è salvato anche nel JSON locale prima della scrittura SQL.
+- Per riprendere senza rifare le prove completate, usare una **nuova cartella** e
+  `--start-phase N` (numerazione del piano originale, 1–8). Il 14/11 alle 13:27:54
+  è partita la ripresa `--start-phase 2` in
+  `/home/home/ecm-tests/20261114-toshiba-cp-ripresa/`: prima V1/E70, poi le sei coppie.
+  V2 della prima sessione è stata recuperata nello storico come test 1, con i soli
+  campioni originali della finestra effettiva, senza ripeterla.
 - Il processo è avviato separato dalla sessione SSH; una riga **temporanea** del
   crontab di `home` invoca `watch SESSION` ogni minuto. La guardia verifica PID,
   comando, boot e scadenza massima e ripristina se il processo termina. Si
@@ -92,7 +102,11 @@ o “Prove automatiche” per usarlo: il ramo WRITE isolato non realizza quel ma
   il primo tentativo si è chiuso con SSH prima di qualsiasi comando fisico.
 - Verifica ripetibile, senza azionare hardware:
   `THERMAL_SESSION_SOURCE=/home/home/thermal_session.py python3 /tmp/test_thermal_session.py -v`.
-  I tre test simulano stop batteria, stop FV e attesa senza sospendere automazioni.
+  I cinque test verificano stop batteria, stop FV, attesa senza sospendere
+  automazioni, ripresa senza ripetere V2 e registrazione idempotente dei soli
+  campioni validi della combinazione prevista. Verificare anche l'accesso SQL
+  reale nel container: i test su un DB temporaneo non provano i permessi di quello
+  di produzione.
 
 Prima di interrompere a mano, leggere il PID in `worker.json` e verificarne il
 comando in `/proc/PID/cmdline`; inviare SIGTERM al processo, poi verificare

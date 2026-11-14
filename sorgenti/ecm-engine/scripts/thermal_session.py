@@ -7,6 +7,7 @@ Non crea automazioni HA e non modifica le regole del motore ECM.
 import argparse
 import fcntl
 import hashlib
+import inspect
 import json
 import os
 from pathlib import Path
@@ -22,6 +23,7 @@ BASE = "http://127.0.0.1:8123"
 TOKEN = Path.home() / ".config/ecm/ha_token"
 DB = Path.home() / "ecm-engine/data/engine.db"
 LOCK_FILE = Path.home() / "ecm-thermal-session.lock"
+CONTAINER_STORE = True
 PLAN = [(0, 2, 80), (0, 1, 70), (2, 1, 74), (2, 2, 84),
         (2, 3, 94), (3, 3, 95), (3, 2, 85), (3, 1, 75)]
 WRITERS = [
@@ -162,18 +164,44 @@ def watch(folder):
         cleanup_watch(folder)
 
 
+def insert_closed_phase(path, payload):
+    """Transazione idempotente; eseguita col proprietario del DB nel container."""
+    with sqlite3.connect(path, timeout=10) as db:
+        existing = db.execute(
+            "SELECT id FROM tests WHERE code=? AND inizio=? AND fine=? AND origine='manuale' LIMIT 1",
+            (payload["code"], payload["start"], payload["end"])).fetchone()
+        if existing:
+            test_id = existing[0]
+        else:
+            cursor = db.execute(
+                "INSERT INTO tests(code,durata_min,origine,inizio,fine,esito) VALUES(?,?,?,?,?,?)",
+                (payload["code"], payload["minutes"], "manuale", payload["start"], payload["end"], payload["result"]))
+            test_id = cursor.lastrowid
+        db.execute("UPDATE samples SET test_id=? WHERE ts>=? AND ts<? AND code=? "
+                   "AND valido=1 AND test_id IS NULL", (test_id, payload["start"], payload["end"], payload["code"]))
+    return test_id
+
+
 def record_phase(folder, data, start, end, code, result):
     """Solo test già CHIUSI: nessun test aperto interferisce con la guardia ECM."""
     key = str(int(start))
     if key in data.setdefault("recorded", {}):
         return
-    with sqlite3.connect(DB, timeout=10) as db:
-        cursor = db.execute(
-            "INSERT INTO tests(code,durata_min,origine,inizio,fine,esito) VALUES(?,?,?,?,?,?)",
-            (code, data["minutes"], "manuale", int(start), int(end), result))
-        test_id = cursor.lastrowid
-        db.execute("UPDATE samples SET test_id=? WHERE ts>=? AND ts<? AND code=? "
-                   "AND valido=1 AND test_id IS NULL", (test_id, int(start), int(end), code))
+    payload = {"code": code, "minutes": data["minutes"], "start": int(start),
+               "end": int(end), "result": result}
+    data.setdefault("phase_results", {})[key] = payload
+    save(folder, data)
+    if CONTAINER_STORE:
+        # Il DB è root:root 0644. Non cambiarne i permessi o le credenziali:
+        # usare il container già autorizzato, senza riavviarlo.
+        program = ("import sqlite3,json,os,sys\n" + inspect.getsource(insert_closed_phase)
+                   + "\nprint(insert_closed_phase(os.environ.get('DB_PATH','/data/engine.db'), json.load(sys.stdin)))")
+        completed = subprocess.run(
+            ["docker", "exec", "-i", "ecm-engine", "python3", "-c", program],
+            input=json.dumps(payload), text=True, capture_output=True, check=True, timeout=30)
+        test_id = int(completed.stdout.strip())
+    else:
+        test_id = insert_closed_phase(DB, payload)
     data["recorded"][key] = test_id
     save(folder, data)
     event(folder, "fase_registrata", code=code, test_id=test_id, result=result)
@@ -218,15 +246,18 @@ def restore(folder):
         cleanup_watch(folder)
 
 
-def run(folder, minutes, combined, wait_minutes=45):
+def run(folder, minutes, combined, wait_minutes=45, start_phase=1):
     folder.mkdir(parents=True, exist_ok=True)
     with LOCK_FILE.open("w") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         if (folder / "session.json").exists():
             raise RuntimeError("sessione già esistente: non riutilizzare la cartella")
+        plan = (PLAN if combined else PLAN[:2])[start_phase-1:]
+        if not plan:
+            raise RuntimeError("nessuna fase da eseguire")
         (folder / "worker.json").write_text(json.dumps({
             "pid": os.getpid(), "boot": Path("/proc/sys/kernel/random/boot_id").read_text().strip(),
-            "deadline": time.time() + (wait_minutes + minutes * (8 if combined else 2) + 5) * 60,
+            "deadline": time.time() + (wait_minutes + minutes * len(plan) + 5) * 60,
         }), encoding="utf-8")
         wait_until = time.time() + wait_minutes * 60
         waiting_notice = False
@@ -238,7 +269,7 @@ def run(folder, minutes, combined, wait_minutes=45):
                      and (initial["cp_comp"] == "OFF" or
                           (initial["cp_comp"] == "ON" and num(initial.get("cp_changed")) is not None
                            and time.time()-num(initial["cp_changed"]) >= 900))
-                     and initial["split_on"] in ("SPENTO", "OFF"))
+                     and initial["split_on"] in ("SPENTO", "OFF", "ACCESO", "ON"))
             if ready:
                 break
             (folder / "waiting.json").write_text(json.dumps({
@@ -254,8 +285,8 @@ def run(folder, minutes, combined, wait_minutes=45):
             time.sleep(min(60, max(0, wait_until-time.time())))
         if initial["manual"] != "AUTO" or initial["auto_tests"] != "off" or initial["acs_test"] != "off":
             raise RuntimeError("un altro comando manuale o una prova è attiva")
-        if initial["cp_comp"] not in ("ON", "OFF") or initial["split_on"] not in ("SPENTO", "OFF"):
-            raise RuntimeError("precondizione: stato CP valido e Toshiba fermo")
+        if initial["cp_comp"] not in ("ON", "OFF") or initial["split_on"] not in ("SPENTO", "OFF", "ACCESO", "ON"):
+            raise RuntimeError("precondizione: stato CP e Toshiba valido")
         if initial["cp_mode"] != "RISCALDAMENTO" or initial["split_mode"] != "RISCALDAMENTO":
             raise RuntimeError("modi macchina diversi da HEAT")
         for key in ("zg", "zn", "ceiling", "cp_set", "acs_set", "split_set"):
@@ -266,8 +297,8 @@ def run(folder, minutes, combined, wait_minutes=45):
         ceiling = min(23.5, float(initial["ceiling"]))
         if max(float(initial["zg"]), float(initial["zn"])) >= ceiling:
             raise RuntimeError("limite termico già raggiunto")
-        plan = PLAN if combined else PLAN[:2]
         data = {"created": stamp(), "minutes": minutes, "plan": plan, "initial": initial,
+                "start_phase": start_phase,
                 "suspended": [e for e in WRITERS if initial[e] == "on"],
                 "status": "preparazione", "ceiling": ceiling}
         save(folder, data)
@@ -378,6 +409,7 @@ if __name__ == "__main__":
     parser.add_argument("folder", type=Path)
     parser.add_argument("--minutes", type=int, choices=(30, 40), default=40)
     parser.add_argument("--combined", action="store_true")
+    parser.add_argument("--start-phase", type=int, choices=range(1, 9), default=1)
     args = parser.parse_args()
     signal.signal(signal.SIGTERM, interrupted)
     signal.signal(signal.SIGINT, interrupted)
@@ -387,7 +419,7 @@ if __name__ == "__main__":
         watch(args.folder)
     else:
         try:
-            run(args.folder, args.minutes, args.combined)
+            run(args.folder, args.minutes, args.combined, start_phase=args.start_phase)
         finally:
             if not (args.folder / "session.json").exists():
                 cleanup_watch(args.folder)

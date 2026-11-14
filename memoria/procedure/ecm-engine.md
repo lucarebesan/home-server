@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-11 14:18 (ombra inverno allineata alla `10` live e 262 test superati; codice non installato).
+Ultima verifica: 2026-11-14 (programma temporaneo delle prove dirette verificato; per l'ombra inverno resta la verifica dell'11/11).
 
 ## Scopo
 
@@ -48,6 +48,56 @@ Sorgente, spec e piani: `sorgenti/ecm-engine/` in questo repository (`docs/specs
 - Condizioni di avvio: 09 in AUTO, Free Cooling spento, nessun ciclo ACS, SOC ≥ 40% oppure FV ≥ consumo, **00-NILAN WRITE accesa**, temperature delle zone compatibili. Per le prove di caldo la zona più calda deve restare sotto la soglia ESTATE − 1 °C (oggi 23,5 °C).
 - Il motore riporta 09 in AUTO se: una zona supera la soglia ESTATE − 0,5 °C, il SOC scende sotto il 25% senza sole, WRITE si spegne, mancano dati per 5 minuti, oppure la prova supera la durata di 3 minuti. Al ritorno in AUTO la 09 riaccende solo le automazioni ECM che erano accese prima della prova (salvate in `input_text.ecm_manuale_automazioni_da_ripristinare`, dal commit HA `183c35a`).
 - Senza WRITE accesa gli helper cambiano ma le macchine no: le prove sarebbero inutili e sospenderebbero il ricambio aria, per questo il motore le blocca.
+
+### Sessione diretta temporanea, autorizzata il 14/11
+
+`scripts/thermal_session.py` è un programma separato dal motore. Non accendere `09`
+o “Prove automatiche” per usarlo: il ramo WRITE isolato non realizza quel manuale
+(verifica del 13/11 nel diario). Il programma scrive con il servizio esistente
+`shell_command.nilan_write`, senza creare automazioni HA o riavviare container.
+
+- Copia eseguita sul server: `/home/home/thermal_session.py`; sessione corrente:
+  `/home/home/ecm-tests/20261114-toshiba-cp/`. `session.json` descrive fase,
+  scadenza, stato iniziale e ripristino; prima dell'avvio esiste solo `waiting.json`.
+  `events.jsonl` conserva dati e cambi fase. **Questa prova esterna non appare nel
+  sensore “Prova in corso” del motore:** la fase corrente è nelle notifiche
+  persistenti HA e nel file di sessione.
+- Avvio entro 45 minuti con batteria **>40%**, FV almeno pari al carico e Toshiba
+  fermo. Se la CP è accesa, si aspetta che il compressore abbia lavorato almeno
+  15 minuti prima di isolarla. Nessuna automazione è sospesa durante l'attesa.
+- Otto fasi da 40 minuti: CP OFF + SPLIT V2, poi V1; CP HEAT V2 + SPLIT V1/V2/V3;
+  CP HEAT V3 + SPLIT V3/V2/V1. Setpoint tecnico Toshiba 29 °C; CP aria 17 °C nelle
+  prove solo Split e 23,5 °C in quelle combinate. I minuti transitori restano
+  registrati; non garantire 35 minuti utili senza analizzare le conferme fisiche.
+- Al via sospende soltanto i writer trovati accesi: WRITE, `10`, `05`, `06`, `07`,
+  minimo ACS CP V2 e vecchia sessione ACS 09 novembre. Restano attivi raccolta,
+  apprendimento e guardia ACS caldo. La resistenza è sospesa abbassando il suo
+  setpoint a 38 °C; il valore iniziale è salvato per il ripristino.
+- Controllo ogni minuto. **Stop a SOC ≤40%, oppure FV sotto il carico per almeno
+  due minuti**: non riparte da sola quando torna il sole. Stop anche ai limiti
+  termici (minimo fra 23,5 °C e massimo configurato delle zone; bollitore 60 °C),
+  temperature mancanti persistenti, intervento manuale o mancata conferma dei
+  comandi. Registrare la causa e riprendere un altro giorno con una nuova
+  sessione e il piano delle fasi mancanti, senza duplicare quelle completate.
+- Ripristina setpoint iniziali e solo le automazioni inizialmente accese, WRITE
+  per ultima. Ogni fase viene inserita nel database ECM **già chiusa** e associata
+  ai soli campioni validi del codice fisico atteso: nessun test aperto attiva la
+  supervisione concorrente del motore. Le prove concluse/interrotte appariranno
+  quindi nello storico del motore.
+- Il processo è avviato separato dalla sessione SSH; una riga **temporanea** del
+  crontab di `home` invoca `watch SESSION` ogni minuto. La guardia verifica PID,
+  comando, boot e scadenza massima e ripristina se il processo termina. Si
+  cancella dal cron dopo un ripristino riuscito, conservando tutte le altre righe.
+  Non usare un servizio systemd **utente** senza Linger: `home` ha `Linger=no` e
+  il primo tentativo si è chiuso con SSH prima di qualsiasi comando fisico.
+- Verifica ripetibile, senza azionare hardware:
+  `THERMAL_SESSION_SOURCE=/home/home/thermal_session.py python3 /tmp/test_thermal_session.py -v`.
+  I tre test simulano stop batteria, stop FV e attesa senza sospendere automazioni.
+
+Prima di interrompere a mano, leggere il PID in `worker.json` e verificarne il
+comando in `/proc/PID/cmdline`; inviare SIGTERM al processo, poi verificare
+`restored: true` e gli stati reali. La guardia cron resta disponibile in caso di
+errore. Non avviare due sessioni: il lock globale impedisce prove concorrenti.
 
 ## Dati caricati
 

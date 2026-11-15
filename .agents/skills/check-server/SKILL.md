@@ -29,9 +29,12 @@ consegnato all'utente come one-liner `ssh -t minipc@192.168.1.100 'sudo …'`.
 5. **Relè luci:** stato del ponte, che deve dare `9/9` raggiungibili:
    `docker exec mosquitto mosquitto_sub -h 127.0.0.1 -t dtbridge_diag/global/state -C 1`.
    Se non sono 9/9, oppure se i buchi lunghi sono molti, usa la skill `luci-dingtian`.
-6. **WiFi del server:** `iw dev wlo1 link` deve mostrare il BSSID `3a:07:16:65:98:b0`
-   (il box) con segnale migliore di −60 dBm. Prova anche `ping -c 10 192.168.1.254`
-   (normale: meno di 5 ms). Se è anomalo, usa la skill `rete-wifi`.
+6. **Rete del server:** il server è **cablato**. `ip route get 192.168.1.254` deve
+   uscire da `enp2s0` (ethernet, primaria, metrica 100); `ping -c 10 192.168.1.254`
+   normale sotto 5 ms (da cavo tipicamente <1 ms). Il WiFi `wlp1s0` (`.25`, metrica
+   600) è di riserva: `ip -br addr show wlp1s0` deve risultare `UP`. `iw` non è
+   installato e `wlo1` non esiste più. Se il server finisce su WiFi o la rete è
+   anomala, usa la skill `rete-wifi`.
 7. **Accesso esterno:** `docker logs --tail 3 duckdns` deve dire "successful" (non "KO").
    Verifica anche la scadenza del certificato servito:
    `echo | openssl s_client -connect 127.0.0.1:443 -servername ha.lrhub.duckdns.org 2>/dev/null | openssl x509 -noout -enddate`.

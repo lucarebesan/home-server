@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-16 (riduzione dei limiti inferiori ECM durante l'assenza; commit HA `48d1e29`).
+Ultima verifica: 2026-11-16 (spegnimento luci collegato alla sicurezza assenza delle chiusure; commit HA `ce934d3`).
 
 ## Prerequisiti
 
@@ -53,6 +53,29 @@ Ultima verifica: 2026-11-16 (riduzione dei limiti inferiori ECM durante l'assenz
 - Il database del recorder (`/config/home-assistant_v2.db`, circa 3 GB su HDD lento) va interrogato solo in sola lettura (`file:...?mode=ro`), un'entità alla volta, senza `COUNT(*)` né scansioni complete: fanno salire l'I/O di tutto il server.
 - Lo storico del recorder dura 7 giorni; le statistiche orarie (`statistics`) restano più a lungo.
 - Le dashboard storage si possono aggiornare senza riavvio via WebSocket `lovelace/config/save`: vedi `dashboard-ecm-v2.md`.
+
+## Spegnimento luci con la sicurezza assenza delle chiusure
+
+Dal commit HA `ce934d3`, l'automazione
+`automation.chiusure_meteo_assenza_casa` richiama
+`script.chiusure_spegni_luci_assenza` subito dopo avere forzato o riaffermato
+`input_select.meteo` su `PIOGGIA` per assenza di Luca e Alice senza ospiti. I
+richiami da conservare sono tre: prima attivazione, sicurezza assenza già attiva
+e scadenza della deroga ospiti con casa ancora vuota.
+
+La lista esplicita delle 60 uscite approvate è nel package
+`packages/chiusure_ospiti.yaml`; la classificazione e le esclusioni fanno fede
+nel diario di novembre 2026. Lo script comanda solo le uscite che risultano ON e
+scrive nel logbook l'esito dopo due secondi. Non eseguirlo manualmente durante
+un controllo ordinario: spegnerebbe realmente le luci incluse. Verificare invece
+che l'entità esista, sia OFF e che `last_triggered` cambi soltanto in
+corrispondenza di una reale forzatura assenza.
+
+Questa logica non mantiene le luci bloccate su OFF: le spegne puntualmente nei
+tre percorsi sopra indicati. Un eventuale blocco continuo durante le ferie
+lontane richiede una decisione separata sulle eccezioni manuali ed emergenza.
+Il backup precedente al deploy è in
+`/tmp/backup_chiusure_luci_assenza_20261116_2205/`.
 
 ## Umidità lavanderia a blocchi lunghi dal 14/11
 

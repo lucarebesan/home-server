@@ -240,6 +240,34 @@ anche `sensor.ecm_ore_assenza`; a casa occupata deve valere 0 insieme all'offset
 Il backup precedente al deploy è in `/tmp/backup_ecm_assenza_20261116/` sul
 mini PC.
 
+#### Rientro da oltre 50 km
+
+Dal commit HA `f85f019` esistono anche le zone storage `zone.25km` e
+`zone.50km`, concentriche a `zone.home`; il registro precedente è salvato in
+`/tmp/backup_ecm_rientro_lontano_20261116/zone`. Quando entrambi risultano
+oltre 50 km, l'assenza è attiva e non ci sono ospiti, dopo due minuti si arma
+`input_boolean.ecm_ferie_lontane_attive`.
+
+Il primo ingresso di almeno una persona nella zona da 50 km apre una finestra
+di rientro di sei ore (`input_boolean.ecm_rientro_lontano_attivo` e
+`input_datetime.ecm_rientro_lontano_inizio`). Se l'assenza ha già superato
+36 ore, l'offset viene anticipato così:
+
+| Posizione durante il rientro | Offset applicato |
+|---|---:|
+| entro 50 km, ma fuori da 25 km | −1,0 °C |
+| entro 25 km, ma fuori da 10 km | −0,5 °C |
+| entro 10 km | 0 °C |
+
+La rampa vale soltanto entro sei ore dall'ingresso nella zona da 50 km; dopo
+torna l'offset ordinario di assenza. Il rientro nella zona da 250 m o la deroga
+ospiti azzerano assenza, ferie e rientro. Alla verifica subito dopo la creazione,
+i centri 25/50 km coincidevano geometricamente con `zone.home` e le posizioni
+di Luca e Alice erano all'interno, ma i contatori delle due nuove zone erano
+ancora 0 in attesa di una rivalutazione dei tracker: verificare il primo
+aggiornamento GPS e il primo viaggio reale prima di considerare validata la
+sequenza completa.
+
 Sopra il minimo non esiste più il vecchio target 21,2 °C. Se l'energia è
 favorevole, l'accumulo può proseguire fino al massimo comune modificabile
 `input_number.ecm_inverno_massimo_accumulo`, inizialmente 23,5 °C; raggiungerlo in

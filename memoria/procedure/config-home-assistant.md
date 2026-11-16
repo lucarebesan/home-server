@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-14 (umidità lavanderia a blocchi lunghi; commit HA `a25c615`).
+Ultima verifica: 2026-11-16 (riduzione dei limiti inferiori ECM durante l'assenza; commit HA `48d1e29`).
 
 ## Prerequisiti
 
@@ -196,8 +196,7 @@ precedente resta valido come arbitro.
 
 La `10` è accesa, gira ogni minuto solo in INVERNO e con `ecm_manuale` in AUTO e
 usa le medie zona a 10 minuti. Tutte le soglie derivano dinamicamente da
-`input_number.t_min_inverno`, impostato a 20,5 °C alla verifica; non esistono
-helper separati per gli offset. La matrice definitiva è:
+`input_number.t_min_inverno`, impostato a 20,5 °C alla verifica. La matrice base è:
 
 | Fascia | Zona | Avvio sotto | Recupero fino a | Con T min 20,5 °C |
 |---|---|---:|---:|---:|
@@ -209,6 +208,37 @@ helper separati per gli offset. La matrice definitiva è:
 Ogni zona ha una memoria di recupero distinta; basta una zona sotto il proprio
 limite per chiedere calore e il suo recupero resta attivo fino alla soglia della
 quarta colonna.
+
+### Riduzione dei minimi durante l'assenza
+
+Dal commit HA `48d1e29`, se `zone.chiusure_casa` (raggio 250 m) non contiene
+né Luca né Alice per almeno due minuti e `input_select.ospiti_a_casa` vale
+`Nessun ospite`, l'automazione `ECM - Gestione assenza temperatura` attiva
+`input_boolean.ecm_assenza_attiva` e conserva l'inizio in
+`input_datetime.ecm_assenza_inizio`. L'offset pubblicato da
+`sensor.ecm_offset_temperatura_assenza` è:
+
+| Assenza continuativa | Riduzione dei limiti inferiori |
+|---|---:|
+| da 0 a meno di 12 ore | −0,5 °C |
+| da 12 a meno di 24 ore | −1,0 °C |
+| da 24 a meno di 36 ore | −1,5 °C |
+| da 36 ore in poi | −2,0 °C |
+
+La `10` sottrae questo valore a `T min` solo per calcolare avvio e recupero di
+entrambe le zone nelle fasce GIORNO e NOTTE; non modifica l'helper impostato
+dall'utente. Il massimo di accumulo resta quello di
+`input_number.ecm_inverno_massimo_accumulo` (23,5 °C alla verifica), quindi
+FV o batteria favorevoli possono accumulare calore anche a casa vuota.
+
+Quando almeno una persona rientra nella zona da 250 m o viene attivata la
+deroga ospiti, l'offset torna subito a zero. Stati zona/ospiti `unknown` o
+`unavailable` non dichiarano la casa vuota. Booleano e ora di inizio sono
+persistenti per conservare lo scaglione dopo un riavvio; questo recupero non è
+stato provato con un riavvio reale durante un'assenza. Per verificare leggere
+anche `sensor.ecm_ore_assenza`; a casa occupata deve valere 0 insieme all'offset.
+Il backup precedente al deploy è in `/tmp/backup_ecm_assenza_20261116/` sul
+mini PC.
 
 Sopra il minimo non esiste più il vecchio target 21,2 °C. Se l'energia è
 favorevole, l'accumulo può proseguire fino al massimo comune modificabile

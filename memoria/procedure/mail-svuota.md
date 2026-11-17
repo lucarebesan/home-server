@@ -43,7 +43,9 @@ senza cambiare router, server o credenziale.
    spostamenti a un modello locale. I messaggi incerti restano.
 3. Per ogni UID scelto, selezionare INBOX in scrittura, ricontrollare
    X-GM-MSGID, etichette e FLAGS. Bloccare l'operazione se identità o
-   etichette sono cambiate o se compaiono ENEA/legale.
+   etichette sono cambiate o se compaiono ENEA/legale. Se l'UID è sparito
+   nel frattempo, cercare il messaggio in SVUOTA e non ritentare il MOVE:
+   un altro client può averlo già spostato.
 4. Usare UID MOVE verso SVUOTA. Selezionare SVUOTA e cercare lo stesso
    X-GM-MSGID: deve apparire una sola volta con le stesse FLAGS. Tornare
    a INBOX: l'ID non deve più esserci. Non usare STORE/EXPUNGE come

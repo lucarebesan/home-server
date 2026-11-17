@@ -28,7 +28,7 @@ non salvarla nel repository e non inserirla nella riga di comando.
 L'utente la può inserire direttamente dal proprio terminale con:
 
 ```bash
-ssh -t home@192.168.1.100 'install -d -m 700 ~/.config/mail-svuota; umask 077; read -rsp "Password per le app Gmail: " p; printf "\n"; printf "%s" "$p" > ~/.config/mail-svuota/app-password; unset p; chmod 600 ~/.config/mail-svuota/app-password'
+ssh -t home@192.168.1.100 'bash ~/mail-svuota/set-password.sh'
 ```
 
 Il programma verifica proprietario e permessi `600` prima di usarla. Una

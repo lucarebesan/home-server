@@ -109,3 +109,8 @@ L'accesso SSH da questo PC come `home@192.168.1.100` è stato verificato il 17 n
   un solo messaggio AMV è stato spostato manualmente a `SVUOTA` in collaudo,
   nessuno dal timer. Codice e regole sono in `sorgenti/mail-svuota/`;
   installazione, verifica e ripristino in `procedure/mail-svuota.md`.
+- Modello locale `qwen3:4b-instruct` nel nuovo container `mail-ollama`,
+  verificato il 17/11. API pubblicata solo su `127.0.0.1:11434` del mini PC,
+  limite 4 CPU e 5 GiB RAM; volume Docker `mail-svuota_mail_ollama`.
+  Lo script `semantic_shadow.py` lo interroga soltanto su UID scelti, senza
+  spostare posta. Nessun costo API OpenAI configurato.

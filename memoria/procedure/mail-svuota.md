@@ -1,7 +1,7 @@
 # Gestione posta Gmail sul mini PC
 
 Ultima verifica: 2026-11-17 (accesso Gmail, scansione completa, timer in
-simulazione e singolo spostamento con `UID MOVE` verificati).
+simulazione, singolo spostamento con `UID MOVE` e modello locale verificati).
 
 ## Scopo e limiti
 
@@ -16,6 +16,10 @@ simulazione e singolo spostamento con `UID MOVE` verificati).
 - Le regole iniziali usano intestazioni, oggetto e indicatori di invio massivo.
   Sono un primo filtro, non riproducono il giudizio semantico delle vecchie
   automazioni. I messaggi incerti restano `review`.
+- `semantic_shadow.py` è una prova separata e manuale: invia al solo modello
+  locale mittente, oggetto e fino a 1800 caratteri del corpo per UID scelti.
+  Usa `BODY.PEEK` in modalità IMAP read-only, non passa gli allegati al modello, non sposta
+  messaggi e conserva nel database locale solo esito e motivo, non il corpo.
 
 ## Credenziale
 
@@ -70,3 +74,46 @@ con `# MAIL_SVUOTA_DRY`; lasciare intatte le altre righe. Per revocare
 l'accesso, rimuovere il file `~/.config/mail-svuota/app-password` sul server
 e revocare la relativa password per le app dall'account Google. Lo stato
 SQLite può essere conservato per audit; non contiene la credenziale.
+
+## Modello locale (prova, non automazione)
+
+Il 17/11 è stato avviato `mail-ollama` con
+`sorgenti/mail-svuota/compose.ollama.yml` e scaricato `qwen3:4b-instruct`.
+La porta 11434 è legata solo al loopback del mini PC; il container ha limiti
+di 4 CPU e 5 GiB, un modello caricato e una richiesta alla volta. Non è
+configurata una API OpenAI. Comandi di verifica:
+
+```bash
+ssh home@192.168.1.100 'docker ps --filter name=mail-ollama'
+ssh home@192.168.1.100 'docker exec mail-ollama ollama list'
+ssh home@192.168.1.100 'cd ~/mail-svuota && python3 semantic_shadow.py --uid UID'
+```
+
+Usare solo UID ancora in INBOX e già censiti dalla simulazione corrente.
+L'ultimo comando legge il messaggio e stampa regola, risposta grezza del
+modello e decisione effettiva: `keep` delle regole prevale sempre; se il
+corpo non è disponibile, la decisione effettiva è `uncertain`. Il file
+SQLite `~/.local/share/mail-svuota/state.sqlite3` contiene la tabella
+`semantic_shadow` con esiti, senza testo delle email. Il modello non è nel
+cron; soltanto `run-dry.sh` è pianificato.
+
+Nel campione del 17/11 il modello ha riconosciuto offerte Beta Formazione,
+Copernico, ECLISSE, Blumatica e Temu, consegna Amazon, avviso GitHub e una
+conversazione tecnica. Ha però proposto erroneamente `SVUOTA` per due
+notifiche Pinterest personali, con confidenza alta; con la prima versione
+del prompt aveva sbagliato anche una consegna Amazon. Le regole ora
+proteggono esplicitamente i due casi Pinterest, gli avvisi PEC e gli
+aggiornamenti degli ordini Amazon osservati. **Non usare la confidenza del
+modello per attivare spostamenti autonomi**. Prima servono un campione più
+ampio revisionato, criteri conservativi, verifica delle flag e coordinamento
+con l'automazione Codex precedente.
+
+Per fermare solo il modello, senza toccare gli altri container:
+
+```bash
+ssh home@192.168.1.100 'cd ~/mail-svuota && docker compose -f compose.ollama.yml stop mail-ollama'
+```
+
+Questo arresto esplicito impedisce il riavvio automatico al boot finché non
+si usa `docker compose -f compose.ollama.yml start mail-ollama`. Eseguirlo
+solo con l'autorizzazione dell'utente richiesta dalle regole del server.

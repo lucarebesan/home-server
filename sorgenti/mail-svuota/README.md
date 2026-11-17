@@ -12,3 +12,8 @@ preesistente. Non usa Cestino, `\\Deleted` o `EXPUNGE`.
 
 La credenziale non appartiene al repository. Procedura di installazione,
 verifica e ripristino: `memoria/procedure/mail-svuota.md`.
+
+`compose.ollama.yml` avvia un modello locale accessibile solo dal mini PC.
+`semantic_shadow.py --uid UID` lo prova su un messaggio già censito, sempre
+in sola lettura. Il modello può sbagliare anche con confidenza alta;
+nessuno spostamento automatico dipende dalle sue risposte.

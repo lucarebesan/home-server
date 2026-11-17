@@ -56,12 +56,33 @@ class ClassifierTests(unittest.TestCase):
         )
         self.assertEqual(result[0], "review")
 
-    def test_personal_share_without_bulk_needs_review(self):
+    def test_personal_share_from_pinterest_is_kept(self):
         result = self.classify(
-            "From: Pinterest <notify@example.com>\r\n"
+            "From: Alice tramite Pinterest <notify@example.com>\r\n"
             "Subject: Alice vorrebbe farti vedere una foto\r\n\r\n"
         )
-        self.assertEqual(result[0], "review")
+        self.assertEqual(result[0], "keep")
+
+    def test_pinterest_message_reminder_is_kept(self):
+        result = self.classify(
+            "From: Pinterest <activity@notifications.pinterest.com>\r\n"
+            "Subject: Non dimenticare di rispondere al messaggio di Alice!\r\n\r\n"
+        )
+        self.assertEqual(result[0], "keep")
+
+    def test_pec_account_access_alert_is_kept(self):
+        result = self.classify(
+            "From: comunicazioni@amministrazionepec.it\r\n"
+            "Subject: Accessi eseguiti da un nuovo dispositivo\r\n\r\n"
+        )
+        self.assertEqual(result[0], "keep")
+
+    def test_amazon_cancellation_is_kept(self):
+        result = self.classify(
+            "From: Amazon.it <order-update@amazon.it>\r\n"
+            "Subject: Articoli annullati correttamente\r\n\r\n"
+        )
+        self.assertEqual(result[0], "keep")
 
     def test_black_friday_training_offer_is_candidate_despite_security_word(self):
         result = self.classify(

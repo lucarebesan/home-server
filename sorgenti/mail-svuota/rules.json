@@ -4,7 +4,9 @@
   "protected_sender_terms": [
     "pec@", "noreply@pec.", "no-reply@accounts.google.com",
     "noreply-accounts@google.com", "noreply@github.com",
-    "comunicazioni@staff.aruba.it", "arubaid@staff.aruba.it"
+    "comunicazioni@staff.aruba.it", "arubaid@staff.aruba.it",
+    "comunicazioni@amministrazionepec.it", "order-update@amazon.it",
+    "tramite pinterest"
   ],
   "protected_subject_terms": [
     "ordine", "ordinato", "order", "spedito", "spedizione", "shipping",
@@ -16,7 +18,8 @@
     "contratto", "polizza", "assicur", "banca", "estratto",
     "prenotazione", "reservation", "preventivo", "assistenza",
     "supporto", "riunione", "conferma", "documento",
-    "attribuzione", "richiesta"
+    "attribuzione", "richiesta", "rispondere al messaggio",
+    "vorrebbe farti", "annullati", "accessi eseguiti"
   ],
   "marketing_sender_terms": [
     "marketing@", "dem@", "infomailing@", "promozioni@", "offers@",

@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-17 08:43 (accesso SSH e connettività IMAP; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-17 (posta in simulazione; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -98,10 +98,12 @@ La fotografia e le procedure di diagnosi sono in `procedure/monitoraggio-server.
 L'accesso SSH da questo PC come `home@192.168.1.100` è stato verificato il 17 novembre
 2026: il server ha risposto come `minipc`, utente `home`.
 
-## Posta (verifica parziale del 17/11/2026)
+## Posta (17/11/2026)
 
 - Il mini PC raggiunge `imap.gmail.com:993` con TLS 1.3, senza autenticazione.
-- Nel `PATH` di `home` non risultano `mail`, `msmtp`, `offlineimap`, `mbsync`,
-  `notmuch`, `dovecot` o `postfix`; nessuna unità systemd utente contiene
-  `mail`, `imap` o `gmail` nel nome. Non è stata ancora verificata alcuna
-  configurazione o credenziale di accesso alla casella.
+- Programma `/home/home/mail-svuota/` installato per valutare
+  `ing.rebesan@gmail.com` via IMAP. Cron `# MAIL_SVUOTA_DRY` ogni 30 minuti:
+  solo simulazione; senza la credenziale esce senza collegarsi.
+  Al 17/11 la credenziale è assente e nessuna email è stata letta o spostata
+  da questo programma. Codice e regole sono in `sorgenti/mail-svuota/`;
+  installazione, verifica e ripristino in `procedure/mail-svuota.md`.

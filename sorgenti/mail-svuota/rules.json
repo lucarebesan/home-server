@@ -1,0 +1,18 @@
+{
+  "destination": "SVUOTA",
+  "protected_labels": ["ENEA", "legale"],
+  "protected_sender_terms": ["pec@", "noreply@pec."],
+  "protected_subject_terms": [
+    "ordine", "order", "spedizione", "shipping", "tracking", "consegna",
+    "fattura", "ricevuta", "pagamento", "accesso", "login", "codice",
+    "password", "sicurezza", "security", "pec", "rimborso", "refund",
+    "contratto", "polizza", "assicur", "banca", "estratto",
+    "prenotazione", "reservation", "preventivo", "assistenza",
+    "supporto", "riunione", "conferma", "documento"
+  ],
+  "promo_subject_terms": [
+    "black friday", "sconto", "offerta", "promo", "saldi", "coupon",
+    "fino al", "acquista", "shopping", "newsletter", "ultime ore",
+    "solo oggi", "lancio", "novità", "punti fedeltà", "cashback"
+  ]
+}

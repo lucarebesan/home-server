@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-17 (posta in simulazione; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-17 (posta manuale via SSH; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -92,7 +92,7 @@ dettagli in `procedure/migrazione-minipc.md`.
 - Token API di HA: `~/.config/ecm/ha_token` sul server (permessi 600).
 - Deploy key GitHub del repo HA: `/config/.ssh/github_homeassistant` nel container.
 - Token DuckDNS: nel compose dello stack Portainer "server" (variabili `TOKEN` e `DUCKDNS_TOKEN`).
-- Password per le app Gmail: `~/.config/mail-svuota/app-password` di `home`
+- Password per le app Gmail: `~/.config/gmail-imap/app-password` di `home`
   sul mini PC (permessi `600`); il valore non è nel repository.
 
 La fotografia e le procedure di diagnosi sono in `procedure/monitoraggio-server.md`. Interventi recenti: `diario/2026-11-03_08-interventi.md` (server, ECM, Nilan) e `diario/2026-11.md` (rete, Dingtian, crollo del 7/11). Questi valori sono una fotografia, non uno stato in tempo reale.
@@ -102,15 +102,16 @@ L'accesso SSH da questo PC come `home@192.168.1.100` è stato verificato il 17 n
 
 ## Posta (17/11/2026)
 
-- Il mini PC raggiunge `imap.gmail.com:993` con TLS 1.3, senza autenticazione.
-- Programma `/home/home/mail-svuota/` installato per valutare
-  `ing.rebesan@gmail.com` via IMAP. Cron `# MAIL_SVUOTA_DRY` ogni 30 minuti:
-  solo simulazione. Accesso Gmail e percorso del timer verificati il 17/11;
-  un solo messaggio AMV è stato spostato manualmente a `SVUOTA` in collaudo,
-  nessuno dal timer. Codice e regole sono in `sorgenti/mail-svuota/`;
-  installazione, verifica e ripristino in `procedure/mail-svuota.md`.
-- Modello locale `qwen3:4b-instruct` nel nuovo container `mail-ollama`,
-  verificato il 17/11. API pubblicata solo su `127.0.0.1:11434` del mini PC,
-  limite 4 CPU e 5 GiB RAM; volume Docker `mail-svuota_mail_ollama`.
-  Lo script `semantic_shadow.py` lo interroga soltanto su UID scelti, senza
-  spostare posta. Nessun costo API OpenAI configurato.
+- Da questa chat si raggiunge il mini PC via SSH; da lì l'accesso IMAP TLS
+  a `ing.rebesan@gmail.com` su `imap.gmail.com:993` è stato verificato
+  dopo la rimozione del programma. Per la pulizia manuale si usa solo la
+  Posta in arrivo e si sposta in `SVUOTA`; vedi `procedure/mail-svuota.md`.
+- Il 17/11 il programma `/home/home/mail-svuota/`, il suo stato locale,
+  il cron `MAIL_SVUOTA_DRY`, il container `mail-ollama`, il suo volume e
+  l'immagine sono stati rimossi dal mini PC su richiesta di Luca. Il
+  codice in `sorgenti/mail-svuota/` è storico e non è installato.
+- Automazione Codex locale `pulizia-gmail-via-ssh` attiva in questa chat:
+  controlli alle ore pari 00:00–22:00 Europe/Rome quando il PC è acceso. Non esiste
+  un timer posta sul mini PC. La prima pulizia manuale ha spostato 18
+  email a `SVUOTA`, tutte verificate con flag invariate; INBOX 830 e
+  SVUOTA 61 alla verifica del 17/11.

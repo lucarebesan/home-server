@@ -1,19 +1,8 @@
-# Mail SVUOTA
+# Mail SVUOTA — codice storico non installato
 
-Programma Python standard library per valutare la sola Posta in arrivo di
-`ing.rebesan@gmail.com` via IMAP TLS. Le regole sono in `rules.json`. Il
-comando ordinario è una simulazione: registra le decisioni in
-`~/.local/share/mail-svuota/state.sqlite3` e non modifica la casella.
-
-`--apply-uid UID` è un'operazione separata che può spostare un solo messaggio
-già classificato come `candidate`; prima di usarla servono prova reale,
-revisione delle decisioni e coordinamento con l'automazione Codex
-preesistente. Non usa Cestino, `\\Deleted` o `EXPUNGE`.
-
-La credenziale non appartiene al repository. Procedura di installazione,
-verifica e ripristino: `memoria/procedure/mail-svuota.md`.
-
-`compose.ollama.yml` avvia un modello locale accessibile solo dal mini PC.
-`semantic_shadow.py --uid UID` lo prova su un messaggio già censito, sempre
-in sola lettura. Il modello può sbagliare anche con confidenza alta;
-nessuno spostamento automatico dipende dalle sue risposte.
+Il 17/11/2026 Luca ha chiesto di eliminare dal mini PC il programma di
+scansione, il modello locale e il timer. La rimozione è stata verificata.
+Questi sorgenti restano nel repository per memoria dell'esperimento; non
+sono il servizio di pulizia attuale e non vanno ridistribuiti senza una
+nuova richiesta. La pulizia si svolge manualmente da questa chat tramite
+SSH e IMAP. Procedura corrente: `memoria/procedure/mail-svuota.md`.

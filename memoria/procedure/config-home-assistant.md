@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-17 (scaglioni assenza aumentati di 0,5 °C su richiesta).
+Ultima verifica: 2026-11-17 (aperture solari invernali e consensi estivi; commit HA `5c6e833`).
 
 ## Prerequisiti
 
@@ -76,6 +76,52 @@ tre percorsi sopra indicati. Un eventuale blocco continuo durante le ferie
 lontane richiede una decisione separata sulle eccezioni manuali ed emergenza.
 Il backup precedente al deploy è in
 `/tmp/backup_chiusure_luci_assenza_20261116_2205/`.
+
+## Aperture per riscaldamento solare, anche in inverno
+
+Dal 17/11, commit HA `c0b608d` e `5c6e833`, le tre automazioni in
+`automations/chiusure/chiusure_meteo_sole_azimut.yaml`,
+`chiusure_meteo_pioggia.yaml` e `chiusure_riscaldamento_sole_richiesta.yaml`
+gestiscono il guadagno solare in entrambe le stagioni.
+
+- **INVERNO:** SOLE+AZIMUT può aprire le sole chiusure raggiunte dal sole con
+  richiesta termica della zona attiva. La richiesta si attiva sotto il limite
+  superiore ECM e termina da limite +0,5 °C, come prima. Il ramo invernale si
+  ferma prima delle azioni estive di ombreggiamento.
+- **ESTATE:** la richiesta si attiva sotto il limite inferiore ECM e mantiene
+  l'isteresi di 0,5 °C; è comunque bloccata al limite superiore, durante una
+  richiesta/attività di COOL o DRY Toshiba, CP in raffrescamento, Free Cooling
+  ATTIVATO/PREPARAZIONE o selezione manuale COOL/DRY. Richiede temperatura
+  esterna affidabile numerica, età 0–60 minuti e non oltre 0,5 °C sopra la
+  temperatura della singola zona. Con dati esterni mancanti o vecchi non apre
+  per scaldare. Le normali azioni estive di ombreggiamento restano operative.
+- **Assenza:** PIOGGIA forzata con pre-assenza SOLE permette le stesse aperture
+  selettive anche in INVERNO; PIOGGIA esenta dalla richiusura soltanto le
+  facciate al sole con consenso termico attivo. Cambio di richiesta e azimut
+  usano il ramo di controllo già periodico a 2 minuti; alla perdita del
+  consenso o del sole l'eccezione cessa. PIOGGIA senza pre-assenza SOLE non
+  riceve eccezioni.
+
+Azimut e orari precedenti conservati: lavanderia 60–110°, studio/divano
+90–180°, cucina/matrimoniale/sottotetto 160–280°, Leo/scala 240–300°.
+Finestra ordinaria da `nilan_mattina +15 minuti` a 100 minuti prima del
+crepuscolo; lavanderia anticipata dopo l'alba nella propria fascia di azimut.
+Serve sole sopra l'orizzonte. ALE e bagno non entrano nel riscaldamento solare.
+Le azioni sono sulle tapparelle/frangisole, non sull'apertura dei serramenti.
+
+**Verifica:** i quattro booleani `riscaldamento_sole_*` devono seguire le
+temperature e, d'estate, i consensi sopra descritti. Non forzare le condizioni
+per collaudare le chiusure: attendere i normali azimut e controllare posizioni
+e `last_triggered`. Il 17/11 sono passati 19 controlli sintetici su estate,
+inverno, dati mancanti, raffrescamento, pioggia e instradamento dei trigger;
+`check_config` riuscito e reload automation senza cambi ON/OFF preesistenti.
+La sequenza completa sul campo attraverso tutti gli azimut non è ancora
+stata osservata.
+
+**Ripristino:** originali in `/config/tmp/backup_sole_inverno_20261117/` nel
+container HA. Ripristinare i soli tre file, eseguire `check_config` e
+`automation.reload`; conservare gli stati ON/OFF e rivalutare la richiesta
+solare solo se la relativa automazione è abilitata.
 
 ## Umidità lavanderia a blocchi lunghi dal 14/11
 

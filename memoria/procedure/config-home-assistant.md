@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-16 (spegnimento luci collegato alla sicurezza assenza delle chiusure; commit HA `ce934d3`).
+Ultima verifica: 2026-11-17 (scaglioni assenza aumentati di 0,5 °C su richiesta).
 
 ## Prerequisiti
 
@@ -243,10 +243,14 @@ né Luca né Alice per almeno due minuti e `input_select.ospiti_a_casa` vale
 
 | Assenza continuativa | Riduzione dei limiti inferiori |
 |---|---:|
-| da 0 a meno di 12 ore | −0,5 °C |
-| da 12 a meno di 24 ore | −1,0 °C |
-| da 24 a meno di 36 ore | −1,5 °C |
-| da 36 ore in poi | −2,0 °C |
+| da 0 a meno di 12 ore | −1,0 °C |
+| da 12 a meno di 24 ore | −1,5 °C |
+| da 24 a meno di 36 ore | −2,0 °C |
+| da 36 ore in poi | −2,5 °C |
+
+Scaglioni aggiornati il 17/11 su richiesta di Luca. Rientro e ospiti azzerano
+la riduzione come prima; la rampa di rientro entro 50/25/10 km resta invariata.
+Backup precedente in `/config/tmp/backup_offset_assenza_20261117/ecm_helper.yaml`.
 
 La `10` sottrae questo valore a `T min` solo per calcolare avvio e recupero di
 entrambe le zone nelle fasce GIORNO e NOTTE; non modifica l'helper impostato

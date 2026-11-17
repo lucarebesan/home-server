@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-14 17:16 (campagna consumi armata e gestione umidità a blocchi lunghi; macchina/rete al 09/11).
+Ultima verifica: 2026-11-17 08:43 (accesso SSH e connettività IMAP; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -95,4 +95,13 @@ dettagli in `procedure/migrazione-minipc.md`.
 
 La fotografia e le procedure di diagnosi sono in `procedure/monitoraggio-server.md`. Interventi recenti: `diario/2026-11-03_08-interventi.md` (server, ECM, Nilan) e `diario/2026-11.md` (rete, Dingtian, crollo del 7/11). Questi valori sono una fotografia, non uno stato in tempo reale.
 
-L'accesso SSH è stato verificato da questo PC l'8 novembre 2026. La rete e i permessi disponibili possono variare tra sessioni e ambienti.
+L'accesso SSH da questo PC come `home@192.168.1.100` è stato verificato il 17 novembre
+2026: il server ha risposto come `minipc`, utente `home`.
+
+## Posta (verifica parziale del 17/11/2026)
+
+- Il mini PC raggiunge `imap.gmail.com:993` con TLS 1.3, senza autenticazione.
+- Nel `PATH` di `home` non risultano `mail`, `msmtp`, `offlineimap`, `mbsync`,
+  `notmuch`, `dovecot` o `postfix`; nessuna unità systemd utente contiene
+  `mail`, `imap` o `gmail` nel nome. Non è stata ancora verificata alcuna
+  configurazione o credenziale di accesso alla casella.

@@ -1,7 +1,7 @@
 # Gestione posta Gmail sul mini PC
 
-Ultima verifica: 2026-11-17 (accesso Gmail, scansione completa e timer in
-simulazione verificati; spostamento reale ancora da collaudare).
+Ultima verifica: 2026-11-17 (accesso Gmail, scansione completa, timer in
+simulazione e singolo spostamento con `UID MOVE` verificati).
 
 ## Scopo e limiti
 
@@ -12,7 +12,7 @@ simulazione verificati; spostamento reale ancora da collaudare).
   `/home/home/mail-svuota/`. Stato e log restano sotto
   `/home/home/.local/share/mail-svuota/`, fuori dal repository.
 - Il timer ogni 30 minuti esegue **solo simulazione**. Senza credenziale
-  esce senza connettersi. Nessun passaggio automatico a `--apply`.
+  esce senza connettersi. Nessun passaggio automatico a `--apply-uid`.
 - Le regole iniziali usano intestazioni, oggetto e indicatori di invio massivo.
   Sono un primo filtro, non riproducono il giudizio semantico delle vecchie
   automazioni. I messaggi incerti restano `review`.
@@ -53,8 +53,11 @@ sicurezza dell'account; in quel caso progettare OAuth prima di proseguire.
    visibile in IMAP e testare **un solo candidato approvato** con
    `--apply-uid UID`. Il programma richiede che lo stesso UID sia già stato
    classificato `candidate` nella simulazione e ricontrolla identità,
-   etichette e flag. Ottenere l'ok esplicito dell'utente sul messaggio
-   preciso prima di ogni prova reale.
+   etichette e flag. Lo spostamento usa `UID MOVE`, supportato dal server
+   Gmail: verificare con una nuova connessione che l'ID Gmail non sia più
+   in `INBOX`, sia presente una sola volta in `SVUOTA` e conservi le flag.
+   Ottenere l'ok esplicito dell'utente sul messaggio preciso prima di ogni
+   prova reale.
 
 ## Attivazione e ripristino
 

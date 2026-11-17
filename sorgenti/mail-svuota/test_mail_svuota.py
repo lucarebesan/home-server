@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import mail_svuota
 
@@ -107,6 +108,36 @@ class FetchTests(unittest.TestCase):
         self.assertEqual(values["uid"], b"42")
         self.assertEqual(values["msgid"], b"1278455344230334865")
         self.assertEqual(header, b"Subject: Test\r\n\r\n")
+
+
+class MoveTests(unittest.TestCase):
+    def test_move_does_not_require_inbox_in_gmail_label_list(self):
+        class Connection:
+            mailbox = "INBOX"
+            moved = False
+
+            def uid(self, command, *args):
+                if command == "MOVE":
+                    self.moved = True
+                    return "OK", []
+                if command == "SEARCH":
+                    return "OK", [b"77" if self.mailbox == "SVUOTA" else b""]
+                raise AssertionError(command)
+
+            def select(self, mailbox, readonly=False):
+                self.mailbox = mailbox
+                return "OK", [b"1"]
+
+        metadata = [
+            ("123", {"\\important"}, {"\\seen"}),
+            ("123", {"\\important", "\\inbox"}, {"\\seen"}),
+        ]
+        with patch.object(mail_svuota, "current_labels", side_effect=metadata):
+            conn = Connection()
+            mail_svuota.apply_move(conn, 42, "123",
+                                  {"protected_labels": ["ENEA", "legale"]})
+            self.assertTrue(conn.moved)
+            self.assertEqual(conn.mailbox, "INBOX")
 
 
 if __name__ == "__main__":

@@ -106,5 +106,6 @@ L'accesso SSH da questo PC come `home@192.168.1.100` è stato verificato il 17 n
 - Programma `/home/home/mail-svuota/` installato per valutare
   `ing.rebesan@gmail.com` via IMAP. Cron `# MAIL_SVUOTA_DRY` ogni 30 minuti:
   solo simulazione. Accesso Gmail e percorso del timer verificati il 17/11;
-  nessuna email è stata spostata dal programma. Codice e regole sono in `sorgenti/mail-svuota/`;
+  un solo messaggio AMV è stato spostato manualmente a `SVUOTA` in collaudo,
+  nessuno dal timer. Codice e regole sono in `sorgenti/mail-svuota/`;
   installazione, verifica e ripristino in `procedure/mail-svuota.md`.

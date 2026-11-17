@@ -160,23 +160,16 @@ def current_labels(conn: imaplib.IMAP4_SSL, uid: int) -> tuple[str, set[str], se
 
 def apply_move(conn: imaplib.IMAP4_SSL, uid: int, msgid: str, rules: dict) -> None:
     before_id, labels, flags = current_labels(conn, uid)
-    if before_id != msgid or not labels or labels & {
+    if before_id != msgid or labels & {
         name.casefold() for name in rules["protected_labels"]
     }:
         raise RuntimeError(f"Etichette o identità cambiate per UID {uid}")
-    if "\\inbox" not in labels:
-        raise RuntimeError(f"UID {uid} non è più in Posta in arrivo")
-    status, _ = conn.uid("STORE", str(uid), "+X-GM-LABELS", "(SVUOTA)")
+    # Gmail può omettere dal risultato X-GM-LABELS la cartella selezionata.
+    # UID MOVE rimuove il messaggio da INBOX e lo rende visibile in SVUOTA
+    # senza impostare \\Deleted o lanciare un EXPUNGE generico.
+    status, _ = conn.uid("MOVE", str(uid), "SVUOTA")
     if status != "OK":
-        raise RuntimeError(f"Impossibile aggiungere SVUOTA per UID {uid}")
-    interim_id, interim_labels, interim_flags = current_labels(conn, uid)
-    if (interim_id != msgid or "svuota" not in interim_labels
-            or interim_flags != flags):
-        raise RuntimeError(f"Verifica dopo aggiunta SVUOTA fallita per UID {uid}")
-    status, _ = conn.uid("STORE", str(uid), "-X-GM-LABELS", "(\\Inbox)")
-    if status != "OK":
-        raise RuntimeError(f"Impossibile togliere INBOX per UID {uid}")
-    # Dopo la rimozione il vecchio UID non è più visibile in INBOX.
+        raise RuntimeError(f"UID MOVE fallito per UID {uid}")
     status, _ = conn.select("SVUOTA", readonly=True)
     if status != "OK":
         raise RuntimeError("Impossibile verificare SVUOTA")
@@ -184,13 +177,15 @@ def apply_move(conn: imaplib.IMAP4_SSL, uid: int, msgid: str, rules: dict) -> No
     if status != "OK" or not data or len(data[0].split()) != 1:
         raise RuntimeError(f"Messaggio {msgid} non trovato univocamente in SVUOTA")
     moved_uid = int(data[0].split()[0])
-    after_id, after_labels, after_flags = current_labels(conn, moved_uid)
-    if (after_id != msgid or "svuota" not in after_labels
-            or "\\inbox" in after_labels or after_flags != flags):
+    after_id, _, after_flags = current_labels(conn, moved_uid)
+    if after_id != msgid or after_flags != flags:
         raise RuntimeError(f"Verifica finale fallita per UID {uid}")
     status, _ = conn.select("INBOX", readonly=False)
     if status != "OK":
         raise RuntimeError("Impossibile tornare a INBOX")
+    status, data = conn.uid("SEARCH", None, "X-GM-MSGID", msgid)
+    if status != "OK" or not data or data[0].split():
+        raise RuntimeError(f"Il messaggio {msgid} risulta ancora in INBOX")
 
 
 def scan(apply_uid: int | None, limit: int | None) -> None:

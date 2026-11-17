@@ -92,6 +92,8 @@ dettagli in `procedure/migrazione-minipc.md`.
 - Token API di HA: `~/.config/ecm/ha_token` sul server (permessi 600).
 - Deploy key GitHub del repo HA: `/config/.ssh/github_homeassistant` nel container.
 - Token DuckDNS: nel compose dello stack Portainer "server" (variabili `TOKEN` e `DUCKDNS_TOKEN`).
+- Password per le app Gmail: `~/.config/mail-svuota/app-password` di `home`
+  sul mini PC (permessi `600`); il valore non è nel repository.
 
 La fotografia e le procedure di diagnosi sono in `procedure/monitoraggio-server.md`. Interventi recenti: `diario/2026-11-03_08-interventi.md` (server, ECM, Nilan) e `diario/2026-11.md` (rete, Dingtian, crollo del 7/11). Questi valori sono una fotografia, non uno stato in tempo reale.
 
@@ -103,7 +105,6 @@ L'accesso SSH da questo PC come `home@192.168.1.100` è stato verificato il 17 n
 - Il mini PC raggiunge `imap.gmail.com:993` con TLS 1.3, senza autenticazione.
 - Programma `/home/home/mail-svuota/` installato per valutare
   `ing.rebesan@gmail.com` via IMAP. Cron `# MAIL_SVUOTA_DRY` ogni 30 minuti:
-  solo simulazione; senza la credenziale esce senza collegarsi.
-  Al 17/11 la credenziale è assente e nessuna email è stata letta o spostata
-  da questo programma. Codice e regole sono in `sorgenti/mail-svuota/`;
+  solo simulazione. Accesso Gmail e percorso del timer verificati il 17/11;
+  nessuna email è stata spostata dal programma. Codice e regole sono in `sorgenti/mail-svuota/`;
   installazione, verifica e ripristino in `procedure/mail-svuota.md`.

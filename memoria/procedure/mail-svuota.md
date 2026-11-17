@@ -1,7 +1,7 @@
 # Gestione posta Gmail sul mini PC
 
-Ultima verifica: 2026-11-17 (installazione del programma e timer in simulazione;
-autenticazione Gmail ancora da configurare).
+Ultima verifica: 2026-11-17 (accesso Gmail, scansione completa e timer in
+simulazione verificati; spostamento reale ancora da collaudare).
 
 ## Scopo e limiti
 
@@ -47,12 +47,14 @@ sicurezza dell'account; in quel caso progettare OAuth prima di proseguire.
    RENOLIT e la distinzione Pinterest automatico/personale.
 4. Confrontare il numero dei messaggi in Posta in arrivo e le flag non lette
    prima/dopo la simulazione. La simulazione usa `BODY.PEEK` e selezione
-   read-only; non deve cambiare nessuna etichetta o flag.
+   read-only; non deve cambiare nessuna etichetta o flag. Il collaudo iniziale
+   è registrato nel diario di novembre.
 5. Prima di uno spostamento reale, verificare nell'account che `SVUOTA` sia
    visibile in IMAP e testare **un solo candidato approvato** con
    `--apply-uid UID`. Il programma richiede che lo stesso UID sia già stato
    classificato `candidate` nella simulazione e ricontrolla identità,
-   etichette e flag.
+   etichette e flag. Ottenere l'ok esplicito dell'utente sul messaggio
+   preciso prima di ogni prova reale.
 
 ## Attivazione e ripristino
 

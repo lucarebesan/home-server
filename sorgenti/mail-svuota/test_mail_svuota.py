@@ -62,6 +62,35 @@ class ClassifierTests(unittest.TestCase):
         )
         self.assertEqual(result[0], "review")
 
+    def test_black_friday_training_offer_is_candidate_despite_security_word(self):
+        result = self.classify(
+            "From: Beta Formazione <dem@betaformazione.com>\r\n"
+            "Subject: Black Friday: formazione e sicurezza in sconto\r\n\r\n"
+        )
+        self.assertEqual(result[0], "candidate")
+
+    def test_personal_discount_attribution_is_kept(self):
+        result = self.classify(
+            "From: Servizio clienti <noreply@example.com>\r\n"
+            "Subject: Attribuzione sconto sulla tua fornitura\r\n\r\n"
+        )
+        self.assertEqual(result[0], "keep")
+
+    def test_generic_product_release_needs_review(self):
+        result = self.classify(
+            "From: AMV <segreteria@amv.it>\r\n"
+            "Subject: Novità di rilascio del software\r\n"
+            "List-Unsubscribe: <mailto:unsubscribe@example.com>\r\n\r\n"
+        )
+        self.assertEqual(result[0], "review")
+
+    def test_personalized_offer_without_bulk_needs_review(self):
+        result = self.classify(
+            "From: Hotel <info@example.com>\r\n"
+            "Subject: Ecco l'offerta per il tuo soggiorno\r\n\r\n"
+        )
+        self.assertEqual(result[0], "review")
+
 
 class FetchTests(unittest.TestCase):
     def test_fetch_parses_gmail_metadata_without_marking_read(self):

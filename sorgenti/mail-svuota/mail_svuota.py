@@ -73,6 +73,7 @@ def classify(headers: bytes, labels: set[str], rules: dict) -> tuple[str, str, s
     sender = str(msg.get("from", ""))
     subject = str(msg.get("subject", ""))
     haystack = subject.casefold()
+    sender_lower = sender.casefold()
     protected = {name.casefold() for name in rules["protected_labels"]}
     if labels & protected:
         return "keep", "etichetta protetta", sender, subject
@@ -83,13 +84,24 @@ def classify(headers: bytes, labels: set[str], rules: dict) -> tuple[str, str, s
         for term in rules["protected_subject_terms"]
     ):
         return "keep", "oggetto operativo o personale", sender, subject
-    if any(term in sender.casefold() for term in rules["protected_sender_terms"]):
+    if any(term in sender_lower for term in rules["protected_sender_terms"]):
         return "keep", "mittente protetto", sender, subject
     bulk = bool(msg.get("list-unsubscribe") or msg.get("list-id"))
+    marketing_sender = any(
+        term in sender_lower for term in rules["marketing_sender_terms"]
+    )
+    strong_promo = any(
+        term in haystack for term in rules["strong_promo_subject_terms"]
+    )
+    weak_promo = any(
+        term in haystack for term in rules["weak_promo_subject_terms"]
+    )
+    if strong_promo and (bulk or marketing_sender):
+        return "candidate", "promozione commerciale", sender, subject
+    if weak_promo and bulk and marketing_sender:
+        return "candidate", "invito commerciale massivo", sender, subject
     if not bulk:
         return "review", "manca indicatore di invio massivo", sender, subject
-    if any(term in haystack for term in rules["promo_subject_terms"]):
-        return "candidate", "promozione da invio massivo", sender, subject
     return "review", "invio massivo senza promozione certa", sender, subject
 
 

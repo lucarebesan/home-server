@@ -1,18 +1,34 @@
 {
   "destination": "SVUOTA",
   "protected_labels": ["ENEA", "legale"],
-  "protected_sender_terms": ["pec@", "noreply@pec."],
+  "protected_sender_terms": [
+    "pec@", "noreply@pec.", "no-reply@accounts.google.com",
+    "noreply-accounts@google.com", "noreply@github.com",
+    "comunicazioni@staff.aruba.it", "arubaid@staff.aruba.it"
+  ],
   "protected_subject_terms": [
-    "ordine", "order", "spedizione", "shipping", "tracking", "consegna",
-    "fattura", "ricevuta", "pagamento", "accesso", "login", "codice",
-    "password", "sicurezza", "security", "pec", "rimborso", "refund",
+    "ordine", "ordinato", "order", "spedito", "spedizione", "shipping",
+    "tracking", "consegna", "consegnato", "fattura", "ricevuta",
+    "scontrino", "pagamento", "bonifico", "addebito", "accredito",
+    "nuovo accesso", "accesso a", "login", "codice di verifica",
+    "password", "avviso di sicurezza", "security alert",
+    "verifica in due passaggi", "pec", "rimborso", "refund",
     "contratto", "polizza", "assicur", "banca", "estratto",
     "prenotazione", "reservation", "preventivo", "assistenza",
-    "supporto", "riunione", "conferma", "documento"
+    "supporto", "riunione", "conferma", "documento",
+    "attribuzione", "richiesta"
   ],
-  "promo_subject_terms": [
+  "marketing_sender_terms": [
+    "marketing@", "dem@", "infomailing@", "promozioni@", "offers@",
+    "promo@"
+  ],
+  "strong_promo_subject_terms": [
     "black friday", "sconto", "offerta", "promo", "saldi", "coupon",
-    "fino al", "acquista", "shopping", "newsletter", "ultime ore",
-    "solo oggi", "lancio", "novità", "punti fedeltà", "cashback"
+    "fino al", "acquista", "shopping", "ultime ore", "solo oggi",
+    "cashback"
+  ],
+  "weak_promo_subject_terms": [
+    "newsletter", "lancio", "novità", "masterclass", "corso",
+    "webinar", "evento", "iscriviti"
   ]
 }

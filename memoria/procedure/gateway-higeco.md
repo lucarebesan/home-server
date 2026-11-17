@@ -1,6 +1,6 @@
 # Gateway Higeco (Nilan, Toshiba, contatori)
 
-Ultima verifica: 2026-11-09 (audit in sola lettura nel pannello admin e confronto fra catalogo, HA e manuali CTS602). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
+Ultima verifica: 2026-11-17 (sonda ambiente e setpoint Toshiba a mezzo grado). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
 
 ## Cos'è
 
@@ -32,15 +32,15 @@ Ultima verifica: 2026-11-09 (audit in sola lettura nel pannello admin e confront
 
 ## Lettura da Home Assistant (dall'8/11)
 
-- `/config/scripts/nilan_batch.py`: una login con cookie proprio (`/config/tmp/gwc_batch_cookie.txt`, separato da quello di `nilan_write.sh`), poi una sola richiesta con 30 `sendCommand` e due `getShm` (1999237 per lo split, 1999690 per l'umidità). Stampa un JSON con un valore per unique_id, oppure null.
-- In `packages/nilan_sensori.yaml`: il command_line "Nilan Batch" (ogni 20 s, timeout 18 s, dal commit `126230e`; stato = numero di valori validi) e 39 sensori template con gli stessi nomi, unique_id e `entity_id` dei vecchi command_line. `sensor.nilan_batch` è escluso dal recorder (vale dal prossimo riavvio di HA).
+- `/config/scripts/nilan_batch.py`: una login con cookie proprio (`/config/tmp/gwc_batch_cookie.txt`, separato da quello di `nilan_write.sh`), poi una sola richiesta con 31 `sendCommand` e due `getShm` (1999237 per lo split, 1999690 per l'umidità). Stampa un JSON con un valore per unique_id, oppure null. Dal commit HA `cf449de` include la sonda ambiente Toshiba `1999108 Id1`.
+- In `packages/nilan_sensori.yaml`: il command_line "Nilan Batch" (ogni 20 s, timeout 18 s, dal commit `126230e`; stato = numero di valori validi) e 40 sensori template. La sonda nuova è esposta stabilmente come `sensor.ecm_toshiba_sonda_ambiente`; una vecchia entità ripristinata con nome Toshiba può restare `unavailable` fino a riavvio e non è usata dalla logica. `sensor.nilan_batch` è escluso dal recorder (vale dal prossimo riavvio di HA).
 - `sensor.compactp_offset_raffrescamento` resta un command_line separato: passando da un template il valore "+4" diventerebbe il numero 4, mentre WRITE si aspetta la stringa.
 - Cadenza: il driver del gateway interroga la Nilan ogni 15 s e i valori cambiano entro 10–20 s; la lettura dura 6–9,5 s. Con 20 s il gateway resta libero più di metà del tempo, anche per le scritture di WRITE. Sotto i 15 s il margine non basta.
-- Verifica: `sensor.nilan_batch` si aggiorna ogni minuto con 39 valori su 39; nessun errore di command_line o template in `docker logs homeassistant`.
+- Verifica: `sensor.nilan_batch` ha restituito 40 valori validi; il 17/11 il proxy ha seguito la sonda Toshiba fra 21,5 e 24,5 °C durante i test. Il registro setpoint `1999108 Id6` ha accettato e restituito 28,5 e 28 °C a macchina accesa, poi 29 °C di ripristino.
 - **Rollback senza fermare HA** (backup in `/config/tmp/backup_nilan_batch/`):
   1. `docker exec homeassistant cp /config/tmp/backup_nilan_batch/nilan_sensori.yaml.bak /config/packages/nilan_sensori.yaml`;
   2. `template.reload`;
-  3. togliere dal registro le 39 voci template di quei unique_id con `config/entity_registry/remove` via WebSocket;
+  3. togliere dal registro le 40 voci template di quei unique_id con `config/entity_registry/remove` via WebSocket;
   4. `command_line.reload`: i vecchi sensori riprendono gli `entity_id` originali;
   5. se serve, `git revert 9b22cc2` sul repo HA e cancellare `scripts/nilan_batch.py`.
 

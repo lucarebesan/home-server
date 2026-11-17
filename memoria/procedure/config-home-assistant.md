@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-17 (aperture solari invernali e consensi estivi; commit HA `5c6e833`).
+Ultima verifica: 2026-11-17 (modulazione setpoint Toshiba; commit HA `0f4b9ef`).
 
 ## Prerequisiti
 
@@ -259,9 +259,10 @@ le automazioni ECM ancora in stato sconosciuto.
 Il primo commit HA `4b1dff7` è stato sostituito lo stesso giorno perché applicava
 al riscaldamento soglie generiche non concordate (20/21,2 °C), un'eccedenza FV
 fissa di 1000 W e CP HEAT come fonte ambiente. La versione vigente è il commit
-HA `d29a722`, poi aggiornata nella matrice dal commit HA `335b878`; i file sono
-`10_ecm_inverno.yaml` e `packages/ecm_helper.yaml`. Il ramo WRITE del commit
-precedente resta valido come arbitro.
+HA `d29a722`, poi aggiornata nella matrice dal commit HA `335b878` e nella
+modulazione Toshiba dai commit `cf449de`, `06edcf8` e `0f4b9ef`; i file sono
+`10_ecm_inverno.yaml` e `packages/ecm_helper.yaml`. Il ramo WRITE accetta ora
+il setpoint Toshiba dinamico a passi di 0,5 °C.
 
 La `10` è accesa, gira ogni minuto solo in INVERNO e con `ecm_manuale` in AUTO e
 usa le medie zona a 10 minuti. Tutte le soglie derivano dinamicamente da
@@ -369,19 +370,62 @@ massimo o sicurezza. Dopo la finestra minima rivaluta ranking e trend separati
 20/30/60 minuti delle zone in recupero; due trend non positivi rendono la resa
 insufficiente e consentono di salire di velocità entro il limite di fascia.
 
+### Modulazione del setpoint Toshiba dal 17/11
+
+La `10` controlla ogni minuto ma adegua il setpoint per efficacia soltanto dopo
+una finestra di 30 minuti. A un nuovo ciclo con
+`sensor.ecm_toshiba_sonda_ambiente` valido parte dalla sonda +0,5 °C, arrotondata
+al mezzo grado superiore e limitata a 29 °C. Se la sonda non è valida parte a
+29 °C e arma `input_boolean.ecm_toshiba_attesa_sonda_iniziale`; al primo valore
+valido passa una sola volta a sonda +0,5 °C, salva nuove temperature iniziali e
+fa ripartire da zero i 30 minuti. Dopo questo primo aggancio il booleano resta
+OFF per tutto il ciclo: una perdita successiva della sonda non cambia setpoint,
+margine efficace o conteggio già maturato.
+
+La finestra usa le medie zona a 10 minuti salvate nei due helper
+`ecm_toshiba_modulazione_tg_inizio` e `_tn_inizio`. In recupero ogni zona ancora
+agganciata deve crescere almeno 0,05 °C; in accumulo basta una delle due. Deve
+anche risultare attivo il compressore (RPS > 0 oppure potenza media Toshiba 5
+minuti > 150 W). Se la resa non basta, il setpoint sale di 0,5 °C e il nuovo
+livello diventa il minimo efficace da non riprovare al ribasso nello stesso
+ciclo. Se la resa basta, mantiene per un altro intervallo; solo dopo due
+intervalli efficaci consecutivi prova −0,5 °C, senza scendere sotto il minimo
+appreso né sotto sonda +0,5 °C. Ogni variazione azzera il conteggio e apre una
+nuova finestra di 30 minuti.
+
+`input_number.toshiba_setpoint` è uno storage helper con passo 0,5 °C (ID storage
+storico `toschiba_setpoint`); il ramo ambiente della WRITE confronta e inoltra
+il valore effettivo invece del vecchio 29 °C fisso. Il batch legge anche il
+proxy Toshiba `1999108 Id1`; il template stabile esposto alla `10` è
+`sensor.ecm_toshiba_sonda_ambiente`. Verificato a macchina accesa che 28,5 e
+28 °C vengono accettati; verificata anche la catena helper → WRITE → gateway e
+il ripristino a 29 °C.
+
+La prima osservazione del 17/11 ha evidenziato due casi di collaudo: il reload
+degli helper rende temporaneamente indisponibili alcuni sensori e può azzerare
+un latch, quindi durante futuri reload di `input_number`, `input_boolean` o
+`template` sospendere la sola `10`, attendere il ritorno dei sensori e poi
+riattivarla; inoltre una stringa `false` nella valutazione della resa era stata
+interpretata male. Il commit `0f4b9ef` forza esplicitamente i booleani: un
+intervallo 0,00/−0,02 °C non può più essere classificato efficace.
+
 **Verifica:** leggere stato e `last_triggered` di `10` e WRITE, i tre helper
 `ecm_inverno_recupero_*`, `ecm_inverno_accumulo_attivo`, la richiesta ambiente,
 la velocità Toshiba e le macchine reali. La richiesta CP ambiente deve restare 0;
 una CP attiva deve essere spiegata da ACS, umidità o ricambio. Controllare anche
-W/ranking del motore, trend zona e nuovi errori nel log. Alla verifica delle
-16:34: `10` e WRITE accese, fascia GIORNO, T min 20,5 °C, recuperi/accumulo OFF,
-ambiente OFF/0, Toshiba spento, zone 20,86/20,62 °C contro soglie 20,5/20,0;
-la CP in STEP 4 rispondeva a una richiesta indipendente. Il primo ciclo reale
-sotto soglia resta da osservare.
+W/ranking del motore, trend zona e nuovi errori nel log. Alla verifica serale
+del 17/11: `10` e WRITE accese, nuovo helper di attesa OFF, richieste ambiente
+OFF e Toshiba spento. Il prossimo ciclo naturale deve ancora validare partenza
+vicino alla sonda, prima finestra completa, salita se inefficace e successiva
+modulazione con condizioni esterne più fredde.
 
 **Ripristino:** spegnere `automation.10_ecm_inverno` e verificare Toshiba OFF;
 la `07` e la WRITE continuano ricambio/ACS. Il backup immediatamente precedente
-è in `/tmp/backup_ecm_inverno_corretto_20261110/` sul server; quello precedente
+alla modulazione è in `/tmp/backup_toshiba_modulazione_20261117_1748/`; i backup
+dell'aggancio sonda e della conversione booleana sono rispettivamente in
+`/tmp/backup_toshiba_sonda_ritardata_20261117_2215/` e
+`/tmp/backup_toshiba_bool_20261117_2225/`. Il backup precedente della logica
+invernale è in `/tmp/backup_ecm_inverno_corretto_20261110/`; quello precedente
 al commit `4b1dff7` resta in `/config/tmp/backup_ecm_inverno_20261110/`. Dopo una
 copia eseguire `check_config`, ricaricare `input_boolean`, `input_number`,
 `input_datetime` e `automation`, lasciando la `10` spenta finché il ripristino

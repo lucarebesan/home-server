@@ -69,7 +69,8 @@ dettagli in `procedure/migrazione-minipc.md`.
   `procedure/config-home-assistant.md`.
   `05-ECM ACS MANAGER`
   resta accesa; le altre automazioni decisionali ECM generali, salvo `10`, restano spente.
-- HA: `10 - ECM INVERNO` corretta nel commit HA `335b878` e accesa dal 10/11.
+- HA: `10 - ECM INVERNO` accesa dal 10/11 e aggiornata fino al commit HA
+  `0f4b9ef` del 17/11.
   In AUTO usa le medie zona a 10 minuti e la matrice relativa a
   `input_number.t_min_inverno` (20,5 °C alla verifica): in fascia GIORNO zona
   giorno da T min a T min +0,5 e zona notte da T min −0,5 a T min; in fascia
@@ -81,10 +82,12 @@ dettagli in `procedure/migrazione-minipc.md`.
   Toshiba HEAT, lasciando a zero la richiesta CP ambiente: CP HEAT resta alle
   richieste indipendenti di ACS, umidità e ricambio. La velocità Split deriva
   dalle combinazioni E70/E80/E90 apprese, usa i trend separati 20/30/60 minuti,
-  resta invariata almeno 15 minuti ed è limitata a V2 di notte. Alle 16:34 non
-  chiedeva calore (fascia GIORNO, zone 20,86/20,62 °C contro soglie 20,5/20,0);
-  Toshiba era spento e la CP in STEP 4 rispondeva a una richiesta indipendente.
-  Prove automatiche del motore ancora spente.
+  resta invariata almeno 15 minuti ed è limitata a V2 di notte. Il setpoint
+  Toshiba parte dalla sonda ambiente +0,5 °C, viene controllato ogni minuto e
+  può cambiare di 0,5 °C soltanto dopo finestre termiche di 30 minuti; massimo
+  29 °C. Se la sonda manca all'avvio usa 29 °C solo come ripiego e si aggancia
+  alla sonda quando torna; perdite successive della lettura non azzerano
+  setpoint o apprendimento del ciclo. Prove automatiche del motore ancora spente.
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.
 
 ## Segreti (solo posizione)

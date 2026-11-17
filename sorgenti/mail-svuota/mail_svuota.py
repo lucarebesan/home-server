@@ -206,7 +206,7 @@ def scan(apply_uid: int | None, limit: int | None) -> None:
         ):
             raise RuntimeError("Le estensioni IMAP Gmail non sono disponibili")
         if apply:
-            status, boxes = conn.list("", "SVUOTA")
+            status, boxes = conn.list('""', "SVUOTA")
             if status != "OK" or not boxes or not any(
                 box and box.rsplit(b" ", 1)[-1].strip(b'"') == b"SVUOTA"
                 for box in boxes

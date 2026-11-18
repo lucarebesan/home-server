@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-17 (modulazione setpoint Toshiba; commit HA `0f4b9ef`).
+Ultima verifica: 2026-11-18 (ID della sonda di immissione Toshiba e continuità dello storico).
 
 ## Prerequisiti
 
@@ -400,6 +400,21 @@ proxy Toshiba `1999108 Id1`; il template stabile esposto alla `10` è
 `sensor.ecm_toshiba_sonda_ambiente`. Verificato a macchina accesa che 28,5 e
 28 °C vengono accettati; verificata anche la catena helper → WRITE → gateway e
 il ripristino a 29 °C.
+
+La temperatura dell'aria in uscita dallo Split, prima della distribuzione nei
+condotti, è il sensore BLE `sensor.toshiba_temperatura_immissione` (unique ID
+`t_A4C13834A616`). Il 18/11 è stato rinominato dal vecchio entity ID
+`sensor.ble_temperature_mija_garage` tramite il registro ufficiale di HA; i
+cinque riferimenti della Overview e quello di ECM v2 sono stati aggiornati.
+Il recorder ha migrato senza discontinuità lo stesso `states_meta` 2513 e lo
+stesso `statistics_meta` 201 al nuovo ID. Verifica in sola lettura: stati grezzi
+dal 11/11 04:12 e statistiche orarie dal 14/12/2025; il nome visibile originale
+può ancora contenere `MIJA GARAGE`, ma non è l'identità usata dalle dashboard.
+Luca conferma che la sonda è fisicamente sulla mandata Toshiba da almeno circa
+sei mesi e ha misurato tutta l'estate 2026: valori vicini a 1–3 °C possono quindi
+essere mandata in COOL, non prova della vecchia collocazione in garage. La data
+esatta dello spostamento resta da determinare prima di usare il tratto più
+antico; ECM Engine non campiona ancora questa grandezza nel proprio database.
 
 La prima osservazione del 17/11 ha evidenziato due casi di collaudo: il reload
 degli helper rende temporaneamente indisponibili alcuni sensori e può azzerare

@@ -2567,7 +2567,7 @@ views:
                 name: Immissione CP
               - entity: sensor.compactp_t10_temperatura_sensore_stanza
                 name: Sonda T10
-              - entity: sensor.ble_temperature_mija_garage
+              - entity: sensor.toshiba_temperatura_immissione
                 name: Immissione split
           - type: history-graph
             title: Configurazione ECM · 24 ore

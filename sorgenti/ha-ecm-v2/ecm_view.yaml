@@ -1512,7 +1512,7 @@ sections:
       name: Imm.CP
     - entity: sensor.compactp_t10_temperatura_sensore_stanza
       name: T.sonda
-    - entity: sensor.ble_temperature_mija_garage
+    - entity: sensor.toshiba_temperatura_immissione
       name: Imm.SPLIT
     - entity: sensor.compactp_t1_temperatura_aria_esterna_post_egwk
       name: T.Post GEOT

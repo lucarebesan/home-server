@@ -1,6 +1,6 @@
 # Gestione manuale della posta Gmail via SSH
 
-Ultima verifica: 2026-11-18 (regole aggiuntive approvate; prima esecuzione ancora da verificare).
+Ultima verifica: 2026-11-18 (prime tre regole aggiuntive eseguite e verificate nel controllo delle 10:00).
 
 ## Scopo e autorizzazione
 

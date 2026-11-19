@@ -19,6 +19,20 @@ dettagli in `procedure/migrazione-minipc.md`.
 - Docker e SSH sono attivi. Home Assistant, MQTT (mosquitto), nginx, Portainer e altri servizi sono in container Docker. Per i nomi aggiornati usare `docker ps -a`.
 - Per spegnere il server **non** fermare i singoli container: con `restart: unless-stopped` non ripartirebbero al boot. Usare `poweroff`.
 
+## Codex (19/11)
+
+- Codex CLI `0.170.0` installato per l'utente `home` con l'installer ufficiale in
+  `/home/home/.local/bin/codex`; pacchetto in `~/.codex/packages/standalone/`.
+  La shell di login trova il comando e `codex app-server --help` risponde.
+- Al controllo successivo all'installazione, `codex login status` indicava
+  `Not logged in`. L'accesso con codice dispositivo richiede che Luca abiliti
+  questa opzione nelle impostazioni di sicurezza del suo account ChatGPT;
+  il primo tentativo è stato interrotto. Non è stato avviato alcun servizio
+  Codex persistente.
+- L'app desktop può usare un progetto sul mini PC via SSH solo se il PC che
+  esegue l'app raggiunge il mini PC via rete. L'installazione della CLI non
+  crea da sola un collegamento remoto dal PC di lavoro.
+
 ## Rete
 
 - Ethernet `enp2s0` (`68:1d:ef:66:29:75`) con prenotazione DHCP `.100` sul box (voce

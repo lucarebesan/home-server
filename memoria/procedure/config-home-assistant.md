@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-18 (ID della sonda di immissione Toshiba e continuità dello storico).
+Ultima verifica: 2026-11-19 (curva delle soglie invernali durante l'assenza).
 
 ## Prerequisiti
 
@@ -290,14 +290,19 @@ né Luca né Alice per almeno due minuti e `input_select.ospiti_a_casa` vale
 
 | Assenza continuativa | Riduzione dei limiti inferiori |
 |---|---:|
-| da 0 a meno di 12 ore | −1,0 °C |
-| da 12 a meno di 24 ore | −1,5 °C |
-| da 24 a meno di 36 ore | −2,0 °C |
-| da 36 ore in poi | −2,5 °C |
+| da 0 a meno di 3 ore | 0 °C |
+| da 3 a meno di 12 ore | −0,5 °C |
+| da 12 a meno di 24 ore | −1,0 °C |
+| da 24 a meno di 36 ore | −1,5 °C |
+| da 36 ore in poi | −2,0 °C |
 
-Scaglioni aggiornati il 17/11 su richiesta di Luca. Rientro e ospiti azzerano
-la riduzione come prima; la rampa di rientro entro 50/25/10 km resta invariata.
-Backup precedente in `/config/tmp/backup_offset_assenza_20261117/ecm_helper.yaml`.
+Scaglioni aggiornati il 19/11 nel commit HA `8181ab9`. Il calcolo usa
+il tempo trascorso dall'inizio dell'assenza confermata. Lo stato
+pubblica il valore positivo da sottrarre. L'attributo `livello` usa lo stesso
+tempo non arrotondato del calcolo.
+Per ripristinare la curva operativa precedente usare
+`/config/tmp/backup_ecm_curva_assenza_20261119/ecm_helper_precedente_attivo.yaml`,
+quindi eseguire `check_config` e ricaricare template e automazioni.
 
 La `10` sottrae questo valore a `T min` solo per calcolare avvio e recupero di
 entrambe le zone nelle fasce GIORNO e NOTTE; non modifica l'helper impostato

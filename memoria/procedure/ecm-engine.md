@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-14 17:10 (campagna automatica delle sei coppie consumi armata; per l'ombra inverno resta la verifica dell'11/11).
+Ultima verifica: 2026-11-19 (sessione di confronto sul recupero Toshiba armata; per l'ombra inverno resta la verifica dell'11/11).
 
 ## Scopo
 
@@ -182,6 +182,36 @@ precedente indicazione di riprendere le prove solo un altro giorno.
 Per fermare le future partenze porre `enabled=false` nel JSON; se c'è un tentativo
 attivo, fermarne anche il PID verificato come nella procedura del runner e
 controllare `restored=true`. Il cron viene rimosso dal controller alla chiusura.
+
+## Confronto automatico una tantum Toshiba V2/V3: recupero 20,0–20,5 °C
+
+Autorizzato da Luca il 19/11. Sorgente `scripts/toshiba_recupero.py`, copia
+`/home/home/toshiba_recupero_20261119.py`, stato e risultati in
+`/home/home/ecm-tests/toshiba-recupero-20261119/stato.json`. Cron di `home`
+taggato `ECM_TOSHIBA_RECUPERO_20261119` dalle 08:00 alle 17:59, una riga
+rimossa dopo due risultati validi o alla scadenza di sette giorni.
+
+- Attende un recupero già in corso in INVERNO/AUTO e fascia GIORNO, con zona
+  giorno 19,90–20,00 °C, setpoint effettivo e richiesto entrambi a 22,5 °C,
+  sole sopra l'orizzonte, FV almeno pari al carico e SOC >40%. La partenza richiede
+  oltre due ore di fascia GIORNO residua. La seconda prova richiede esterno
+  iniziale entro 1 °C dalla prima e altezza del sole entro 10°.
+- Usa il lock condiviso della campagna consumi. Durante la prova rinnova
+  soltanto il timer di permanenza e chiede la velocità. Il timer è ripristinato
+  se è ancora quello della prova e, se il processo si interrompe, scade in
+  15 minuti. Il limite della sessione in corso è due ore. ACS e ricambio
+  restano operativi: se la Compact P esce da OFF per ventilatore, compressore
+  o resistenza, la prova viene scartata. Anche cambio setpoint, comandi
+  concorrenti e dati mancanti invalidano la finestra.
+- Misura minuti e kWh tra le due soglie sulla media a 10 minuti della zona
+  giorno, interpolando il passaggio e integrando la potenza Toshiba
+  campionata ogni 30 secondi. Il confronto segnala V3 favorevole se supera la
+  V2 in tempo di più di un campione e consuma meno energia. Verificare
+  comparabilità ed esito prima di modificare il decisore: la prova non
+  scrive il suo codice né impone V3 per tutte le condizioni.
+- Per annullare le future partenze rimuovere soltanto la riga del tag.
+  Un tentativo attivo termina ai limiti di prova anche senza la riga cron.
+  `--check` valuta i requisiti senza inviare comandi alle macchine.
 
 ## Dati caricati
 

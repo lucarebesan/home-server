@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-19 (curva delle soglie invernali durante l'assenza).
+Ultima verifica: 2026-11-19 (curva invernale di assenza e anticipo serale).
 
 ## Prerequisiti
 
@@ -346,6 +346,34 @@ di Luca e Alice erano all'interno, ma i contatori delle due nuove zone erano
 ancora 0 in attesa di una rivalutazione dei tracker: verificare il primo
 aggiornamento GPS e il primo viaggio reale prima di considerare validata la
 sequenza completa.
+
+#### Anticipo serale del riscaldamento
+
+Dal commit HA `ffaf02f` la `10` in INVERNO/AUTO e fascia GIORNO mira
+ad avere la media a 10 minuti della zona giorno a 20,5 °C alle 18:30.
+Per iniziare la media deve essere sotto l'obiettivo e almeno uno tra Luca e
+Alice deve risultare tra i membri di `zone.50km`. Un conteggio generico
+positivo senza uno dei due nomi, posizione mancante per entrambi o zona non
+disponibile non danno il consenso. Questo controllo vale anche per assenze
+inferiori a 36 ore e si aggiorna a ogni cambio della zona e almeno ogni minuto.
+
+L'anticipo stimato divide i gradi mancanti per la resa Split appresa,
+se confermata e con affidabilità almeno 0,4. La stima iniziale usa
+un intervallo prudente di 0,12–0,24 °C/ora e 0,24 °C/ora come ripiego,
+aggiunge 15 minuti e limita l'anticipo a cinque ore. Il raggiungimento
+dell'obiettivo resta da verificare nelle prime serate utili.
+
+`input_boolean.ecm_inverno_anticipo_serale_attivo` mantiene il recupero fino
+a 21 °C anche dopo le 18:30, finché è fascia GIORNO e resta il consenso
+geografico. Nessuna richiesta nuova di anticipo dopo le 18:30. L'anticipo
+può richiedere calore anche senza surplus, segue trend e modulazione
+della zona giorno e rispetta il massimo, la permanenza e la gestione
+ordinaria di recupero e accumulo. Il latch parte da OFF dopo un riavvio HA.
+Le transizioni sono nel logbook della `10`.
+
+Per ripristinare i due file precedenti usare
+`/config/tmp/backup_ecm_anticipo_serale_20261119/`, poi eseguire
+`check_config` e ricaricare `input_boolean` e `automation`.
 
 Sopra il minimo non esiste più il vecchio target 21,2 °C. Se l'energia è
 favorevole, l'accumulo può proseguire fino al massimo comune modificabile

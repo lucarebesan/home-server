@@ -65,6 +65,10 @@ dettagli in `procedure/migrazione-minipc.md`.
 
 - Gateway Higeco di Nilan e Toshiba: `192.168.1.171` (vedi `procedure/gateway-higeco.md`).
 - Relè luci Dingtian DT-R008 (ESP32, in WiFi a 2,4 GHz): `.51`–`.58` e `.29`, in HA tramite `dtbridge`.
+- Sonoff MINI `Albero` (ID eWeLink `1000b62fe2`, già `NATALE`): in HA è
+  `switch.sonoff_1000b62fe2`. Nome e disponibilità verificati dopo il reload
+  dell'integrazione Sonoff il 20/11; gli altri due vecchi dispositivi
+  `ESTERNO NATALE` e `INGRESSO NATALE` risultavano ancora `unavailable`.
 - Inverter Growatt, via l'integrazione `solax_modbus`; TV LG.
 - Terminale Anviz: `.218`, non ancora montato al 7/11.
 
@@ -111,6 +115,10 @@ dettagli in `procedure/migrazione-minipc.md`.
   alla sonda quando torna; perdite successive della lettura non azzerano
   setpoint o apprendimento del ciclo. Prove automatiche del motore ancora spente.
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.
+- HA: `automation.natale_tre_sonoff` è attiva dal 20/11 per la stagione
+  2026–27; controlla `Albero` e, quando torneranno disponibili con gli stessi
+  ID, `ESTERNO NATALE` e `INGRESSO NATALE`. Dal 7 gennaio 2027 non invia più
+  comandi. Regole e verifica in `procedure/config-home-assistant.md`.
 
 ## Segreti (solo posizione)
 

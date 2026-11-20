@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-19 (curva invernale di assenza e anticipo serale).
+Ultima verifica: 2026-11-20 (reload dell'integrazione Sonoff).
 
 ## Prerequisiti
 
@@ -46,6 +46,65 @@ Ultima verifica: 2026-11-19 (curva invernale di assenza e anticipo serale).
 
 - Leggere lo stato delle entità interessate via API: `GET /api/states/<entity_id>`.
 - `docker logs --since 10m homeassistant` senza nuovi errori.
+
+## Sonoff rinominato in eWeLink ma vecchio nome o `unavailable` in HA
+
+Verificato il 20/11 con il Sonoff MINI ora chiamato `Albero`: l'ID eWeLink è
+rimasto lo stesso di `NATALE`, ma HA mostrava ancora il vecchio nome e lo stato
+`unavailable`. Prima di eliminare l'entità, confrontare l'ID nelle due app e
+ricaricare la sola integrazione Sonoff, con l'ok dell'utente. La versione
+installata rilegge l'elenco dispositivi dal cloud durante il reload e conserva
+l'`entity_id` quando l'ID del dispositivo non cambia.
+
+1. Verificare l'unica voce con `domain: sonoff` in
+   `/opt/homeassistant/config/.storage/core.config_entries` e annotarne
+   l'`entry_id` (al 20/11: `01JTFNBNSJR51RR819CQTWM7EZ`). Non stampare i dati
+   di autenticazione presenti nello stesso file.
+2. Eseguire `docker exec homeassistant python3 -m homeassistant --script check_config -c /config`.
+3. Chiamare `POST /api/services/homeassistant/reload_config_entry` con JSON
+   `{"entry_id":"<entry_id>"}` e bearer token letto sul mini PC da
+   `~/.config/ecm/ha_token`, senza stamparlo. Non riavviare HA e non inviare
+   comandi ai dispositivi.
+4. Verificare via API `GET /api/states/<entity_id>`: nome, disponibilità e
+   stato; controllare anche il registro dispositivi e i nuovi errori Sonoff
+   nel log. Se il cloud non risponde, valutare prima l'autenticazione e la
+   connessione: il reload può ripiegare sulla cache e non aggiornare il nome.
+
+Il 20/11 il POST ha restituito HTTP 200; dopo 5 secondi
+`switch.sonoff_1000b62fe2` era disponibile, con nome `Albero` e stato `on`.
+Non è stata comandata la luce. Gli altri due Sonoff natalizi sono rimasti
+`unavailable`.
+
+## Automazione dei tre Sonoff natalizi (stagione 2026–27)
+
+Il file sorgente è `automations/luci/natale_sonoff_2026_2027.yaml` nel repo HA;
+in HA l'entità è `automation.natale_tre_sonoff`. Commit di installazione
+`048bd15` sul branch `main`. Controlla gli ID, non i nomi, dei tre Sonoff:
+`1000b62fe2` (`Albero`, ex `NATALE`), `1000b5ed90` (`ESTERNO NATALE`) e
+`1000e48846` (`INGRESSO NATALE`).
+
+- Dal 20/11/2026 al 06/01/2027 compreso: accende al tramonto, spegne alle
+  23:00; accende alle 06:00, spegne all'ora corrente di
+  `input_datetime.nilan_mattina` (08:30 alla verifica del 20/11).
+- Il 25/12/2026 non esegue lo spegnimento di `nilan_mattina`: le luci restano
+  programmate accese dalle 06:00 alle 23:00.
+- Dal 07/01/2027 l'automazione resta caricata, ma i trigger non inviano più
+  comandi. Non riparte automaticamente la stagione successiva.
+- Le entità `unavailable`/`unknown` sono saltate. Quando una delle tre passa
+  da `unavailable` a disponibile, o dopo l'avvio di HA, la regola applica lo
+  stato previsto per l'ora corrente. Se una riassociazione eWeLink cambia
+  l'ID Sonoff, aggiornare l'`entity_id` in trigger e azioni dopo averlo
+  verificato nel registro HA.
+
+Per modificare: `git fetch` e `git status` nel repo HA prima di scrivere;
+toccare solo questo file e conservare le automazioni spente a mano. Eseguire
+`check_config`, poi `POST /api/services/automation/reload`, verificando che
+`automation.natale_tre_sonoff` sia `on` e che nessuna automazione prima `off`
+sia stata accesa. Controllare il trace al prossimo trigger previsto e gli
+stati dei Sonoff, senza azionarli manualmente durante la verifica. Committare
+e fare push del solo file modificato. Per ripristinare la situazione precedente,
+disattivare `automation.natale_tre_sonoff` in HA e rimuovere questo solo file
+dal repo HA con commit e push; fare `check_config` e reload automazioni.
 
 ## Attenzioni
 

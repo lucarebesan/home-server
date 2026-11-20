@@ -52,14 +52,17 @@ cartella è salvata nell'app del PC di lavoro come progetto remoto `HOME-SERVER`
 su `minipc`. La funzione Hand off richiede un progetto Git corrispondente su
 entrambi gli host.
 
-Il 20/11 Hand off della chat `Gestisci mail via SSH` da `ZENBOOK-LUCA` a
-`minipc` ha restituito «Le chat paginate non possono ancora essere continuate
-su un altro host». Il passaggio si è fermato prima di copiare cronologia e stato
-Git: la chat originale è rimasta sul ponte e non è stata creata una copia.
+Il 20/11 Hand off delle chat `Gestisci mail via SSH` ed `ECM` da
+`ZENBOOK-LUCA` a `minipc` ha restituito «Le chat paginate non possono ancora
+essere continuate su un altro host». I passaggi si sono fermati durante la
+preparazione, prima di copiare cronologia e stato Git: gli originali sono
+rimasti sul ponte e non sono state create copie.
 Non usare spostamenti manuali dei file interni di Codex come se fossero un
 trasferimento supportato. Il limite è segnalato in
 [openai/codex#40879](https://github.com/openai/codex/issues/40879).
-Le altre chat non sono state provate e potrebbero avere esiti diversi.
+Collegare direttamente l'app Codex del ponte al mini PC non supera questo
+blocco sul formato della cronologia. Le altre chat non sono state provate e
+potrebbero avere esiti diversi.
 
 Per continuare il lavoro della posta sul mini PC serve una nuova chat nel
 progetto remoto che legga `AGENTS.md`, `memoria/inventario.md` e

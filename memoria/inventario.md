@@ -36,9 +36,9 @@ dettagli in `procedure/migrazione-minipc.md`.
   l'esecuzione dopo un riavvio non è ancora stata provata.
 - Il repository `home-server` è clonato in `/home/home/home-server` e salvato
   nell'app del PC di lavoro come progetto remoto `HOME-SERVER` su `minipc`.
-  Il tentativo di trasferire la chat `Gestisci mail via SSH` dal PC ponte è
-  stato bloccato dal limite Codex sulle chat paginate; la chat originale e
-  l'automazione posta restano sul PC ponte.
+  I tentativi di trasferire le chat `Gestisci mail via SSH` ed `ECM` dal PC
+  ponte sono stati bloccati dal limite Codex sulle chat paginate; gli originali
+  e l'automazione posta restano sul PC ponte.
 
 ## Rete
 

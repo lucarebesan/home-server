@@ -69,3 +69,28 @@ progetto remoto che legga `AGENTS.md`, `memoria/inventario.md` e
 `memoria/procedure/mail-svuota.md`. La vecchia chat e la sua automazione di
 pulizia ogni due ore restano sul PC ponte: prima di spegnerlo occorre decidere
 come sostituire quella pianificazione, evitando due controlli paralleli.
+
+## Archivio testuale delle chat che non passano con Hand off
+
+Il 20/11 è stata copiata sul mini PC la cronologia **testuale** della chat
+`ECM` del ponte in
+`/home/home/.local/share/codex-chat-archives/ECM-2026-11-20.md`.
+La directory è privata (`700`) e il file è leggibile solo da `home` (`600`).
+La copia contiene 161 turni e 705 messaggi utente/assistente, dal 9 al 20
+novembre; include anche i messaggi intermedi dell'assistente. Non include gli
+allegati né gli output degli strumenti. L'hash SHA-256 è stato verificato
+identico fra sorgente e destinazione. L'originale rimane sul PC ponte.
+
+Per usare questo contesto, avviare una **nuova chat** nel progetto remoto
+`HOME-SERVER` su `minipc` e indicare all'agente di leggere il file sopra,
+cercando le parti pertinenti alla domanda. Confrontare sempre le decisioni
+storiche con `memoria/inventario.md` e le procedure ECM correnti: l'archivio
+può descrivere stati ormai superati. Non è una chat importata né continuabile.
+
+Per ripetere la copia di una chat paginata, l'agente può leggere le pagine
+di `read_thread` (massimo 10 turni per pagina, seguendo `nextCursor`),
+riordinare cronologicamente i messaggi `userMessage` e `agentMessage`,
+salvare il testo **fuori dal repository**, copiarlo via SSH in una directory
+privata e verificare hash e permessi. Non includere credenziali negli
+aggiornamenti Git. La CLI `/export` non è stata usata per `ECM`, perché
+un'altra istanza dell'app teneva la chat aperta in scrittura.

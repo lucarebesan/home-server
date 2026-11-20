@@ -1,6 +1,6 @@
 # Codex sul mini PC
 
-Ultima verifica: 2026-11-20 (login, controllo remoto, telefono e crontab).
+Ultima verifica: 2026-11-20 (login, controllo remoto, telefono, crontab e Hand off).
 
 ## Stato e prerequisiti
 
@@ -47,7 +47,22 @@ Non esporre il socket o una porta app-server su Internet.
 
 ## Progetto Git e chat esistenti
 
-Il repository è in `/home/home/home-server`, clonato dal remoto GitHub. Prima
-di trasferire una chat Git, aprire/salvare la stessa cartella come progetto
-Codex sul mini PC. La funzione Hand off richiede un progetto Git corrispondente
-su entrambi gli host. Il trasferimento delle chat non è ancora stato verificato.
+Il repository è in `/home/home/home-server`, clonato dal remoto GitHub. La
+cartella è salvata nell'app del PC di lavoro come progetto remoto `HOME-SERVER`
+su `minipc`. La funzione Hand off richiede un progetto Git corrispondente su
+entrambi gli host.
+
+Il 20/11 Hand off della chat `Gestisci mail via SSH` da `ZENBOOK-LUCA` a
+`minipc` ha restituito «Le chat paginate non possono ancora essere continuate
+su un altro host». Il passaggio si è fermato prima di copiare cronologia e stato
+Git: la chat originale è rimasta sul ponte e non è stata creata una copia.
+Non usare spostamenti manuali dei file interni di Codex come se fossero un
+trasferimento supportato. Il limite è segnalato in
+[openai/codex#40879](https://github.com/openai/codex/issues/40879).
+Le altre chat non sono state provate e potrebbero avere esiti diversi.
+
+Per continuare il lavoro della posta sul mini PC serve una nuova chat nel
+progetto remoto che legga `AGENTS.md`, `memoria/inventario.md` e
+`memoria/procedure/mail-svuota.md`. La vecchia chat e la sua automazione di
+pulizia ogni due ore restano sul PC ponte: prima di spegnerlo occorre decidere
+come sostituire quella pianificazione, evitando due controlli paralleli.

@@ -34,9 +34,11 @@ dettagli in `procedure/migrazione-minipc.md`.
   `CODEX_REMOTE_CONTROL`: dopo 30 secondi avvia `codex remote-control start`,
   con al massimo cinque tentativi. La presenza della riga è verificata;
   l'esecuzione dopo un riavvio non è ancora stata provata.
-- Il repository `home-server` è clonato in `/home/home/home-server`; il 20/11
-  era pulito e allo stesso commit del PC di casa. Per trasferire una chat Git
-  occorre anche salvarlo come progetto nell'app Codex sul mini PC.
+- Il repository `home-server` è clonato in `/home/home/home-server` e salvato
+  nell'app del PC di lavoro come progetto remoto `HOME-SERVER` su `minipc`.
+  Il tentativo di trasferire la chat `Gestisci mail via SSH` dal PC ponte è
+  stato bloccato dal limite Codex sulle chat paginate; la chat originale e
+  l'automazione posta restano sul PC ponte.
 
 ## Rete
 

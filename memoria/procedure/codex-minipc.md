@@ -1,6 +1,6 @@
 # Codex sul mini PC
 
-Ultima verifica: 2026-11-20 (login e controllo remoto dal PC di lavoro).
+Ultima verifica: 2026-11-20 (login, controllo remoto, telefono e crontab).
 
 ## Stato e prerequisiti
 
@@ -27,15 +27,22 @@ Ultima verifica: 2026-11-20 (login e controllo remoto dal PC di lavoro).
    `remoteControlEnabled: true`.
 2. Generare il codice di abbinamento con
    `ssh home@192.168.1.100 'codex remote-control pair'`. Inserirlo
-   nell'app Codex del dispositivo che deve controllare il mini PC.
+   nell'app Codex del dispositivo che deve controllare il mini PC. Sul telefono
+   usare "Inserisci codice manualmente" nella schermata del QR.
 3. Verificare nell'app che `minipc` compaia come `Connesso` e aprire una chat
    di prova eseguita sul mini PC. Il 20/11 la connessione dal PC di lavoro è
-   stata verificata; dal telefono non ancora.
+   stata verificata; il 20/11 `minipc` era visibile anche nell'app del telefono,
+   senza ancora una chat di prova.
 4. Per interrompere il controllo remoto usare
    `ssh home@192.168.1.100 'codex remote-control stop'`.
 
 La funzione `remote-control` della CLI è sperimentale. Il daemon usa il backend
-PID; l'avvio automatico dopo un riavvio non è ancora configurato o verificato.
+PID e può aggiornarsi automaticamente: il 20/11 è passato da `0.170.0` a
+`0.171.0` restando attivo. Nel crontab di `home` la riga marcata
+`CODEX_REMOTE_CONTROL` avvia il comando dopo 30 secondi dal boot e ritenta
+fino a cinque volte. `cron` era attivo e abilitato; l'esecuzione dopo un
+riavvio non è stata ancora verificata. Per disattivare l'avvio al boot,
+rimuovere solo quella riga dal crontab, lasciando intatte le altre.
 Non esporre il socket o una porta app-server su Internet.
 
 ## Progetto Git e chat esistenti

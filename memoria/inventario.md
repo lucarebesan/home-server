@@ -26,11 +26,14 @@ dettagli in `procedure/migrazione-minipc.md`.
   La shell di login trova il comando e `codex app-server --help` risponde.
 - `codex login status` indica `Logged in using ChatGPT` dopo l'accesso con
   codice dispositivo autorizzato da Luca. Non è stata usata una chiave API.
-- `codex remote-control start --json` ha avviato il daemon gestito, versione
-  `0.170.0`, con stato `connected`. L'app del PC di lavoro mostra `minipc`
-  come dispositivo connesso. Il collegamento diretto è sperimentale su Linux;
-  l'avvio automatico dopo un riavvio e l'accesso dal telefono non sono ancora
-  verificati.
+- `codex remote-control start --json` ha avviato il daemon gestito con stato
+  `connected`; il daemon si è poi aggiornato automaticamente da `0.170.0` a
+  `0.171.0`. Le app del PC di lavoro e del telefono mostrano `minipc` tra i
+  dispositivi connessi. Il collegamento diretto è sperimentale su Linux.
+- Nel crontab di `home` è presente una riga `@reboot` marcata
+  `CODEX_REMOTE_CONTROL`: dopo 30 secondi avvia `codex remote-control start`,
+  con al massimo cinque tentativi. La presenza della riga è verificata;
+  l'esecuzione dopo un riavvio non è ancora stata provata.
 - Il repository `home-server` è clonato in `/home/home/home-server`; il 20/11
   era pulito e allo stesso commit del PC di casa. Per trasferire una chat Git
   occorre anche salvarlo come progetto nell'app Codex sul mini PC.

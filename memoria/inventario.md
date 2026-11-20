@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-19 (ECM invernale; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-20 (Codex sul mini PC; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -19,19 +19,21 @@ dettagli in `procedure/migrazione-minipc.md`.
 - Docker e SSH sono attivi. Home Assistant, MQTT (mosquitto), nginx, Portainer e altri servizi sono in container Docker. Per i nomi aggiornati usare `docker ps -a`.
 - Per spegnere il server **non** fermare i singoli container: con `restart: unless-stopped` non ripartirebbero al boot. Usare `poweroff`.
 
-## Codex (19/11)
+## Codex (20/11)
 
 - Codex CLI `0.170.0` installato per l'utente `home` con l'installer ufficiale in
   `/home/home/.local/bin/codex`; pacchetto in `~/.codex/packages/standalone/`.
   La shell di login trova il comando e `codex app-server --help` risponde.
-- Al controllo successivo all'installazione, `codex login status` indicava
-  `Not logged in`. L'accesso con codice dispositivo richiede che Luca abiliti
-  questa opzione nelle impostazioni di sicurezza del suo account ChatGPT;
-  il primo tentativo è stato interrotto. Non è stato avviato alcun servizio
-  Codex persistente.
-- L'app desktop può usare un progetto sul mini PC via SSH solo se il PC che
-  esegue l'app raggiunge il mini PC via rete. L'installazione della CLI non
-  crea da sola un collegamento remoto dal PC di lavoro.
+- `codex login status` indica `Logged in using ChatGPT` dopo l'accesso con
+  codice dispositivo autorizzato da Luca. Non è stata usata una chiave API.
+- `codex remote-control start --json` ha avviato il daemon gestito, versione
+  `0.170.0`, con stato `connected`. L'app del PC di lavoro mostra `minipc`
+  come dispositivo connesso. Il collegamento diretto è sperimentale su Linux;
+  l'avvio automatico dopo un riavvio e l'accesso dal telefono non sono ancora
+  verificati.
+- Il repository `home-server` è clonato in `/home/home/home-server`; il 20/11
+  era pulito e allo stesso commit del PC di casa. Per trasferire una chat Git
+  occorre anche salvarlo come progetto nell'app Codex sul mini PC.
 
 ## Rete
 

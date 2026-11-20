@@ -72,17 +72,25 @@ come sostituire quella pianificazione, evitando due controlli paralleli.
 
 ## Archivio testuale delle chat che non passano con Hand off
 
-Il 20/11 è stata copiata sul mini PC la cronologia **testuale** della chat
-`ECM` del ponte in
-`/home/home/.local/share/codex-chat-archives/ECM-2026-11-20.md`.
-La directory è privata (`700`) e il file è leggibile solo da `home` (`600`).
-La copia contiene 161 turni e 705 messaggi utente/assistente, dal 9 al 20
-novembre; include anche i messaggi intermedi dell'assistente. Non include gli
-allegati né gli output degli strumenti. L'hash SHA-256 è stato verificato
-identico fra sorgente e destinazione. L'originale rimane sul PC ponte.
+Il 20/11 sono state copiate sul mini PC le cronologie **testuali** delle chat
+del ponte, nella directory privata
+`/home/home/.local/share/codex-chat-archives/` (`700`):
+
+| Chat | File nella directory | Turni | Messaggi utente/assistente |
+|---|---|---:|---:|
+| ECM | `ECM-2026-11-20.md` | 161 | 705 |
+| Spiegazioni | `Spiegazioni-2026-11-20.md` | 42 | 191 |
+| Gestisci mail via SSH | `Gestisci-mail-via-SSH-2026-11-20.md` | 81 | 390 |
+
+Tutti e tre i file sono leggibili solo da `home` (`600`); gli hash SHA-256
+sono stati verificati identici fra sorgente e destinazione. Includono i
+messaggi intermedi dell'assistente, ma non gli allegati né gli output degli
+strumenti. Gli originali rimangono sul PC ponte. La copia della chat mail è
+una fotografia fino al momento dell'esportazione: i messaggi successivi non
+si aggiungono automaticamente.
 
 Per usare questo contesto, avviare una **nuova chat** nel progetto remoto
-`HOME-SERVER` su `minipc` e indicare all'agente di leggere il file sopra,
+`HOME-SERVER` su `minipc` e indicare all'agente di leggere il file pertinente,
 cercando le parti pertinenti alla domanda. Confrontare sempre le decisioni
 storiche con `memoria/inventario.md` e le procedure ECM correnti: l'archivio
 può descrivere stati ormai superati. Non è una chat importata né continuabile.

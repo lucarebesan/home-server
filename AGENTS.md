@@ -16,6 +16,8 @@ Quando modifichi questo repository, crea un commit delle modifiche relative al l
 
 Ogni fatto sta in un solo posto: aggiorna quel file invece di crearne uno nuovo (vedi la skill `aggiorna-memoria`).
 
+Se una nuova chat sul mini PC deve riprendere il contesto delle vecchie chat `ECM`, `Spiegazioni` o `Gestisci mail via SSH` del PC ponte, consulta gli archivi privati indicati in `memoria/procedure/codex-minipc.md`. Leggi le parti pertinenti e confrontale con lo stato attuale prima di agire.
+
 ## Skill disponibili
 
 | Skill | Quando |

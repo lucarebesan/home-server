@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-20 (reload dell'integrazione Sonoff).
+Ultima verifica: 2026-11-21 (reload Sonoff e recupero di NATALE INGRESSO).
 
 ## Prerequisiti
 
@@ -81,7 +81,7 @@ Il file sorgente è `automations/luci/natale_sonoff_2026_2027.yaml` nel repo HA;
 in HA l'entità è `automation.natale_tre_sonoff`. Commit di installazione
 `048bd15` sul branch `main`. Controlla gli ID, non i nomi, dei tre Sonoff:
 `1000b62fe2` (`Albero`, ex `NATALE`), `1000b5ed90` (`ESTERNO NATALE`) e
-`1000e48846` (`INGRESSO NATALE`).
+`1000e48846` (`NATALE INGRESSO` dal 21/11, ex `INGRESSO NATALE`).
 
 - Dal 20/11/2026 al 06/01/2027 compreso: accende al tramonto, spegne alle
   23:00; accende alle 06:00, spegne all'ora corrente di

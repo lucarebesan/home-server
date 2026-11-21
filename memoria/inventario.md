@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-21 (Sonoff natalizi; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-21 (tre Sonoff natalizi disponibili; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -69,7 +69,8 @@ dettagli in `procedure/migrazione-minipc.md`.
   `switch.sonoff_1000b62fe2`. Nome e disponibilità verificati dopo il reload
   dell'integrazione Sonoff il 20/11. Il 21/11 è tornato disponibile anche il
   Sonoff MINI `NATALE INGRESSO` (ID `1000e48846`, già `INGRESSO NATALE`,
-  `switch.sonoff_1000e48846`); `ESTERNO NATALE` era ancora `unavailable`.
+  `switch.sonoff_1000e48846`) e il Sonoff MINI `NATALE ESTERNO`
+  (ID `1000b5ed90`, già `ESTERNO NATALE`, `switch.sonoff_1000b5ed90`).
 - Inverter Growatt, via l'integrazione `solax_modbus`; TV LG.
 - Terminale Anviz: `.218`, non ancora montato al 7/11.
 
@@ -117,8 +118,8 @@ dettagli in `procedure/migrazione-minipc.md`.
   setpoint o apprendimento del ciclo. Prove automatiche del motore ancora spente.
 - HA: il deploy da GitHub e il sync "GitHub Live" sono spenti dal 3/11, per decisione di Luca.
 - HA: `automation.natale_tre_sonoff` è attiva dal 20/11 per la stagione
-  2026–27; controlla `Albero` e `NATALE INGRESSO` e, quando tornerà disponibile
-  con lo stesso ID, `ESTERNO NATALE`. Dal 7 gennaio 2027 non invia più
+  2026–27; controlla `Albero`, `NATALE INGRESSO` e `NATALE ESTERNO`.
+  Dal 7 gennaio 2027 non invia più
   comandi. Regole e verifica in `procedure/config-home-assistant.md`.
 
 ## Segreti (solo posizione)

@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-21 (reload Sonoff e tre dispositivi natalizi disponibili).
+Ultima verifica: 2026-11-22 (sicurezza centrale termica e Natale mattino solo albero; commit HA `5a260f5`).
 
 ## Prerequisiti
 
@@ -84,11 +84,13 @@ in HA l'entità è `automation.natale_tre_sonoff`. Commit di installazione
 21/11, ex `ESTERNO NATALE`) e
 `1000e48846` (`NATALE INGRESSO` dal 21/11, ex `INGRESSO NATALE`).
 
-- Dal 20/11/2026 al 06/01/2027 compreso: accende al tramonto, spegne alle
-  23:00; accende alle 06:00, spegne all'ora corrente di
-  `input_datetime.nilan_mattina` (08:30 alla verifica del 20/11).
-- Il 25/12/2026 non esegue lo spegnimento di `nilan_mattina`: le luci restano
-  programmate accese dalle 06:00 alle 23:00.
+- Dal 20/11/2026 al 06/01/2027 compreso: accende tutti e tre al tramonto e
+  spegne alle 23:00. Dal 22/11 (commit HA `5a260f5`) alle 06:00 accende
+  **solo Albero**, fino all'ora corrente di `input_datetime.nilan_mattina`
+  (08:30 alla verifica del 20/11); Ingresso ed Esterno restano spenti al mattino.
+- Il 25/12/2026 non esegue lo spegnimento di `nilan_mattina`: **solo Albero**
+  resta programmato acceso dalle 06:00 alle 23:00. Ingresso ed Esterno seguono
+  comunque il solo orario serale, anche dopo riavvio o ritorno disponibili.
 - Dal 07/01/2027 l'automazione resta caricata, ma i trigger non inviano più
   comandi. Non riparte automaticamente la stagione successiva.
 - Le entità `unavailable`/`unknown` sono saltate. Quando una delle tre passa
@@ -106,6 +108,42 @@ stati dei Sonoff, senza azionarli manualmente durante la verifica. Committare
 e fare push del solo file modificato. Per ripristinare la situazione precedente,
 disattivare `automation.natale_tre_sonoff` in HA e rimuovere questo solo file
 dal repo HA con commit e push; fare `check_config` e reload automazioni.
+
+## Protezione luce centrale termica
+
+Dal 22/11, commit HA `5a260f5`, il package
+`packages/centrale_termica_sicurezza.yaml` aggiunge due automazioni abilitate:
+
+- `automation.centrale_termica_spegnimento_dopo_30_minuti`: segue
+  `switch.5_notte_relay48066_r5`, con scadenza puntuale a 30 minuti e controllo
+  di recupero ogni minuto. Ora di accensione e ciclo attivo sono persistenti
+  (`input_datetime.centrale_termica_accesa_da`,
+  `input_boolean.centrale_termica_ciclo_attivo`), così un riavvio o una
+  disconnessione non azzera un ciclo noto. Dopo uno spegnimento il ciclo termina;
+  una nuova accensione OFF→ON avvia un nuovo conteggio. Dopo il comando attende
+  fino a 10 secondi la conferma OFF e notifica sul telefono; in caso di mancata
+  conferma avvisa e riprova al minuto successivo.
+- `automation.centrale_termica_avviso_accensione_senza_pulsante`: a ogni
+  transizione OFF→ON attende 3 secondi e confronta l'ora con l'ultima pressione
+  OFF→ON osservata su `binary_sensor.5_notte_relay48066_i5`, conservata in
+  `input_datetime.centrale_termica_ultimo_pulsante`. Se manca una pressione
+  nella finestra da −3 a +3 secondi, invia un avviso a
+  `notify.mobile_app_iphone_luca`. La notifica dice **senza pulsante rilevato**:
+  un impulso breve può sfuggire al polling. Non attribuisce il comando a una
+  persona e non genera falsi avvisi di accensione solo per riconnessione/avvio.
+
+**Verifica:** entrambe ON, luce e I5 leggibili, helper presenti. I test del
+22/11 hanno verificato soglia 1799/1800/1801 secondi, conservazione del ciclo,
+nuovo ciclo e correlazione del pulsante con impulsi prima/dopo l'accensione.
+Le automazioni sono state caricate senza riavvio e senza azionare la luce per
+provarle. Spegnimento reale dopo 30 minuti e ricezione delle notifiche sul
+telefono restano da osservare sul campo.
+
+**Ripristino:** spegnere soltanto queste due automazioni per sospendere le
+protezioni. Per rimuoverle eliminare il solo nuovo package dal repo HA con
+commit/push, `check_config` e reload automation/input_boolean/input_datetime.
+Per Natale il backup precedente del 22/11 è in
+`/config/tmp/backup_natale_mattino_20261122/` nel container HA.
 
 ## Attenzioni
 

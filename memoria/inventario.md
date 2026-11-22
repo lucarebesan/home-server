@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-21 (tre Sonoff natalizi disponibili; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-22 (protezione centrale termica e Natale aggiornati; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -121,6 +121,10 @@ dettagli in `procedure/migrazione-minipc.md`.
   2026–27; controlla `Albero`, `NATALE INGRESSO` e `NATALE ESTERNO`.
   Dal 7 gennaio 2027 non invia più
   comandi. Regole e verifica in `procedure/config-home-assistant.md`.
+- HA: dal 22/11 sono attive le due automazioni di protezione della luce
+  centrale termica: durata massima e avviso su iPhone per accensione senza
+  pulsante rilevato. Entità, funzionamento e ripristino in
+  `procedure/config-home-assistant.md`, sezione dedicata.
 
 ## Segreti (solo posizione)
 

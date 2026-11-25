@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-25 (ricambio invernale; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-25 (ricambio invernale e anticipo serale ECM; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -100,7 +100,7 @@ dettagli in `procedure/migrazione-minipc.md`.
   `05-ECM ACS MANAGER`
   resta accesa; le altre automazioni decisionali ECM generali, salvo `10`, restano spente.
 - HA: `10 - ECM INVERNO` accesa dal 10/11 e aggiornata fino al commit HA
-  `ffaf02f` del 19/11. Curva di assenza e anticipo serale in
+  `d6ec93b` del 25/11. Curva di assenza e anticipo serale in
   `procedure/config-home-assistant.md`.
   In AUTO usa le medie zona a 10 minuti e la matrice relativa a
   `input_number.t_min_inverno` (20,5 °C alla verifica): in fascia GIORNO zona

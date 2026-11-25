@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-25 (ricambio invernale adattato alla riserva batteria; commit HA `37b5ef5`).
+Ultima verifica: 2026-11-25 (anticipo serale alle 18:00; commit HA `d6ec93b`).
 
 ## Prerequisiti
 
@@ -478,7 +478,8 @@ sequenza completa.
 #### Anticipo serale del riscaldamento
 
 Dal commit HA `ffaf02f` la `10` in INVERNO/AUTO e fascia GIORNO mira
-ad avere la media a 10 minuti della zona giorno a 20,5 °C alle 18:30.
+ad avere la media a 10 minuti della zona giorno a 20,5 °C alle 18:00
+(orario anticipato il 25/11, commit HA `d6ec93b`).
 Per iniziare la media deve essere sotto l'obiettivo e almeno uno tra Luca e
 Alice deve risultare tra i membri di `zone.50km`. Un conteggio generico
 positivo senza uno dei due nomi, posizione mancante per entrambi o zona non
@@ -492,13 +493,16 @@ aggiunge 15 minuti e limita l'anticipo a cinque ore. Il raggiungimento
 dell'obiettivo resta da verificare nelle prime serate utili.
 
 `input_boolean.ecm_inverno_anticipo_serale_attivo` mantiene il recupero fino
-a 21 °C anche dopo le 18:30, finché è fascia GIORNO e resta il consenso
-geografico. Nessuna richiesta nuova di anticipo dopo le 18:30. L'anticipo
+a 21 °C anche dopo le 18:00, finché è fascia GIORNO e resta il consenso
+geografico. Nessuna richiesta nuova di anticipo dopo le 18:00. L'anticipo
 può richiedere calore anche senza surplus, segue trend e modulazione
 della zona giorno e rispetta il massimo, la permanenza e la gestione
 ordinaria di recupero e accumulo. Il latch parte da OFF dopo un riavvio HA.
 Le transizioni sono nel logbook della `10`.
 
+Per ripristinare il solo orario delle 18:30 usare
+`/config/tmp/backup_ecm_anticipo_1800_20261125.nnGJKm/10_ecm_inverno.yaml`,
+poi eseguire `check_config` e ricaricare `automation`.
 Per ripristinare i due file precedenti usare
 `/config/tmp/backup_ecm_anticipo_serale_20261119/`, poi eseguire
 `check_config` e ricaricare `input_boolean` e `automation`.

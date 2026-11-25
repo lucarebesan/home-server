@@ -1,6 +1,6 @@
 # DuckDNS e certificato HTTPS
 
-Ultima verifica: 2026-11-08.
+Ultima verifica: 2026-11-25 (aggiunto Nextcloud; rinnovo certbot invariato).
 
 ## Come funziona
 
@@ -8,8 +8,10 @@ Ultima verifica: 2026-11-08.
   (stack Portainer "server", compose in
   `/var/lib/docker/volumes/opt_data/_data/compose/2/docker-compose.yml`, variabile
   `TOKEN`).
-- `nginx` espone Home Assistant su `https://ha.lrhub.duckdns.org` con il certificato
-  wildcard `*.lrhub.duckdns.org` (Let's Encrypt, cartella `/opt/certs`).
+- `nginx` espone Home Assistant su `https://ha.lrhub.duckdns.org` e Nextcloud su
+  `https://cloud.lrhub.duckdns.org`, con il certificato wildcard
+  `*.lrhub.duckdns.org` (Let's Encrypt, cartella `/opt/certs`). La configurazione
+  e la verifica di Nextcloud sono in `box-mega-nextcloud.md`.
 - Il certificato si ottiene con la challenge DNS su DuckDNS: anche il container
   `letsencrypt` usa il token DuckDNS (variabile `DUCKDNS_TOKEN`).
 

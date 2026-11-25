@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-25 (ricambio invernale e anticipo serale ECM; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-25 (ricambio invernale, anticipo serale ECM e nuovo Nextcloud; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -48,12 +48,13 @@ dettagli in `procedure/migrazione-minipc.md`.
   manca il server resta raggiungibile solo su `.25`. Config in `/etc/netplan/`.
 - Box Iliad `192.168.1.254` (router e DHCP): `Rebesan_ILIAD` a 2,4 GHz sul canale 11 dal 7/11, `Rebesan_ILIAD5` a 5 GHz.
 - Router EOLO `192.168.1.253`: secondo access point con gli stessi nomi di rete, DHCP spento.
-- Accesso esterno: `https://ha.lrhub.duckdns.org` (nginx con certificato Let's Encrypt).
+- Accesso esterno: `https://ha.lrhub.duckdns.org` e, dal 25/11, `https://cloud.lrhub.duckdns.org` per Nextcloud (nginx con certificato Let's Encrypt wildcard).
 - Dettagli in `procedure/rete-wifi.md` e `procedure/duckdns-certificato.md`.
 
 ## Container (9/11)
 
 - `homeassistant` (2026.11.0 dal 09/11; l'immagine precedente resta con il tag `2026.9.3`), `mosquitto`, `nginx`, `duckdns`, `letsencrypt`, `opt-portainer-1`, `crosschex-webapi` (Anviz), `hassconfigurator`.
+- Dal 25/11 lo stack `/home/home/nextcloud/compose.yaml` aggiunge `nextcloud-app` (Nextcloud 35.0.3), PostgreSQL, Redis e cron; dati e database in volumi Docker `nextcloud_html` e `nextcloud_db`. Procedura in `procedure/box-mega-nextcloud.md`.
 - `ecm-engine`: vedi `procedure/ecm-engine.md`.
 - Dal 09/11 il motore pubblica anche la resa ACS osservata per combinazione CP HEAT/SPLIT; conserva i dati sorgente, filtra periodi incerti e non usa questa stima per comandare le macchine.
 - `dtbridge`: ponte tra i relè Dingtian e MQTT, che dal 7/11 serve tutti e 9 i relè (`~/dingtian/dtbridge`). Vedi `procedure/dingtian-ponte.md`.
@@ -136,6 +137,8 @@ dettagli in `procedure/migrazione-minipc.md`.
 - Token DuckDNS: nel compose dello stack Portainer "server" (variabili `TOKEN` e `DUCKDNS_TOKEN`).
 - Password per le app Gmail: `~/.config/gmail-imap/app-password` di `home`
   sul mini PC (permessi `600`); il valore non è nel repository.
+- Credenziali rclone per Box e MEGA: `/home/home/.config/rclone/rclone.conf` (permessi `600`).
+- Segreti iniziali dello stack Nextcloud: `/home/home/nextcloud/.env` (permessi `600`); la password dell'account è stata cambiata dall'utente dopo l'installazione.
 
 La fotografia e le procedure di diagnosi sono in `procedure/monitoraggio-server.md`. Interventi recenti: `diario/2026-11-03_08-interventi.md` (server, ECM, Nilan) e `diario/2026-11.md` (rete, Dingtian, crollo del 7/11). Questi valori sono una fotografia, non uno stato in tempo reale.
 

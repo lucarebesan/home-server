@@ -609,6 +609,22 @@ né validano tutti i rami del controllo. Restano da verificare la risalita per
 resa insufficiente e il confronto kWh a comfort e condizioni comparabili;
 la modulazione interna del compressore è distinta dal setpoint comandato da HA.
 
+**Confronto giri/potenza del 25/11:** incrociati in sola lettura i cambi helper
+degli ultimi sette giorni con le righe al minuto di `engine.db`, usando il
+timestamp UTC reale. Per ciascun ribasso di 0,5 °C confrontare i 15 minuti
+precedenti, i primi 15 successivi e i successivi 15; un ribasso all'avvio non
+è un test di modulazione su macchina già in marcia. Alle 09:30 del 25/11,
+22,5 → 22 °C: medie rispettivamente 57,4/50,9/34,9 rps e
+1414,3/1008,6/886,1 W. Nessuno dei 45 campioni ha RPS zero; la zona giorno
+passa da 20,21 a 20,30 °C e la notte da 20,26 a 20,34 °C nei 30 minuti dopo.
+È quindi osservato un calo di giri e assorbimento con temperature ancora in
+salita. Anche il 21/11 alle 18:52 c'è un piccolo calo nei primi 15 minuti
+(55,6 → 54 rps, 1407,5 → 1365,1 W), mentre alcuni altri ribassi, per esempio
+il 20/11 alle 09:30, sono seguiti da un aumento. Non attribuire causalmente
+tutta la variazione al setpoint: cambiano carico termico, stato CP e talvolta
+continuità del compressore. I confronti non dimostrano ancora risparmio kWh
+complessivo a parità di comfort e meteo. Nessuna modifica live nell'analisi.
+
 **Ripristino:** spegnere `automation.10_ecm_inverno` e verificare Toshiba OFF;
 la `07` e la WRITE continuano ricambio/ACS. Il backup immediatamente precedente
 alla modulazione è in `/tmp/backup_toshiba_modulazione_20261117_1748/`; i backup

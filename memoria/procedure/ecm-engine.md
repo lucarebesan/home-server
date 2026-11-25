@@ -1,6 +1,6 @@
 # ECM Engine (motore di apprendimento del clima)
 
-Ultima verifica: 2026-11-19 (sessione di confronto sul recupero Toshiba armata; per l'ombra inverno resta la verifica dell'11/11).
+Ultima verifica: 2026-11-25 12:54–12:56 (salute raccolta, avanzamento campagna e criticità statistiche; nessuna modifica live).
 
 ## Scopo
 
@@ -133,6 +133,10 @@ precedente indicazione di riprendere le prove solo un altro giorno.
   conserva le combinazioni acquisite, `active` la cartella del tentativo corrente;
   ogni tentativo ha snapshot, eventi, risultati e ripristino propri. Stato
   iniziale verificato: **attesa, 0/6 acquisite**, nessun test avviato al setup.
+  **Avanzamento al 25/11:** acquisite 4/6: E74 il 16/11, E75/E85 il 20/11,
+  E95 il 24/11, tutte da 30 minuti. Restano E84/E94. Nessun tentativo attivo,
+  cron presente e aggiornato ogni minuto; attesa per SOC 15% e FV insufficiente.
+  Gli arresti dei quattro tentativi risultano energetici, non errori del controller.
 - Piano nell'ordine: **E74** CP HEAT V2 + SPLIT V1; **E75** CP HEAT V3 + SPLIT V1;
   **E85** CP HEAT V3 + SPLIT V2; **E95** CP HEAT V3 + SPLIT V3;
   **E84** CP HEAT V2 + SPLIT V2; **E94** CP HEAT V2 + SPLIT V3.
@@ -190,6 +194,10 @@ Autorizzato da Luca il 19/11. Sorgente `scripts/toshiba_recupero.py`, copia
 `/home/home/ecm-tests/toshiba-recupero-20261119/stato.json`. Cron di `home`
 taggato `ECM_TOSHIBA_RECUPERO_20261119` dalle 08:00 alle 17:59, una riga
 rimossa dopo due risultati validi o alla scadenza di sette giorni.
+**Verifica 25/11:** stato `attesa`, nessun risultato e nessun tentativo;
+motivo corrente `heating=off (atteso on)`. Scadenza verificata nel file:
+**26/11/2026 17:31:47 Europe/Rome**. Rivedere la fattibilità del protocollo
+prima della scadenza: non assumere che il confronto V2/V3 sia già stato svolto.
 
 - Attende un recupero già in corso in INVERNO/AUTO e fascia GIORNO, con zona
   giorno 19,90–20,00 °C, setpoint effettivo e richiesto entrambi a 22,5 °C,
@@ -374,5 +382,35 @@ del sensore restano sotto 15 000 byte, perché il recorder di HA non salva quell
 
 ## Limiti delle misure climatiche
 
-- Dallo storico i consumi sono attendibili, l'efficacia (°C/ora) poco: osservando passivamente la casa è già regolata e le zone hanno solo medie orarie. Per l'efficacia servono le prove.
+- I consumi sono misurati elettricamente, ma vanno distinti funzionamento,
+  modulazione e standby e verificate le incoerenze dei flag. L'efficacia è una
+  pendenza netta della casa: `aggregate` raggruppa codice/tipo/fascia esterna,
+  senza sottrarre dispersioni naturali o separare sole, apporti interni,
+  temperatura iniziale e setpoint Toshiba. Il setpoint ordinario è diventato
+  dinamico dal 19/11: mischiare questi cicli con quelli precedenti a 29 °C può
+  cambiare medie e confronti. Il retrostorico importato ha anche temperature
+  di zona soltanto orarie; il campionamento live è al minuto. Una frase
+  “conviene” non dimostra ancora un confronto causale di efficienza.
+- **Qualità al 25/11 12:54:** 60/60 campioni validi nell'ultima ora e 1433/1440
+  nelle ultime 24 ore; 7 scarti `dato mancante p_cp`. Ricalcolo alle 12:41:
+  206301 campioni, 2650 periodi, 167 statistiche; nessun avviso MQTT. Questo
+  verifica raccolta/calcolo, non risolve le lacune o i bias delle stime.
+- **Copertura 5–10 °C al 25/11:** 13/29 righe senza W e 19/29 senza periodi
+  termici, comprese righe di ventilazione non da forzare al freddo. Toshiba V1
+  senza minuti elettrici utili assegnati a questa fascia; V2 solo 28 minuti
+  e nessun periodo termico da sola; V3 1855 minuti e 30 periodi da sola.
+  Le prove completate in altre condizioni/fasce non colmano automaticamente
+  questi vuoti. L'indice caldo 19% è copertura/coerenza media, non accuratezza.
+- **Anomalia E84 in 5–10 °C:** la tabella pubblica 45 W da un solo periodo.
+  Nel database ci sono tratti validi E84 con CP 36 W e Toshiba 9 W/RPS 0,
+  mentre il flag CP compressore risulta ON. È una rappresentazione non valida
+  del consumo attivo della coppia HEAT. Isolare e verificare questi periodi
+  prima di usarli per l'ottimizzazione, senza cancellare indiscriminatamente
+  i minuti di standby che fanno parte del consumo reale. La riga non ha un
+  costo termico calcolato, quindi non è quella che sta vincendo il ranking.
+- **Temperatura esterna al 25/11 12:54:** valore conservato 6,9 °C, ultima
+  lettura affidabile 08:48 (circa 246 minuti), sebbene l'entità sia aggiornata
+  più recentemente. Il problema di freschezza descritto sopra resta aperto:
+  una fascia esterna assegnata tramite riuso/interpolazione ha incertezza da
+  rendere esplicita. Non acquisirla forzando ventilazione fredda sfavorevole.
 - La velocità V1 della Nilan (STEP 1) è registrata con codici propri (u=7 e u=8, per esempio E7, E8), fuori dalla numerazione di HA. Non è mai proposta come prova.

@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-25 (anticipo serale alle 18:00, commit HA `d6ec93b`; stato ECM e storico regolazione setpoint Toshiba).
+Ultima verifica: 2026-11-25 (ribasso Toshiba dopo 30 minuti efficaci, commit HA `a6cc560`; anticipo serale alle 18:00).
 
 ## Prerequisiti
 
@@ -553,10 +553,25 @@ agganciata deve crescere almeno 0,05 °C; in accumulo basta una delle due. Deve
 anche risultare attivo il compressore (RPS > 0 oppure potenza media Toshiba 5
 minuti > 150 W). Se la resa non basta, il setpoint sale di 0,5 °C e il nuovo
 livello diventa il minimo efficace da non riprovare al ribasso nello stesso
-ciclo. Se la resa basta, mantiene per un altro intervallo; solo dopo due
-intervalli efficaci consecutivi prova −0,5 °C, senza scendere sotto il minimo
+ciclo. Dal 25/11, su richiesta di Luca, se la resa basta prova −0,5 °C già
+dopo il primo intervallo efficace di 30 minuti, senza scendere sotto il minimo
 appreso né sotto sonda +0,5 °C. Ogni variazione azzera il conteggio e apre una
 nuova finestra di 30 minuti.
+
+Prima del commit `a6cc560` servivano due intervalli efficaci consecutivi
+(60 minuti). La prova anticipata rimuove soltanto l'attesa del secondo:
+invariati crescita minima, verifica compressore, rialzo se inefficace e
+limiti di discesa. Backup precedente nel container:
+`/tmp/backup_toshiba_ribasso_30m_20261125/10_ecm_inverno.yaml`.
+Verifica del 25/11 alle 14:18: confronto strutturale YAML con originale,
+sei scenari con i template HA (prima dei 30 minuti, primo intervallo
+efficace, crescita insufficiente giorno/notte, compressore fermo, assenza
+richiesta), `check_config` riuscito e reload `automation` HTTP 200.
+Nessuna variazione ON/OFF delle automazioni; `10` e WRITE ON, Toshiba
+SPENTO e nessun nuovo errore ECM nei log. Commit inviato a `main`.
+Resta da osservare il primo ribasso naturale anticipato: questi controlli
+non dimostrano ancora il suo beneficio termico/elettrico. La prova valuta
+la crescita delle zone, non usa giri/W come obiettivo di ottimizzazione.
 
 `input_number.toshiba_setpoint` è uno storage helper con passo 0,5 °C (ID storage
 storico `toschiba_setpoint`); il ramo ambiente della WRITE confronta e inoltra

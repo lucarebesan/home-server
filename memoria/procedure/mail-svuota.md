@@ -1,11 +1,13 @@
 # Gestione manuale della posta Gmail via SSH
 
-Ultima verifica: 2026-11-18 (prime tre regole aggiuntive eseguite e verificate nel controllo delle 10:00).
+Ultima verifica: 2026-11-25 (pulizia completa della INBOX verificata).
 
 ## Scopo e autorizzazione
 
 Luca ha autorizzato il 17/11/2026 una prima pulizia completa e controlli
 ricorrenti ogni due ore eseguiti da Codex da questa chat, quando il PC è acceso.
+Il 25/11 ha autorizzato esplicitamente Codex a leggere mittente, oggetto,
+data e, quando necessario, il testo delle email in INBOX per questi controlli.
 Si lavora soltanto sulla Posta in arrivo di ing.rebesan@gmail.com.
 Le email commerciali chiaramente riconosciute vanno nell'etichetta SVUOTA,
 conservando flag e stato letto/non letto. Non usare Cestino, eliminazione,

@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-25 (avviso centrale termica al nuovo episodio; ribasso Toshiba dopo 30 minuti, commit HA `a6cc560`).
+Ultima verifica: 2026-11-25 (avvio Toshiba in V1 con soglia di mandata, commit HA `1df11ac`).
 
 ## Prerequisiti
 
@@ -536,6 +536,25 @@ Nella fascia NOTTE non supera V2. Una scelta resta attiva almeno 15 minuti, salv
 massimo o sicurezza. Dopo la finestra minima rivaluta ranking e trend separati
 20/30/60 minuti delle zone in recupero; due trend non positivi rendono la resa
 insufficiente e consentono di salire di velocità entro il limite di fascia.
+
+### Avvio Toshiba a V1 fino a mandata sopra 40 °C
+
+Dal commit HA `1df11ac`, ogni nuovo ciclo ambiente della `10` richiede V1
+prima di accendere il Toshiba. WRITE verifica la velocità prima di inviare ON.
+`input_boolean.ecm_toshiba_avvio_v1_attivo` mantiene questa fase. Con Toshiba
+acceso, la prima misura numerica di `sensor.toshiba_temperatura_immissione`
+pubblicata dopo l'avvio e strettamente superiore a 40 °C libera la velocità
+ordinaria. Il superamento della soglia attiva la `10` subito; la verifica
+periodica resta ogni minuto. Il valore 40,0 °C, i dati precedenti all'avvio
+e la sonda indisponibile mantengono V1. Non è previsto uno sblocco a tempo.
+
+Il passaggio salta la permanenza ordinaria dei 15 minuti e avvia una nuova
+finestra di permanenza per la velocità selezionata. I successivi cali di
+mandata non riarmano la fase durante lo stesso ciclo. Gli arresti ordinari
+e di sicurezza continuano a operare e azzerano la fase all'arresto.
+
+Ripristino dei due file da `/config/tmp/backup_ecm_avvio_v1_20261125.fKGPMN/`,
+seguito da `check_config` e ricarica di `input_boolean` e `automation`.
 
 ### Modulazione del setpoint Toshiba dal 17/11
 

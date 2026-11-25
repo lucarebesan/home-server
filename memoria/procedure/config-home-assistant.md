@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-22 (sicurezza centrale termica e Natale mattino solo albero; commit HA `5a260f5`).
+Ultima verifica: 2026-11-25 (ricambio invernale adattato alla riserva batteria; commit HA `37b5ef5`).
 
 ## Prerequisiti
 
@@ -220,6 +220,36 @@ stata osservata.
 container HA. Ripristinare i soli tre file, eseguire `check_config` e
 `automation.reload`; conservare gli stati ON/OFF e rivalutare la richiesta
 solare solo se la relativa automazione è abilitata.
+
+## Ricambio minimo invernale con riserva batteria dal 25/11
+
+La `07` (`automations/nilan/07_ecm_ricambio_aria_minimo.yaml`, commit HA
+`37b5ef5`) punta di norma a 2 volumi in ciascuna finestra `01–09`, `09–17`,
+`17–01`. Il sensore dei volumi conta la ventilazione reale già svolta dalla
+Compact P, compresi i cicli per l'umidità. La `07` valuta il costo del volume
+residuo usando i W appresi per la velocità che sceglierebbe entro la scadenza,
+oppure W di ripiego senza dati appresi affidabili. Somma il carico base previsto
+fino a `nilan_mattina` dal profilo orario di casa, oppure dal carico base corrente
+se il profilo è incompleto. La stima usa 20 kWh nominali e non prevede i carichi
+climatici futuri né la produzione FV futura.
+
+Se la stima con 2 volumi porta il SOC sotto il 15%, l'obiettivo passa a 1. Se il
+FV corrente copre il carico e la Compact P per la velocità prevista con 150 W di
+margine, e il piano sta entro tramonto, fine fascia giorno e fine finestra, la
+`07` può partire subito per mantenere 2 volumi. Con dati batteria o carico base
+indisponibili vale l'obiettivo standard. Il ramo estivo e le soglie della `06`
+restano indipendenti da questa stima. La `07` aggiorna la decisione al controllo
+periodico e nei trigger già previsti.
+
+**Verifica:** leggere la traccia della `07`, in particolare `obiettivo_inverno`,
+`riserva_insufficiente_inv`, `fv_sufficiente_inv` e `ricambio_dovuto_inv`. Alle
+12:58 del 25/11 la traccia reale ha scelto 1 volume con SOC 16% e FV insufficiente,
+rimandando l'avvio perché mancavano circa quattro ore alla fine della finestra.
+Il completamento reale del volume e il ramo con surplus FV sono da osservare.
+
+**Ripristino:** il file precedente è in
+`/config/tmp/backup_ricambio_inverno_20261125.HegkCH/`. Ripristinare il solo
+YAML della `07`, poi eseguire `check_config`, reload automazioni e verifica.
 
 ## Umidità lavanderia a blocchi lunghi dal 14/11
 

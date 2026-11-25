@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-22 (protezione centrale termica e Natale aggiornati; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-25 (ricambio invernale; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -85,7 +85,10 @@ dettagli in `procedure/migrazione-minipc.md`.
   ambiente della `10`, e inoltra allo SPLIT la richiesta ambiente separata.
   `07-ECM RICAMBIO ARIA MINIMO` è accesa: sceglie automaticamente V2/V3/V4 di giorno,
   soltanto V2/V3 di notte, mai V1; decide CP HEAT/OFF dalla temperatura esterna e può
-  acquisirla con un campionamento preventivo V2. `06-ECM HUMIDITY OVERRIDE`, aggiornata
+  acquisirla con un campionamento preventivo V2. L'obiettivo invernale è 2 volumi
+  per finestra di 8 ore, ridotti a 1 con riserva batteria insufficiente e senza
+  FV utile. Criterio e verifica in `procedure/config-home-assistant.md`.
+  `06-ECM HUMIDITY OVERRIDE`, aggiornata
   nel commit HA `a25c615`, è attiva: sopra il 75% avvia autonomamente un blocco
   continuo fino a 90 minuti, V4 di giorno e V3 di sera/notte, con arresto sotto il
   70%; dopo 2 ore può fare richiami continui di 60 minuti, poi distanziati di 3 ore.

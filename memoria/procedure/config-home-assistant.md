@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-25 (anticipo serale alle 18:00; commit HA `d6ec93b`).
+Ultima verifica: 2026-11-25 (anticipo serale alle 18:00, commit HA `d6ec93b`; stato ECM e storico regolazione setpoint Toshiba).
 
 ## Prerequisiti
 
@@ -595,9 +595,19 @@ la velocità Toshiba e le macchine reali. La richiesta CP ambiente deve restare 
 una CP attiva deve essere spiegata da ACS, umidità o ricambio. Controllare anche
 W/ranking del motore, trend zona e nuovi errori nel log. Alla verifica serale
 del 17/11: `10` e WRITE accese, nuovo helper di attesa OFF, richieste ambiente
-OFF e Toshiba spento. Il prossimo ciclo naturale deve ancora validare partenza
-vicino alla sonda, prima finestra completa, salita se inefficace e successiva
-modulazione con condizioni esterne più fredde.
+OFF e Toshiba spento.
+
+**Verifica in sola lettura del 25/11 alle 14:09–14:10:** `10`, WRITE e `07`
+ON, ECM AUTO/INVERNO, motore online e zero avvisi. Lo storico HA delle ultime
+24 ore mostra il setpoint helper da 23,5 °C alle 18:08 del 24/11 a 23 °C alle
+19:09; il 25/11 da 22,5 °C alle 08:30 a 22 °C alle 09:30. Il timestamp della
+finestra avanza ogni 30 minuti fino alle 10:30. Al controllo il setpoint letto
+dalla macchina è 22 °C, Toshiba SPENTO dalle 10:55 e potenza circa 10 W.
+Questi riscontri confermano l'attività della regolazione del setpoint e il
+valore attuale ricevuto dalla macchina, non quantificano un risparmio elettrico
+né validano tutti i rami del controllo. Restano da verificare la risalita per
+resa insufficiente e il confronto kWh a comfort e condizioni comparabili;
+la modulazione interna del compressore è distinta dal setpoint comandato da HA.
 
 **Ripristino:** spegnere `automation.10_ecm_inverno` e verificare Toshiba OFF;
 la `07` e la WRITE continuano ricambio/ACS. Il backup immediatamente precedente

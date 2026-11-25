@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-25 (ribasso Toshiba dopo 30 minuti efficaci, commit HA `a6cc560`; anticipo serale alle 18:00).
+Ultima verifica: 2026-11-25 (avviso centrale termica al nuovo episodio; ribasso Toshiba dopo 30 minuti, commit HA `a6cc560`).
 
 ## Prerequisiti
 
@@ -136,8 +136,10 @@ Dal 22/11, commit HA `5a260f5`, il package
 22/11 hanno verificato soglia 1799/1800/1801 secondi, conservazione del ciclo,
 nuovo ciclo e correlazione del pulsante con impulsi prima/dopo l'accensione.
 Le automazioni sono state caricate senza riavvio e senza azionare la luce per
-provarle. Spegnimento reale dopo 30 minuti e ricezione delle notifiche sul
-telefono restano da osservare sul campo.
+provarle. Al nuovo episodio del 25/11 è verificata la chiamata al servizio di
+notifica iPhone e l'avvio del ciclo persistente (dettagli nel diario del mese).
+Spegnimento reale dopo 30 minuti e ricezione delle notifiche sul telefono
+restano da osservare sul campo.
 
 **Ripristino:** spegnere soltanto queste due automazioni per sospendere le
 protezioni. Per rimuoverle eliminare il solo nuovo package dal repo HA con

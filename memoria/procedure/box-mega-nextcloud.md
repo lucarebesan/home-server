@@ -38,6 +38,8 @@ Box o MEGA durante la migrazione.
   in `/home/home/.config/rclone/rclone.conf` (segreto, permessi 600).
 - Log e report tecnici privati in `/home/home/.local/state/`. I nomi dei file
   possono contenere dati personali: non pubblicare i log.
+- Sorgenti degli script di migrazione in `sorgenti/nextcloud/migrazione/` nel
+  repository; copie eseguibili sul mini PC in `/home/home/.local/state/`.
 
 ## Verifiche rapide
 
@@ -55,14 +57,25 @@ indirizzo digitato erroneamente; con l'indirizzo corretto l'accesso è riuscito.
 
 ## Copia e verifica dei cloud
 
-Le copie sono da cloud a mini PC, senza passare per il PC di lavoro. I processi
-sono monitorati da `/home/home/.local/state/supervise_cloud_copy.py`: dopo la
-fine della prima copia, `rclone check` confronta il remoto con l'archivio.
-Se trova differenze ripete la copia e il controllo (fino a tre controlli); se
-resta un problema invia un avviso tramite Home Assistant a
-`notify.mobile_app_iphone_luca`. I file `.status` contengono `verified` oppure
-`failed`; non basta il contatore di avanzamento di rclone, perché il totale
-viene scoperto durante la scansione.
+Le copie sono da cloud a mini PC, senza passare per il PC di lavoro. La copia
+Box è monitorata da `/home/home/.local/state/supervise_cloud_copy.py`: dopo la
+fine, `rclone check` confronta il remoto con l'archivio. Se trova differenze
+ripete la copia e il controllo (fino a tre controlli).
+
+MEGA gratuito ha risposto `509 Bandwidth Limit Exceeded` dopo circa 5,3 GiB il
+25/11 alle 17:15. Il download è stato sospeso senza perdere i file locali.
+`/home/home/.local/state/resume_mega_quota.py` attende sei ore fra i tentativi,
+poi riprende con `rclone copy --size-only` e verifica quando la copia termina.
+Il primo nuovo tentativo è programmato intorno alle 23:22; la quota potrebbe
+richiedere più finestre. Il supervisore MEGA precedente è stato fermato per
+evitare tentativi ripetuti durante il blocco.
+
+Se una verifica resta fallita, il mini PC invia un avviso tramite Home Assistant
+a `notify.mobile_app_iphone_luca`. I file `box-verified.status` e
+`mega-verified.status` contengono `verified` oppure `failed`; non basta il
+contatore di avanzamento di rclone, perché il totale viene scoperto durante la
+scansione. I processi `postprocess_cloud_import.py` attendono questi esiti e
+avviano le importazioni separate in Nextcloud.
 
 Box fornisce hash SHA-1; la copia e il controllo usano `--checksum` e
 `--create-empty-src-dirs`. MEGA non fornisce hash/modtime a rclone: si usa

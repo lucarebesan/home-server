@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-25 (ricambio invernale, avvio Toshiba e nuovo Nextcloud; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-26 (quattro meter Sonoff; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -72,6 +72,15 @@ dettagli in `procedure/migrazione-minipc.md`.
   Sonoff MINI `NATALE INGRESSO` (ID `1000e48846`, già `INGRESSO NATALE`,
   `switch.sonoff_1000e48846`) e il Sonoff MINI `NATALE ESTERNO`
   (ID `1000b5ed90`, già `ESTERNO NATALE`, `switch.sonoff_1000b5ed90`).
+- Quattro Sonoff meter WiFi PSF-X67 in HA: L1 `1001692a80`, L2 `10020fef85`,
+  L3 `10020f9c4a`, CT `10020fdcc1`. Secondo Luca, L1+L2+L3 misurano circa
+  il consumo totale della casa; CT misura la centrale termica (Nilan, Toshiba,
+  compressore, addolcitore). I sensori di potenza sono rispettivamente
+  `sensor.sonoff_1001692a80_power`, `sensor.sonoff_10020fef85_power`,
+  `sensor.sonoff_10020f9c4a_power` e `sensor.meter_st_power`. In HA
+  `sensor.somma_meter` somma le tre fasi; `automation.meter_update_5`
+  richiama l'aggiornamento dei quattro meter ogni 5 secondi. Tutti i sensori di potenza erano
+  disponibili il 26/11. Verifica in `procedure/monitoraggio-server.md`.
 - Inverter Growatt, via l'integrazione `solax_modbus`; TV LG.
 - Terminale Anviz: `.218`, non ancora montato al 7/11.
 

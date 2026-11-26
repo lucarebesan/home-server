@@ -1,6 +1,6 @@
 # Stato e monitoraggio del server
 
-Ultima verifica: 2026-11-08 sull'HP, tramite `ssh` come `home` (ora il server è il mini PC, stesso indirizzo `192.168.1.100`). I comandi seguenti si eseguono sul server; i risultati cambiano nel tempo. Le verifiche sono in sola lettura, salvo diversa indicazione. Non incollare nei documenti log contenenti segreti o dati personali.
+Ultima verifica: 2026-11-26 (meter Sonoff; il controllo generale sotto risale all'08/11 sull'HP). I comandi seguenti si eseguono sul server; i risultati cambiano nel tempo. Le verifiche sono in sola lettura, salvo diversa indicazione. Non incollare nei documenti log contenenti segreti o dati personali.
 
 ## Controllo rapido
 
@@ -98,6 +98,28 @@ grep -Hn cloud-init /etc/logrotate.d/*cloud*
 ```
 
 Prima di correggere, verificare proprietà dei file e configurazione dei pacchetti, valutare quale regola mantenere e conservarne una copia. Testare la configurazione con `logrotate -d /etc/logrotate.conf` (modalità diagnostica, non esegue la rotazione), usando privilegi appropriati se necessari. Una correzione e il successivo avvio del servizio modificano il sistema e vanno valutati separatamente. Non è stata effettuata alcuna correzione.
+
+## Verifica dei quattro meter Sonoff WiFi
+
+Gli ID e gli `entity_id` correnti sono nell'inventario. Leggere via API HA
+`GET /api/states` i tre sensori `*_power` di L1/L2/L3, `sensor.meter_st_power`
+(CT), `sensor.somma_meter` e
+`sensor.growatt_inverter_growatt_total_load_power`. Confrontare valori letti
+nello stesso momento: `sensor.somma_meter` è un helper `min_max` di tipo `sum`
+configurato nell'interfaccia HA con le tre potenze di fase, **senza CT**.
+Il carico Growatt è un riferimento indipendente; piccoli scarti istantanei
+possono derivare da tempi di campionamento diversi. La destinazione fisica
+dei meter è stata riferita da Luca, non verificata sul cablaggio.
+
+Controllare che `automation.meter_update_5` sia `on` e che `last_triggered`
+avanzi: il file `automations/_generale/meter_update_5s.yaml` richiama
+`homeassistant.update_entity` ogni 5 secondi per le quattro potenze e i
+quattro switch. Se una potenza manca, controllare prima lo stato Sonoff e
+l'ultimo aggiornamento dell'entità, senza azionare gli switch.
+La potenza istantanea non implica che i contatori `*_energy` in kWh siano
+disponibili: al 26/11 L1 era `unknown`, mentre L2/L3/CT erano disabilitati
+dall'integrazione. Non usare questi contatori per confronti energetici finché
+non sono stati verificati.
 
 ## Backup e limiti del controllo
 

@@ -10,6 +10,7 @@ import json
 import os
 import shutil
 import sys
+import unicodedata
 
 
 name = sys.argv[1] if len(sys.argv) > 1 else "box"
@@ -49,6 +50,10 @@ def make_parent(path):
         os.chown(directory, 33, 33)
 
 
+def nextcloud_path(relative):
+    return destination.joinpath(*(unicodedata.normalize("NFC", part) for part in Path(relative).parts))
+
+
 copied = 0
 already_present = 0
 collisions = []
@@ -60,7 +65,7 @@ for path in source.rglob("*"):
     relative = path.relative_to(source).as_posix()
     if relative in excluded or relative.lower().endswith(extensions):
         continue
-    target = destination / relative
+    target = nextcloud_path(relative)
     make_parent(target)
     if target.exists():
         if target.is_file() and target.stat().st_size == path.stat().st_size and digest(target) == digest(path):
@@ -88,7 +93,7 @@ if counted_source != analysis["file_count"]:
 directory_count = 0
 for path in source.rglob("*"):
     if path.is_dir():
-        make_parent(destination / path.relative_to(source) / ".directory-marker")
+        make_parent(nextcloud_path(path.relative_to(source)) / ".directory-marker")
         directory_count += 1
 
 recovered_copied = 0
@@ -100,7 +105,7 @@ for item in recovery["results"]:
         continue
     relative = item["recovered"]
     original = recovered / relative
-    target = destination / relative
+    target = nextcloud_path(relative)
     if not original.is_file():
         raise RuntimeError("Verified recovery missing from disk: " + relative)
     make_parent(target)

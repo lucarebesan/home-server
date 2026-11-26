@@ -33,7 +33,8 @@ Box o MEGA durante la migrazione.
   del rinnovo è in `duckdns-certificato.md`.
 - Archivi grezzi, privati e separati:
   `/home/home/box-import` e `/home/home/mega-import`. Recuperi di versioni
-  storiche Box: `/home/home/box-recovered`.
+  storiche Box: `/home/home/box-recovered`; oggetti Box con percorso duplicato:
+  `/home/home/box-duplicates`.
 - Rclone in `/home/home/.local/bin/rclone`, remoti `box:` e `mega:` configurati
   in `/home/home/.config/rclone/rclone.conf` (segreto, permessi 600).
 - Log e report tecnici privati in `/home/home/.local/state/`. I nomi dei file
@@ -91,6 +92,14 @@ log. I file con lo stesso nome e percorso possono esistere su MEGA: prima di
 dichiarare completa la migrazione cercare tali avvisi e risolverli senza
 cancellare oggetti nel cloud.
 
+Il controllo Box del 26/11 alle 09:37 ha trovato 299.411 file corrispondenti
+e zero differenze. Ha segnalato anche un secondo oggetto attivo con lo stesso
+percorso di un file già scaricato. `audit_box_duplicate.py` ha confermato due
+ID e due SHA-1 diversi; `recover_box_duplicates.py` ha scaricato e verificato
+con SHA-1 l'oggetto distinto in `box-duplicates` (194.437 byte). Entrambi sono
+in Nextcloud `Box.com`, con suffisso contenente l'ID Box per distinguere il
+secondo. Il report privato è `box-duplicates-recovery.json`.
+
 ## File cifrati dal ransomware
 
 Su Box è stato osservato `README-RECOVER-uD1zw1ZbZm.txt` e file con suffisso
@@ -104,8 +113,20 @@ argomento). Per i file Box cifrati, `audit_box_versions.py` legge in sola
 lettura la cronologia Box; `recover_box_versions.py` scarica versioni precedenti
 in `box-recovered`, confronta dimensione e SHA-1 forniti da Box e controlla il
 formato dei documenti riconoscibili. I report JSON sono nella stessa cartella
-di stato, con permessi 600. I file non recuperabili o dal formato incerto
-restano nell'archivio separato e vanno segnalati all'utente.
+di stato, con permessi 600. I file non recuperabili restano nell'archivio
+grezzo; quelli dal formato incerto restano nell'archivio di recupero e sono
+copiati in una cartella Nextcloud di revisione separata.
+
+Esito del 26/11: 2.912 file cifrati e 1.062 note di riscatto nel grezzo.
+L'audit delle versioni ha coperto tutti i 2.912 file senza errori e ha trovato
+versioni precedenti per 2.886. Sono state scaricate e verificate con SHA-1
+2.883 versioni: 80 con formato riconosciuto, importate in `Box.com`; 2.803 con
+formato non riconosciuto automaticamente, mantenute nella cartella distinta
+`Box.com - recuperi da verificare`. Per 29 file cifrati non esiste una versione
+precedente recuperata (26 senza versioni e 3 con errori di formato).
+I 2.912 cifrati e le 1.062 note non sono stati cancellati da Box o dal grezzo;
+non sono stati importati come file ordinari in Nextcloud. Il contenuto dei
+2.803 recuperi incerti richiede controllo con i programmi che li hanno creati.
 
 ## Importazione in Nextcloud
 
@@ -121,6 +142,7 @@ le collisioni. Dopo la copia, eseguire come `www-data`:
 ```sh
 docker exec -u www-data nextcloud-app php occ files:scan --path='luca/files/Box.com'
 docker exec -u www-data nextcloud-app php occ files:scan --path='luca/files/MEGA'
+docker exec -u www-data nextcloud-app php occ files:scan --path='luca/files/Box.com - recuperi da verificare'
 ```
 
 Confrontare il report `nextcloud-box-import-report.json` o
@@ -132,6 +154,22 @@ proprietà all'utente che possiede l'archivio sorgente. Il processo di controllo
 esterno può così leggere il report. La versione precedente del 25/11 lasciava
 il report `root:root`, causando un errore di permessi dopo una copia e scansione
 già riuscite; correggere solo il proprietario del report e ripetere il controllo.
+
+Nove nomi Box con accento in forma Unicode decomposta non erano indicizzabili
+da Nextcloud. `normalize_nextcloud_names.py` ha controllato l'assenza di
+collisioni e rinominato solo la copia Nextcloud in NFC; la mappa privata è
+`box-nextcloud-nfc-renames.json`. Anche `import_box_to_nextcloud.py` normalizza
+i futuri target NFC. `import_box_extras.py` verifica e aggiunge il duplicato
+con nome distinto e i recuperi incerti separati. Le scansioni Nextcloud dopo
+queste correzioni hanno dato 295.518 file e zero errori in `Box.com`, 2.803 e
+zero errori nella cartella dei recuperi, e 51.795 e zero errori in `MEGA`.
+Una seconda esecuzione idempotente dell'importazione Box ha verificato con
+SHA-1 locale tutti i 295.437 file puliti e gli 80 recuperi riconosciuti già
+in Nextcloud, senza differenze. Il controllo separato degli extra ha verificato
+identici anche i 2.803 recuperi incerti e il duplicato. Lo stato
+`box-nextcloud.status` è `imported_with_review` per i recuperi ancora da
+valutare e per i 29 file cifrati senza versione recuperata; `mega-nextcloud.status`
+è `imported` per i file attivi MEGA.
 
 ## Ripristino e limiti
 

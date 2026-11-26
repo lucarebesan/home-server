@@ -110,6 +110,16 @@ try:
     if report["collisions"] or report["copied_clean_files"] + report["already_present_clean_files"] != report["expected_clean_files"]:
         raise RuntimeError("Import report count mismatch")
     expected_files = report["expected_clean_files"] + report["copied_recovered_files"] + report["already_present_recovered_files"]
+    extras = None
+    if name == "box":
+        extras_path = state / "box-nextcloud-extras-report.json"
+        if extras_path.is_file():
+            extras = json.loads(extras_path.read_text(encoding="utf-8"))
+            if not extras["apply"] or extras["copied"] + extras["already_present"] != extras["total_jobs"]:
+                raise RuntimeError("Box extras report count mismatch")
+            expected_files += extras["duplicate_files"]
+            if scan_nextcloud("Box.com - recuperi da verificare") != extras["review_files"]:
+                raise RuntimeError("Box review folder indexed count mismatch")
     if scanned_files != expected_files:
         raise RuntimeError("Nextcloud indexed file count differs from imported file count")
     needs_review = bool(analysis["encrypted_count"])
@@ -119,6 +129,8 @@ try:
         recovered = {item["path"] for item in recovery["results"] if item["sha1_verified"] and item["format"] == "expected_format"}
         encrypted = {item["path"] for item in analysis["encrypted"]}
         needs_review = bool(encrypted - recovered or audit["errors"])
+        if extras and extras["review_files"]:
+            needs_review = True
     if needs_review:
         set_status("imported_with_review")
         notify(name.upper() + " è in Nextcloud, ma alcuni file cifrati o incerti richiedono un controllo. Apri la chat Codex.")

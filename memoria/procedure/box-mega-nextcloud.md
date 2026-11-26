@@ -66,9 +66,16 @@ MEGA gratuito ha risposto `509 Bandwidth Limit Exceeded` dopo circa 5,3 GiB il
 25/11 alle 17:15. Il download è stato sospeso senza perdere i file locali.
 `/home/home/.local/state/resume_mega_quota.py` attende sei ore fra i tentativi,
 poi riprende con `rclone copy --size-only` e verifica quando la copia termina.
-Il primo nuovo tentativo è programmato intorno alle 23:22; la quota potrebbe
-richiedere più finestre. Il supervisore MEGA precedente è stato fermato per
-evitare tentativi ripetuti durante il blocco.
+Il primo tentativo alle 23:22 ha ancora incontrato la quota; quello delle 07:14
+del 26/11 è terminato e il controllo alle 07:25 ha trovato 51.795 file
+corrispondenti. Il supervisore MEGA precedente è stato fermato per evitare
+tentativi ripetuti durante il blocco. L'archivio attivo MEGA è stato importato
+in Nextcloud nella cartella `MEGA`, indicizzato con 51.795 file e zero errori.
+L'audit dei percorsi non ha trovato duplicati, mancanze o differenze di
+dimensione. `rclone size mega:` indica 14.409.517.883 byte di file attivi;
+`rclone about mega:` indica 17,439 GiB occupati nell'account. La differenza
+potrebbe appartenere al cestino o alle versioni storiche: non è inclusa nella
+copia del cloud drive attivo e resta da classificare.
 
 Se una verifica resta fallita, il mini PC invia un avviso tramite Home Assistant
 a `notify.mobile_app_iphone_luca`. I file `box-verified.status` e
@@ -119,6 +126,12 @@ docker exec -u www-data nextcloud-app php occ files:scan --path='luca/files/MEGA
 Confrontare il report `nextcloud-box-import-report.json` o
 `nextcloud-mega-import-report.json` con il totale del rispettivo archivio.
 Controllare inoltre l'apertura di campioni dal browser e dal telefono.
+Il container temporaneo esegue come root per impostare la proprietà dei file
+Nextcloud: dopo aver scritto il report privato (modo 600), ne assegna la
+proprietà all'utente che possiede l'archivio sorgente. Il processo di controllo
+esterno può così leggere il report. La versione precedente del 25/11 lasciava
+il report `root:root`, causando un errore di permessi dopo una copia e scansione
+già riuscite; correggere solo il proprietario del report e ripetere il controllo.
 
 ## Ripristino e limiti
 

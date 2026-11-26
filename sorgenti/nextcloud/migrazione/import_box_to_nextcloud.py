@@ -137,6 +137,7 @@ report = {
 output = state / ("nextcloud-" + name + "-import-report.json")
 output.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
 output.chmod(0o600)
+os.chown(output, source.stat().st_uid, source.stat().st_gid)
 print(json.dumps({key: value for key, value in report.items() if key not in ("collisions", "unverified_recovered_files_not_imported")}, ensure_ascii=False), flush=True)
 if copied + already_present != expected or collisions:
     raise RuntimeError("Import count mismatch or file collisions")

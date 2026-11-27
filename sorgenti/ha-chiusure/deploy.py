@@ -1,6 +1,7 @@
 """Aggiunge Chiusure2 alla Overview via WebSocket, senza reload o comandi fisici.
 
 Eseguire nel container HA con aiohttp. Argomenti: vista-nuova.json originale.json.
+Per aggiornare: aggiungere --replace precedente-chiusure2.json.
 Il token arriva solo da stdin JSON {"token": ...}; non viene stampato o salvato.
 """
 import asyncio
@@ -38,6 +39,10 @@ async def main():
     token = incoming["token"]
     new = json.loads(Path(sys.argv[1]).read_text())
     expected = json.loads(Path(sys.argv[2]).read_text())
+    previous = None
+    if len(sys.argv) > 3:
+        assert len(sys.argv) == 5 and sys.argv[3] == "--replace"
+        previous = json.loads(Path(sys.argv[4]).read_text())
     assert new["path"] == "chiusure2" and expected["path"] == "chiusure"
     headers = {"Authorization": "Bearer " + token}
     timeout = aiohttp.ClientTimeout(total=45)
@@ -59,11 +64,17 @@ async def main():
             assert (await ws.receive_json())["type"] == "auth_ok"
             current = await call(ws, 1, {"type": "lovelace/config"})
             paths = [v.get("path") for v in current["views"]]
-            assert "chiusure2" not in paths, "Chiusure2 esiste già: non sovrascritta"
             index = paths.index("chiusure")
             assert current["views"][index] == expected, "Chiusure è cambiata: ricostruire dal live"
             desired = copy.deepcopy(current)
-            desired["views"].insert(index + 1, new)
+            if previous is None:
+                assert "chiusure2" not in paths, "Chiusure2 esiste già: non sovrascritta"
+                desired["views"].insert(index + 1, new)
+                target_index = index + 1
+            else:
+                target_index = paths.index("chiusure2")
+                assert current["views"][target_index] == previous, "Chiusure2 è cambiata in parallelo"
+                desired["views"][target_index] = new
             stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
             backup = Path("/config/tmp") / ("backup_lovelace_chiusure2_" + stamp + ".json")
             backup.parent.mkdir(parents=True, exist_ok=True)
@@ -74,7 +85,9 @@ async def main():
             actual = await call(ws, 4, {"type": "lovelace/config"})
             assert actual == desired, "Configurazione riletta diversa dal salvataggio"
             assert actual["views"][index] == expected
-            assert actual["views"][:index + 1] + actual["views"][index + 2:] == current["views"]
+            remaining = actual["views"][:target_index] + actual["views"][target_index + 1:]
+            old_remaining = current["views"] if previous is None else current["views"][:target_index] + current["views"][target_index + 1:]
+            assert remaining == old_remaining
             source = Path("/config/dashboards/chiusure2.json")
             source.parent.mkdir(parents=True, exist_ok=True)
             source.write_text(json.dumps(new, ensure_ascii=False, indent=2) + "\n")

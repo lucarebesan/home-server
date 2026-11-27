@@ -1,12 +1,15 @@
 # Dashboard Chiusure e Chiusure2
 
-Ultima verifica: 2026-11-27 15:30 (Chiusure2 compatta, due colonne, riletta identica).
+Ultima verifica: 2026-11-27 16:05 (Chiusure2 rimossa su richiesta; altre viste identiche).
 
 ## Viste e sorgenti
 
 La Overview storage predefinita (`lovelace`) contiene la vista originale
-`/lovelace/chiusure` e, subito dopo, `/lovelace/chiusure2`, aggiunta su richiesta
-di Luca per confrontare una nuova grafica mantenendo dati e comandi.
+`/lovelace/chiusure`. La prova `/lovelace/chiusure2`, aggiunta e poi compattata
+il 27/11, è stata **rimossa alle 16:05 su richiesta di Luca**. Verificata la
+configurazione riletta, con tutte le altre viste integralmente invariate.
+Non ricrearla senza una nuova richiesta. I sorgenti sotto sono conservati
+come archivio della prova, non sono una vista attualmente installata.
 
 Il sorgente della nuova vista è `/config/dashboards/chiusure2.json`, versionato
 nel repository HA, versione compatta nel commit `d233b52`. È una copia per manutenzione: il file
@@ -68,6 +71,11 @@ sono operativi e agiscono sulle stesse entità dell'originale.
    e inviare soltanto `dashboards/chiusure2.json` dal repository HA.
 
 ## Ripristino
+
+Backup immediatamente prima della rimozione:
+`/config/tmp/backup_prima_rimozione_chiusure2_20261127-160522.json`.
+Per un'eventuale nuova prova, richiesta dall'utente, estrarre solo la vista
+archiviata e inserirla nel live aggiornato, senza ripristinare l'intera Overview.
 
 Backup completo immediatamente precedente:
 `/config/tmp/backup_lovelace_chiusure2_20261127-153021.json` (prima del compattamento).

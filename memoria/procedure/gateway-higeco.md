@@ -1,12 +1,70 @@
 # Gateway Higeco (Nilan, Toshiba, contatori)
 
-Ultima verifica: 2026-11-27 (password rinnovate, validità a 90 giorni, batch attivo). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
+Ultima verifica: 2026-11-27 (VPN temporaneamente spenta, accesso admin rifiutato, richieste HA al gateway in pausa; recupero VPN programmato). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
 
 ## Cos'è
 
 - Higeco GWCV4-M1-2ETH, `http://192.168.1.171`, firmware core 25.12.1, impianto "Rebesan-Foletto", collegato al cloud `exrg-data.it`.
 - Dispositivi Modbus: Compact P (driver Nilan CTS602, 89 grandezze), Split Toshiba (IntesisBox, 21), modulo I/O iSMA (temperatura EGWK, 21), contatori di energia SDM120 di Compact e Split (9 ciascuno), sanificatore Jonix (20), ingressi della scheda (3).
-- HA legge e scrive attraverso `/config/scripts/nilan_sensor.sh` e `nilan_write.sh`, con l'utente di sola lettura predefinito.
+- HA legge e scrive attraverso `/config/scripts/nilan_sensor.sh` e `nilan_write.sh`, con l'utente di sola lettura predefinito. Dal 27/11 le richieste dirette sono temporaneamente in pausa, come indicato sotto.
+
+## Connessione Exrg e VPN (verifica del 27/11)
+
+- Nel primo slot di `serverCgi/getServerConf` il collegamento Exrg è abilitato
+  (`abilServer=1`), VPN abilitata (`abilVpn=1`) e tunnel SSH disabilitato
+  (`abilTun=0`); gli altri tre slot sono spenti. `getServerStatus` riporta
+  `successo=1` quando il gateway è connesso al server. Il dispositivo ha anche
+  un'interfaccia `hig-vpn` con indirizzo privato, osservata prima della prova.
+- Il pannello firmware 25.12.1 usa `serverCgi/saveServerConf` per salvare un
+  array dei quattro slot. **Attenzione:** `confServer` è il nome del server
+  configurato, mentre `server` può essere l'indirizzo operativo risolto. In
+  una prima prova, inviare l'array letto tale e quale cambiando solo `abilVpn`
+  ha sostituito `confServer` con `server` e ha causato una breve riconnessione.
+  Per conservare il nome configurato, prima del salvataggio assegnare al campo
+  `server` il valore di `confServer`. Il backup privato pre-prova è in
+  `/home/home/.local/state/higeco-password/vpn-test-before.json` (permessi 600);
+  non copiarlo nel repository.
+- Una prova temporanea di due minuti con `abilVpn=0` ha mantenuto
+  `abilServer=1` e `getServerStatus.successo=1`; alla fine la VPN è stata
+  riattivata e l'intera configurazione è tornata identica al backup, con
+  `successo=1`. Questo verifica il collegamento gateway–server **senza VPN**,
+  ma da solo non prova che l'app Exrg fuori casa continui a mostrare dati
+  aggiornati né identifica chi possiede un account Exrg.
+- **Seconda prova del 27/11:** su autorizzazione di Luca è stata spenta la
+  sola VPN (`abilVpn=0`) lasciando il server abilitato. Da iPhone su rete
+  cellulare l'app Exrg si apriva, ma mostrava valori fermi e i comandi non
+  rispondevano. Quindi per l'uso remoto di questo impianto la VPN risulta
+  necessaria. Durante la prova nuovi login admin sono stati rifiutati con
+  `auth=-1`; anche il tentativo di ripristino e il timer di riserva hanno
+  fallito. Il gateway potrebbe aver bloccato temporaneamente le nuove
+  sessioni dopo troppi accessi; la causa e la durata non sono verificate.
+  **All'ultima verifica la VPN era ancora spenta.** Non fare nuovi login
+  ripetuti per diagnosticarla. Il cookie `user` di HA è ancora accettato per
+  `getStatus`, ma non ha i permessi per `serverCgi/getServerConf` (`ERR=2`).
+- Recupero automatico: sorgente `sorgenti/higeco-password/recover_vpn.py`,
+  copia `/home/home/higeco-password/recover_vpn.py`; backup privato sopra.
+  Cron di `home` marcato `HIGECO_VPN_RECOVERY` controlla ogni 15 minuti il
+  file locale `~/.local/state/higeco-password/vpn-recovery.json`. Il primo
+  **singolo** nuovo login admin è previsto non prima delle **16:28 del
+  27/11/2026**; se fallisce, il successivo è almeno 4 ore dopo. Lo stato
+  viene salvato prima del tentativo. Quando può, lo script riattiva la VPN,
+  verifica `abilVpn=1`, server configurato originario e collegamento
+  `successo=1`, chiude la sessione e invia notifica iPhone tramite HA.
+  `successo=1` verifica il collegamento gateway-server, non il refresh
+  dell'app: quest'ultimo va provato dall'iPhone. La pausa HA rimane attiva.
+  Stato senza login: `python3 /home/home/higeco-password/recover_vpn.py status`.
+  Log: `~/.local/state/higeco-password/vpn-recovery.log`. Il 27/11 alle
+  12:33 locali: `complete=False`, `attempts=0`, prossimo tentativo 16:28;
+  cron e sentinella HA presenti. Prima di un eventuale recupero manuale,
+  disarmare soltanto la riga cron marcata e conservare backup e stato.
+- Luca può togliere da remoto la corrente all'intera centrale termica,
+  probabilmente anche al gateway. Non è stato fatto: fermerebbe più
+  apparecchi e non è verificato che cancelli il blocco login.
+- Higeco descrive separatamente [dashboard cloud e gestione utenti](https://www.higeco.com/en/cloud-services/)
+  e [Page creator sul datalogger](https://www.higeco.com/en/software/).
+  La schermata Exrg può quindi avere componenti locali e cloud; il livello
+  di modifica disponibile per questo impianto e i permessi dell'account Exrg
+  non sono ancora verificati. La prova VPN resta da chiudere con il recupero.
 
 ## Utenti
 
@@ -21,6 +79,10 @@ Ultima verifica: 2026-11-27 (password rinnovate, validità a 90 giorni, batch at
 - **Prova reale del 27/11 riuscita:** `--check` ha autenticato entrambi; `--renew` ha rinnovato `user` e `admin`, ripristinato tutte le regole originali e verificato i login. `restore-rules.json` assente, `last_success=2026-11-27`. HA mostrava `sensor.nilan_batch=40` prima e dopo, con aggiornamento recente. Una successiva richiesta admin ha trovato `passExpire=120`, impostato da Luca il 26/11; su sua richiesta è stato portato a **90 giorni**, conservando gli altri sette campi. Backup delle regole precedenti in `~/.local/state/higeco-password/password-rules-before-90.json`. Un altro `--check` è riuscito e il batch HA è rimasto a 40 valori recenti.
 - Nel crontab di `home` sono attive due righe marcate `HIGECO_PASSWORD`: controllo alle 03:15 ogni giorno e 120 secondi dopo il boot. Il codice rinnova solo se manca un successo dal primo dei mesi dispari, a partire dal **1° gennaio 2027**; dopo una data saltata ritenta al controllo successivo. Le righe preesistenti del crontab sono state confrontate col backup `~/.local/state/higeco-password/crontab.before-higeco` e risultano invariate. `Linger=no` per `home`, perciò si usa cron anziché un timer utente.
 - Dopo ogni successo il programma chiede a HA di inviare una notifica a `notify.mobile_app_iphone_luca`; se HA non la accetta, conserva la notifica pendente e ritenta al controllo giornaliero. La notifica per la prova del 27/11 è stata accettata da HA e Luca ne ha confermato la ricezione sull'iPhone. **Da verificare nel tempo:** la prima esecuzione automatica del 1° gennaio e il recupero reale dopo un riavvio o una notifica fallita.
+- Dopo la prova VPN, `renew.py` è stato corretto per inviare `logoutUser`
+  dopo i login di verifica e alla fine dell'esecuzione; prima lasciava
+  sessioni aperte. Sei test offline con gateway simulato sono riusciti.
+  Nessun nuovo login reale è stato eseguito durante il blocco.
 
 ## Confini dell'audit Nilan tramite il gateway
 
@@ -39,6 +101,21 @@ Ultima verifica: 2026-11-27 (password rinnovate, validità a 90 giorni, batch at
 - **Solo comandi di lettura**: mai comandi `W*`, né set/save/reset/reboot.
 
 ## Lettura da Home Assistant (dall'8/11)
+
+**Pausa temporanea del 27/11:** su richiesta di Luca, la sentinella
+`/config/tmp/nilan_gateway_paused` nel container HA fa terminare prima di
+qualsiasi accesso a `.171` i quattro script diretti: `nilan_batch.py`,
+`nilan_sensor.sh`, `nilan_write.sh`, `nilan_gest_split_automode.sh`. Le guardie
+sono nei commit HA `9426e1a` e `a25c787` (il secondo ripristina i permessi
+originali). Backup degli script precedenti in
+`/config/tmp/backup_nilan_gateway_pause_20261127`. Sintassi Python/shell e
+uscite in pausa verificate, senza chiamate al gateway. `sensor.nilan_batch`
+vale 0 durante la pausa; i dati dipendenti diventano indisponibili. **Non
+rimuovere la sentinella automaticamente al ripristino VPN:** prima verificare
+app Exrg, stato del gateway, e che gli script non creino nuove sessioni in
+serie. Rimuovere solo su decisione di Luca dopo la verifica; il polling
+riparte al ciclo HA successivo senza reload. Il blocco riguarda gli script
+HA diretti elencati, non dimostra che altri client sulla LAN siano fermi.
 
 - `/config/scripts/nilan_batch.py`: una login con cookie proprio (`/config/tmp/gwc_batch_cookie.txt`, separato da quello di `nilan_write.sh`), poi una sola richiesta con 31 `sendCommand` e due `getShm` (1999237 per lo split, 1999690 per l'umidità). Stampa un JSON con un valore per unique_id, oppure null. Dal commit HA `cf449de` include la sonda ambiente Toshiba `1999108 Id1`.
 - In `packages/nilan_sensori.yaml`: il command_line "Nilan Batch" (ogni 20 s, timeout 18 s, dal commit `126230e`; stato = numero di valori validi) e 40 sensori template. La sonda nuova è esposta stabilmente come `sensor.ecm_toshiba_sonda_ambiente`; una vecchia entità ripristinata con nome Toshiba può restare `unavailable` fino a riavvio e non è usata dalla logica. `sensor.nilan_batch` è escluso dal recorder (vale dal prossimo riavvio di HA).

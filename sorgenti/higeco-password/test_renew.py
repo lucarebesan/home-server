@@ -48,7 +48,14 @@ class FakeGateway:
             if self.fail_account == data["id"]:
                 raise renew.RenewalError("Cambio rifiutato")
             return {}
+        if act == "logoutUser":
+            self.logged_in = False
+            return {}
         raise AssertionError(act)
+
+    def logout(self):
+        if self.logged_in:
+            self.call("logoutUser")
 
 
 class RenewalTests(unittest.TestCase):
@@ -91,6 +98,9 @@ class RenewalTests(unittest.TestCase):
         self.assertEqual(changes, [2, 1])
         saves = [event for event in FakeGateway.events if event[0] == "setPasswordRules"]
         self.assertEqual(len(saves), 2)
+        self.assertEqual(
+            len([event for event in FakeGateway.events if event[0] == "logoutUser"]), 2
+        )
 
     def test_failure_restores_rules_and_keeps_success_unrecorded(self):
         original = dict(FakeGateway.rules)
@@ -157,9 +167,12 @@ class ProtocolTests(unittest.TestCase):
             client = renew.GatewayClient()
             client.login("admin", "Admin123!")
             client.call("modPass", {"id": 2, "p": "simple"})
+            client.logout()
         self.assertEqual(requests[0][1]["u"], ["admin"])
         self.assertEqual(requests[1][0].get_header("Cookie"), "gwc=session123")
         self.assertEqual(requests[1][2]["DATI"], {"id": 2, "p": "simple"})
+        self.assertEqual(requests[2][2]["act"], "logoutUser")
+        self.assertIsNone(client.cookie)
 
 
 if __name__ == "__main__":

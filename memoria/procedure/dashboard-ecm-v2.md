@@ -1,10 +1,10 @@
 # Dashboard ECM v2
 
-Ultima verifica: 2026-11-13 21:35 (vista Costi e consumi installata via WebSocket e riletta identica alla build).
+Ultima verifica: 2026-11-27 (vista Filtri aggiunta via WebSocket e riletta identica alla versione preparata).
 
 ## Scopo
 
-Dashboard storage separata dalla Overview, `url_path` `ecm-v2`. Tab installate all'ultima verifica live: Stato, Albero, Impostazioni, Diagnostica, Apprendimento, Costi e consumi. Dati e limiti della nuova vista `/ecm-v2/costi` sono descritti in `costi-energia.md`. La vista ECM della Overview (`lovelace.lovelace`) resta intatta.
+Dashboard storage separata dalla Overview, `url_path` `ecm-v2`. Tab installate all'ultima verifica live: Stato, Filtri, Albero, Impostazioni, Diagnostica, Apprendimento, Costi e consumi. I tre filtri in `/ecm-v2/filtri` leggono gli helper del package HA `filtri_ecm.yaml`; logica e risposte iPhone in `config-home-assistant.md`. Dati e limiti della vista `/ecm-v2/costi` sono descritti in `costi-energia.md`. La vista ECM della Overview (`lovelace.lovelace`) resta intatta.
 
 ## Sorgente
 
@@ -29,6 +29,16 @@ Aprire `/ecm-v2/stato`, `/ecm-v2/albero` e le altre tab e controllare che le car
 Salvare via WebSocket il JSON di backup più recente.
 
 Backup prima della vista Costi e consumi: `/home/home/backup-ecm-v2-costi-20261113-213436.json`. Prima del salvataggio del 13/11 la configurazione live coincideva integralmente con la build priva della sola nuova vista; dopo il salvataggio la configurazione riletta coincide integralmente con la build completa. Risposta WebSocket `success: true`; verifica visiva ancora da fare.
+
+Backup prima della vista Filtri: `/home/home/backup-ecm-v2-filtri-20261127.json`.
+Il 27/11 il sorgente YAML è stato validato con PyYAML e i tre template markdown
+con `POST /api/template` (ognuno mostrava 29/07/2026 e 31 giorni di ritardo).
+La vista è stata inserita nel backup live dopo Stato, preservando tutte le
+altre sei viste. WebSocket `lovelace/config/save` ha risposto `success: true`;
+una nuova lettura della configurazione è risultata identica al JSON preparato.
+Verifica visiva su telefono ancora da fare. Per il ripristino, salvare via
+WebSocket il backup indicato, dopo aver controllato che le altre viste non
+siano state modificate nel frattempo.
 
 ## Note
 
@@ -80,6 +90,10 @@ Backup prima della vista Costi e consumi: `/home/home/backup-ecm-v2-costi-202611
   (stagione, setpoint, accensione split) sono in Impostazioni. Alcuni chip hanno il tocco
   disattivato o portano all'Albero apposta: il more-info di `input_select.stagione` o di
   un'automazione conterrebbe un comando.
+- **Filtri**: tre card markdown in sola lettura, con ultima manutenzione,
+  scadenza a 90 giorni, numero di pulizie, azione richiesta e codice ricambio
+  per i due pre-temperamento. Le azioni si registrano dai pulsanti degli avvisi
+  iPhone; la card aggiorna i dati letti dagli helper HA.
 - **Albero**: albero decisionale in una `button-card` (JS in `custom_fields.albero`) più
   una card `logbook` "Ultime decisioni" su 12 ore. In cima il "Percorso attuale" (una
   etichetta per passaggio, mappa `BREVE` nel JS); sotto i nodi chiusi (domanda e valore),

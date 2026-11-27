@@ -13,6 +13,10 @@ della pagina Utenti del gateway `192.168.1.171`, senza librerie Python esterne.
 4. Rinnovo della password attuale di `user`, poi di `admin`, nella stessa sessione.
 5. Ripristino e rilettura delle regole originali; verifica dei login di entrambi.
 
+Dal 27/11 i login di verifica e la sessione usata dall'esecuzione terminano
+con `logoutUser`. La correzione è stata provata con sei test offline; non è
+stato fatto un altro login reale dopo il blocco delle nuove sessioni admin.
+
 Se un passaggio fallisce, il programma tenta il ripristino immediato. Il file
 `~/.local/state/higeco-password/restore-rules.json` consente di riprovarlo al
 successivo avvio dopo un'interruzione. Un errore del rinnovo invia una notifica
@@ -53,3 +57,19 @@ Per fermare il rinnovo, togliere solo le due righe marcate `HIGECO_PASSWORD` dal
 crontab. Se `restore-rules.json` è presente, prima del fermo verificare nel
 pannello che le regole siano state ripristinate. Non cancellare il file di
 recupero prima della verifica.
+
+## Recupero VPN dopo la prova del 27/11
+
+La prova temporanea senza VPN ha mostrato che l'app Exrg su rete cellulare
+apre l'impianto ma lascia dati e comandi fermi. Nuovi login admin sono stati
+poi rifiutati; la VPN è rimasta spenta. `recover_vpn.py` è installato sul mini
+PC e pianificato con riga cron `HIGECO_VPN_RECOVERY`. Legge il backup privato
+`~/.local/state/higeco-password/vpn-test-before.json`, attende almeno quattro
+ore fra singoli tentativi admin e chiude la sessione. Il primo tentativo è
+previsto non prima delle 16:28 del 27/11. Al successo verifica VPN e
+collegamento gateway-server e invia un avviso iPhone; la risposta effettiva
+dell'app Exrg va verificata separatamente. La pausa delle richieste HA rimane.
+
+Stato senza contattare il gateway:
+`python3 /home/home/higeco-password/recover_vpn.py status`. Dettagli,
+backup, limiti e ripristino in `memoria/procedure/gateway-higeco.md`.

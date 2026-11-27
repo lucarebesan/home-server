@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-27 (rinnovo password Higeco; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-27 (prova VPN Higeco e pausa richieste HA; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -65,6 +65,11 @@ dettagli in `procedure/migrazione-minipc.md`.
 ## Dispositivi in rete
 
 - Gateway Higeco di Nilan e Toshiba: `192.168.1.171` (vedi `procedure/gateway-higeco.md`).
+  Dopo la prova del 27/11 la VPN è ancora spenta all'ultima verifica e i
+  nuovi login admin sono rifiutati; recupero a tentativo singolo ogni almeno
+  4 ore, primo non prima delle 16:28. HA è in pausa verso `.171` tramite
+  `/config/tmp/nilan_gateway_paused`. Non confondere questo stato con lo
+  stato operativo ordinario descritto nella procedura.
 - Relè luci Dingtian DT-R008 (ESP32, in WiFi a 2,4 GHz): `.51`–`.58` e `.29`, in HA tramite `dtbridge`.
 - Sonoff MINI `Albero` (ID eWeLink `1000b62fe2`, già `NATALE`): in HA è
   `switch.sonoff_1000b62fe2`. Nome e disponibilità verificati dopo il reload
@@ -88,6 +93,10 @@ dettagli in `procedure/migrazione-minipc.md`.
 
 - Crontab di `home`: rinnovo del certificato alle 04:17 (vedi `procedure/duckdns-certificato.md`).
 - Crontab di `home`: `HIGECO_PASSWORD` alle 03:15 ogni giorno e dopo il boot; lo script rinnova `admin` e `user` solo dal primo dei mesi dispari a partire dal 1° gennaio 2027, con recupero delle date saltate. Prova reale riuscita il 27/11; regole password a 90 giorni e notifica di successo all'iPhone verificata. Dettagli e ripristino in `procedure/gateway-higeco.md`.
+- Crontab di `home`: `HIGECO_VPN_RECOVERY` controlla localmente ogni 15 minuti
+  quando riprovare un solo login admin per riattivare la VPN; tentativi
+  effettivi distanziati di almeno quattro ore. Cron, stato e sentinella HA
+  presenti alla verifica delle 12:33 del 27/11. Procedura Higeco per dettagli.
 - `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti; dal 09/11 campiona anche bollitore alto/basso e marcatore della prova ACS indiretta. Dal 10/11 pubblica stime W separate CP/SPLIT; la resa termica delle coppie resta da misurare. Prove automatiche verificate spente il 10/11.
 - Dal 14/11 è armata una **campagna automatica consumi delle sei coppie CP HEAT/SPLIT HEAT**, con cron separato e ripresa persistente. È indipendente dall'interruttore "Prove automatiche" del motore, che resta spento. Stato, soglie, percorsi e disattivazione dopo sei acquisizioni in `procedure/ecm-engine.md`, sezione "Campagna automatica consumi"; prima di un comando climatico controllare se esiste un tentativo attivo.
 - HA: `00-NILAN WRITE` è accesa in modalità isolata ACS, ricambio minimo e
@@ -139,6 +148,11 @@ dettagli in `procedure/migrazione-minipc.md`.
   centrale termica: durata massima e avviso su iPhone per accensione senza
   pulsante rilevato. Entità, funzionamento e ripristino in
   `procedure/config-home-assistant.md`, sezione dedicata.
+- HA: dal 27/11 il package `packages/filtri_ecm.yaml` conserva la manutenzione
+  dei tre filtri ECM e manda promemoria azionabili all'iPhone alle 09:00;
+  dashboard `/ecm-v2/filtri`. Stato iniziale confermato da Luca: ultima
+  manutenzione 29/07/2026, conteggi 4/4, 2/2, 2/4. Dettagli e ripristino in
+  `procedure/config-home-assistant.md`.
 
 ## Segreti (solo posizione)
 

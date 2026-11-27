@@ -153,6 +153,22 @@ class GatewayClient:
         query = [{"act": act, "sn": self.sn, "idReq": act, "DATI": data or {}}]
         return self._post({"query": json.dumps(query, separators=(",", ":"))})
 
+    def logout(self):
+        if not self.cookie:
+            return
+        try:
+            self.call("logoutUser")
+        finally:
+            self.cookie = None
+            self.sn = None
+
+
+def quiet_logout(client):
+    try:
+        client.logout()
+    except Exception:
+        pass
+
 
 def rule_values(raw):
     if not isinstance(raw, dict) or any(key not in raw for key in RULE_KEYS):
@@ -225,7 +241,11 @@ def renew(client, secret):
     if problem:
         raise problem
     for name in ("admin", "user"):
-        GatewayClient(client.base).login(name, secret[name])
+        verifier = GatewayClient(client.base)
+        try:
+            verifier.login(name, secret[name])
+        finally:
+            quiet_logout(verifier)
     today = date.today()
     atomic_json(STATE, {
         "last_success": today.isoformat(),
@@ -307,6 +327,7 @@ def main():
     group.add_argument("--renew", action="store_true", help="Rinnovo reale immediato")
     group.add_argument("--scheduled", action="store_true", help="Rinnovo quando dovuto, recupero ogni giorno")
     args = parser.parse_args()
+    client = None
     try:
         with program_lock():
             if args.setup:
@@ -325,7 +346,11 @@ def main():
                 client.login("admin", secret["admin"])
                 user_ids(client)
                 rule_values(client.call("getPasswordRules"))
-                GatewayClient().login("user", secret["user"])
+                verifier = GatewayClient()
+                try:
+                    verifier.login("user", secret["user"])
+                finally:
+                    quiet_logout(verifier)
                 print("Accessi admin/user e lettura regole riusciti; nessuna modifica")
             elif args.renew or due_today(date.today()):
                 renew(client, secret)
@@ -337,6 +362,9 @@ def main():
         if not args.setup and not args.check:
             notify_failure("Rinnovo password Higeco fallito. Controllare il mini PC e le regole password del gateway.")
         return 1
+    finally:
+        if client is not None:
+            quiet_logout(client)
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-27 (pausa ricambio al cambio fascia delle 08:30; nessuna modifica live).
+Ultima verifica: 2026-11-27 (package filtri ECM caricato; richieste dirette HA al gateway Higeco temporaneamente in pausa).
 
 ## Prerequisiti
 
@@ -147,7 +147,66 @@ commit/push, `check_config` e reload automation/input_boolean/input_datetime.
 Per Natale il backup precedente del 22/11 è in
 `/config/tmp/backup_natale_mattino_20261122/` nel container HA.
 
+## Manutenzione dei tre filtri ECM
+
+Dal 27/11/2026 il package `packages/filtri_ecm.yaml` nel repo HA (commit
+`a6a4f10`) mantiene data e numero di pulizie per tre filtri. Il 27/11 Luca ha
+confermato i dati iniziali: ultima manutenzione **29/07/2026** per tutti,
+Compact P pre-temperamento **4/4** (ricambio `FILTRO-N-004`, 430×425×48 mm),
+lato esterno **2/2** (`FILTRO-N-002`, stessa misura), ritorno Compact P
+**2/4** (codice ancora da inserire). La prossima scadenza è il 27/10/2026:
+sono già scaduti. Solo i due pre-temperamento richiedono ora la sostituzione;
+il ritorno può essere pulito. Il periodo è di **90 giorni** dall'ultima azione.
+
+- Gli `input_datetime.filtro_*_ultima_manutenzione` e
+  `input_number.filtro_*_pulizie` sono persistenti: **non usare `initial`** nel
+  package, perché ripristinerebbe il valore iniziale a ogni riavvio.
+- `automation.ecm_filtri_promemoria_manutenzione` invia alle **09:00** un avviso
+  distinto per filtro a −15, −10, −5 giorni e poi ogni giorno dal giorno
+  seguente a −5 finché la manutenzione non è registrata. Ogni filtro ha un
+  `tag` proprio: gli avvisi successivi sostituiscono il precedente sul telefono.
+  Se il limite pulizie è raggiunto mostra **Sostituito** e **Non ancora**;
+  altrimenti anche **Pulito**.
+- `automation.ecm_filtri_registra_risposta_iphone` gestisce l'evento
+  `mobile_app_notification_action`. **Non ancora** non cambia nulla.
+  **Pulito** incrementa di uno il conteggio; **Sostituito** lo azzera.
+  Entrambi impostano la data di manutenzione al giorno corrente e fanno
+  ripartire i 90 giorni. L'identificatore del pulsante contiene la data del
+  ciclo: risposte a notifiche vecchie o doppie vengono ignorate. Non registrare
+  la manutenzione prima del lavoro reale.
+- Lo stato è anche nella tab `/ecm-v2/filtri`, sorgente
+  `sorgenti/ha-ecm-v2/ecm_v2.yaml` del repo `home-server`.
+
+**Verifica del 27/11:** `check_config` riuscito; reload dei soli domini
+`input_datetime`, `input_number`, `automation`; sei helper valorizzati ai
+dati confermati, due automazioni ON. Un evento simulato con data di ciclo
+superata non ha modificato le date. L'automazione di promemoria è stata
+richiamata una volta e HA ha accettato l'invio dei tre avvisi; la ricezione
+di tutti e tre sull'iPhone è stata confermata da Luca. I pulsanti compaiono
+espandendo la notifica con una pressione prolungata, come previsto da iOS.
+Un'azione reale di manutenzione richiede ancora verifica sul campo.
+Nessun impianto è stato comandato.
+
+**Ripristino:** spegnere solo `automation.ecm_filtri_promemoria_manutenzione`
+per sospendere gli avvisi senza perdere i dati. Per rimuovere la funzione,
+esportare prima i sei helper se si vogliono conservare data e conteggi;
+rimuovere soltanto `packages/filtri_ecm.yaml` con commit/push nel repo HA,
+eseguire `check_config` e ricaricare `automation`, `input_datetime`,
+`input_number`. Rimuovere la tab Filtri dalla plancia seguendo la procedura
+`dashboard-ecm-v2.md`, ripartendo dal backup precedente.
+
 ## Attenzioni
+
+- **Pausa Higeco dal 27/11:** su richiesta di Luca, il file
+  `/config/tmp/nilan_gateway_paused` interrompe prima di ogni chiamata a
+  `.171` `nilan_batch.py`, `nilan_sensor.sh`, `nilan_write.sh` e
+  `nilan_gest_split_automode.sh`. Guardie nei commit HA `9426e1a` e
+  `a25c787`, backup precedente in
+  `/config/tmp/backup_nilan_gateway_pause_20261127`. Il recupero VPN
+  programmato **non** toglie la sentinella. Solo dopo la verifica dell'app
+  Exrg e della disponibilità delle sessioni, Luca potrà decidere di
+  riprendere HA rimuovendo il file; gli script ripartono al ciclo successivo.
+  Vedi `gateway-higeco.md` per l'incidente, il recupero e le verifiche.
 
 - **Mai `docker stop` su HA prima di spegnere il server**: dopo il riavvio il container resta fermo. Per spegnere usare `poweroff`; per riavviare HA usare `docker restart homeassistant`.
 - Il database del recorder (`/config/home-assistant_v2.db`, circa 3 GB su HDD lento) va interrogato solo in sola lettura (`file:...?mode=ro`), un'entità alla volta, senza `COUNT(*)` né scansioni complete: fanno salire l'I/O di tutto il server.

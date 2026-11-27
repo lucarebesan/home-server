@@ -1212,6 +1212,74 @@ views:
               - operator: default
                 color: 'var(--success-color)'
 
+  # ───────────────────────────── FILTRI ─────────────────────────────
+  - title: Filtri
+    path: filtri
+    icon: mdi:air-filter
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: markdown
+            title: Pre-temperamento lato Compact P
+            content: |-
+              {% set ultima = states('input_datetime.filtro_compactp_ultima_manutenzione') %}
+              {% set pulizie = states('input_number.filtro_compactp_pulizie') | int(-1) %}
+              {% if ultima in ['unknown', 'unavailable', 'none'] or pulizie < 0 %}
+              Dati di manutenzione non disponibili.
+              {% else %}
+              {% set scadenza = as_datetime(ultima).date() + timedelta(days=90) %}
+              **{{ 'Da sostituire' if pulizie >= 4 else 'Da pulire' }}** · {{ pulizie }}/4 pulizie
+
+              Ultima manutenzione: **{{ as_datetime(ultima).strftime('%d/%m/%Y') }}**<br>
+              Prossima: **{{ scadenza.strftime('%d/%m/%Y') }}**
+              {% set giorni = (scadenza - now().date()).days %}
+              {% if giorni < 0 %}⚠️ Scaduto da {{ -giorni }} giorni{% elif giorni == 0 %}⚠️ Scade oggi{% else %}Mancano {{ giorni }} giorni{% endif %}
+
+              Codice: **FILTRO-N-004** (430×425×48 mm)
+              {% endif %}
+      - type: grid
+        cards:
+          - type: markdown
+            title: Pre-temperamento lato esterno
+            content: |-
+              {% set ultima = states('input_datetime.filtro_esterno_ultima_manutenzione') %}
+              {% set pulizie = states('input_number.filtro_esterno_pulizie') | int(-1) %}
+              {% if ultima in ['unknown', 'unavailable', 'none'] or pulizie < 0 %}
+              Dati di manutenzione non disponibili.
+              {% else %}
+              {% set scadenza = as_datetime(ultima).date() + timedelta(days=90) %}
+              **{{ 'Da sostituire' if pulizie >= 2 else 'Da pulire' }}** · {{ pulizie }}/2 pulizie
+
+              Ultima manutenzione: **{{ as_datetime(ultima).strftime('%d/%m/%Y') }}**<br>
+              Prossima: **{{ scadenza.strftime('%d/%m/%Y') }}**
+              {% set giorni = (scadenza - now().date()).days %}
+              {% if giorni < 0 %}⚠️ Scaduto da {{ -giorni }} giorni{% elif giorni == 0 %}⚠️ Scade oggi{% else %}Mancano {{ giorni }} giorni{% endif %}
+
+              Codice: **FILTRO-N-002** (430×425×48 mm)
+              {% endif %}
+      - type: grid
+        cards:
+          - type: markdown
+            title: Ritorno Compact P
+            content: |-
+              {% set ultima = states('input_datetime.filtro_ritorno_ultima_manutenzione') %}
+              {% set pulizie = states('input_number.filtro_ritorno_pulizie') | int(-1) %}
+              {% if ultima in ['unknown', 'unavailable', 'none'] or pulizie < 0 %}
+              Dati di manutenzione non disponibili.
+              {% else %}
+              {% set scadenza = as_datetime(ultima).date() + timedelta(days=90) %}
+              **{{ 'Da sostituire' if pulizie >= 4 else 'Da pulire' }}** · {{ pulizie }}/4 pulizie
+
+              Ultima manutenzione: **{{ as_datetime(ultima).strftime('%d/%m/%Y') }}**<br>
+              Prossima: **{{ scadenza.strftime('%d/%m/%Y') }}**
+              {% set giorni = (scadenza - now().date()).days %}
+              {% if giorni < 0 %}⚠️ Scaduto da {{ -giorni }} giorni{% elif giorni == 0 %}⚠️ Scade oggi{% else %}Mancano {{ giorni }} giorni{% endif %}
+
+              Codice ricambio da inserire.
+              {% endif %}
+
   # ───────────────────────────── ALBERO ─────────────────────────────
   - title: Albero
     path: albero

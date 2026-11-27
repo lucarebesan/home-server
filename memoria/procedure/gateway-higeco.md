@@ -1,6 +1,6 @@
 # Gateway Higeco (Nilan, Toshiba, contatori)
 
-Ultima verifica: 2026-11-27 13:18 (VPN riattivata, Exrg su iPhone ancora bloccata, HA nuovamente attivo con attesa guasti 5/30 minuti; niente nuove richieste admin). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
+Ultima verifica: 2026-11-27 13:32 (configurazione server identica al backup, opzione VPN attiva ma `getServerStatus.successo=0`; Exrg non operativa, HA locale 40 valori). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
 
 ## Cos'è
 
@@ -50,6 +50,18 @@ Ultima verifica: 2026-11-27 13:18 (VPN riattivata, Exrg su iPhone ancora bloccat
   però bloccata nell'app**: toccare i comandi non produceva effetti. Il solo
   `successo=1` non certifica il funzionamento dell'app o del server cloud.
   Su richiesta di Luca, non fare altre richieste admin a `.171` per ora.
+- **Audit singolo autorizzato alle 13:31:** Luca ha autorizzato un solo
+  accesso admin per controllare le modifiche e chiudere la sessione al
+  termine. `sorgenti/higeco-password/audit_vpn.py` ha letto nella stessa
+  sessione `getServerConf` e `getServerStatus`, confrontato tutti e quattro
+  gli slot con il backup pre prova e fatto logout. **Nessuna differenza,
+  neanche nei campi operativi**; `abilVpn=1`. Tuttavia il gateway riportava
+  **`successo=0`**: in quel momento non risultava connesso al server Exrg.
+  Il valore `successo=1` letto alle 13:03 non è rimasto stabile. Questo
+  spiega i dati vuoti nel portale, mentre HA legge sulla LAN. La causa della
+  disconnessione remota resta aperta; non attribuirla a una modifica della
+  configurazione, che è identica al backup. Nessuna scrittura al gateway
+  nell'audit e nessun altro login admin pianificato.
 - Sorgente del recupero `sorgenti/higeco-password/recover_vpn.py`, copia sul
   mini PC `/home/home/higeco-password/recover_vpn.py`, backup privato sopra.
   La riga cron temporanea `HIGECO_VPN_RECOVERY` è stata rimossa dopo il

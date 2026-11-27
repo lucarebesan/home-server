@@ -77,6 +77,16 @@ stato rimane `complete=True`, `attempts=1`, notifica non pendente. Le
 richieste HA sono state riprese su richiesta di Luca e ora hanno un'attesa
 condivisa per i guasti (procedura Higeco).
 
+Alle 13:31 del 27/11 un audit di sola lettura, autorizzato per una sessione
+admin unica, ha trovato l'intera configurazione server identica al backup e
+`abilVpn=1`, ma `getServerStatus.successo=0`. Quindi l'opzione VPN è attiva,
+mentre il collegamento al server Exrg non risultava operativo. La notifica
+del recupero precedente era troppo ottimista: il valore `successo=1` letto
+subito dopo il salvataggio non ha garantito continuità. `audit_vpn.py` legge
+e confronta i campi senza stamparne i valori, chiude la sessione e non
+scrive sul gateway. **Non ripeterlo senza una nuova decisione di Luca:**
+troppi login admin possono essere rifiutati dal gateway.
+
 Stato senza contattare il gateway:
 `python3 /home/home/higeco-password/recover_vpn.py status`. Dettagli,
 backup, limiti e ripristino in `memoria/procedure/gateway-higeco.md`.

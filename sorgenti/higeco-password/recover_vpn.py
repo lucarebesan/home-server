@@ -47,8 +47,8 @@ def server_call(client, action, payload=None):
 def notify_success():
     token = (Path.home() / ".config/ecm/ha_token").read_text().strip()
     body = json.dumps({
-        "title": "Gateway Nilan ripristinato",
-        "message": "VPN riattivata e collegamento gateway-server attivo. Verifica se i valori Exrg si aggiornano. Le richieste HA restano in pausa.",
+        "title": "Opzione VPN Higeco riattivata",
+        "message": "L'opzione VPN è attiva e il gateway segnalava il server connesso alla verifica immediata. Controlla separatamente i dati Exrg: il tunnel può ancora non funzionare.",
     }).encode()
     request = urllib.request.Request(
         "http://127.0.0.1:8123/api/services/notify/mobile_app_iphone_luca",

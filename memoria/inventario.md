@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-27 13:18 (VPN Higeco riattivata; HA attivo con attesa guasti condivisa; Exrg app ancora bloccata; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-27 13:32 (Higeco: configurazione server invariata e VPN abilitata, ma connessione Exrg segnalata assente; HA locale attivo; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -65,9 +65,11 @@ dettagli in `procedure/migrazione-minipc.md`.
 ## Dispositivi in rete
 
 - Gateway Higeco di Nilan e Toshiba: `192.168.1.171` (vedi `procedure/gateway-higeco.md`).
-  Dopo la prova del 27/11 la VPN è stata riattivata con un solo login admin,
-  ma Luca riferisce che l'app Exrg ancora non riceve dati o comandi. Nessun
-  altro accesso admin è autorizzato per ora. HA è di nuovo attivo verso `.171`:
+  Dopo la prova del 27/11 l'opzione VPN è tornata attiva. L'audit admin
+  singolo delle 13:31 ha trovato tutti e quattro gli slot identici al
+  backup pre prova, ma `getServerStatus.successo=0`: il collegamento remoto
+  Exrg non risultava operativo. Web e app non mostrano dati; non è un guasto
+  di lettura locale. HA è di nuovo attivo verso `.171`:
   batch 40 valori alla verifica; se tutti falliscono, attende 5 minuti e poi
   fa una prova minima ogni 30 minuti. Dettagli in procedura.
 - Relè luci Dingtian DT-R008 (ESP32, in WiFi a 2,4 GHz): `.51`–`.58` e `.29`, in HA tramite `dtbridge`.

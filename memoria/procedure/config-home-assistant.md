@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-25 (avvio Toshiba in V1 con soglia di mandata, commit HA `1df11ac`).
+Ultima verifica: 2026-11-27 (pausa ricambio al cambio fascia delle 08:30; nessuna modifica live).
 
 ## Prerequisiti
 
@@ -248,6 +248,20 @@ periodico e nei trigger già previsti.
 12:58 del 25/11 la traccia reale ha scelto 1 volume con SOC 16% e FV insufficiente,
 rimandando l'avvio perché mancavano circa quattro ore alla fine della finestra.
 Il completamento reale del volume e il ramo con surplus FV sono da osservare.
+
+**Limite osservato il 27/11 alle 08:30–08:33:** la scelta viene ricalcolata
+ogni minuto anche durante un ricambio avviato, senza mantenerne agganciata la
+richiesta fino al completamento. Al passaggio notte/giorno entra fra i
+candidati V4, più conveniente secondo i W appresi per volume; il minor tempo
+necessario sposta in avanti l'avvio e può interrompere temporaneamente V3.
+Con 0,841 volumi, obiettivo 1, SOC 11% e FV 0 W, la traccia delle 08:33
+sceglie V4 per 0,159 ore (9,54 minuti, 96,513 Wh stimati), ma con
+`ore_fino_avvio_inv=0.058` dichiara `ricambio_dovuto_inv=false` e richiesta 0.
+È una pausa di pianificazione, non completamento del volume né blocco
+diretto per SOC basso; avvio previsto dopo circa 3,5 minuti secondo quella
+traccia. Verificare il completamento reale separatamente. Possibile miglioria:
+evitare l'interruzione al cambio velocità/obiettivo di un ciclo già avviato;
+nessuna correzione applicata durante la diagnosi. Episodio nel diario.
 
 **Ripristino:** il file precedente è in
 `/config/tmp/backup_ricambio_inverno_20261125.HegkCH/`. Ripristinare il solo

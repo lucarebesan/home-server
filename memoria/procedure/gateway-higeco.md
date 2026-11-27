@@ -14,6 +14,13 @@ Ultima verifica: 2026-11-27 (batch attivo e ricostruzione della protezione origi
 - Le credenziali admin le conosce Mattia: si inseriscono a mano nella pagina, mai in chat, script o repository.
 - Con `user` si leggono circa 49 grandezze tramite i plugin proxy (`pluginManager.cgi` `sendCmd`/`sendCommand`, `getShm`). Storico (`dataLogCgi getDataLog`) e lettura diretta (`acqModCgi getShmData`) richiedono admin.
 
+### Rinnovo delle password: verifica del 27/11
+
+- Dal mini PC, Python 3 ha raggiunto `http://192.168.1.171/` e ha inviato in sola lettura `getStatus` a `/cgi-bin/userCgi`: HTTP 200, `ERR=0`, `auth=0` senza credenziali. Le risposte dell'API sono compresse con gzip.
+- Lo script servito dal gateway in `/jsLibs/0.0.2/drawChangePassword.js` mostra il flusso della pagina: login con `p`, `u` e `getStatus` su `/cgi-bin/userCgi`, cookie di sessione `gwc` e identificativo `uid`; la pagina legge `getPasswordRules` e, dopo la conferma, invia `modPass` allo stesso CGI con `DATI` contenente l'ID dell'utente e la nuova password. `getPasswordRules` senza autenticazione ha risposto con errore interno `1`.
+- **Da verificare prima di automatizzare:** autenticazione Python per ciascuno dei due account, autorizzazione effettiva a `modPass`, rinnovo della validità quando si risalva la stessa password, comportamento delle sessioni dopo il salvataggio e continuità delle letture HA. Nessun login autenticato e nessuna chiamata `modPass` sono stati eseguiti durante questa verifica.
+- Luca riferisce che il rinnovo manuale anticipato non causa interruzioni e che si può riutilizzare la stessa password. Propone una cadenza ogni due mesi, con margine rispetto alla validità di 90 giorni; il 26/11 aveva portato `user` a 120 giorni. La frequenza va parametrizzata sulla validità effettiva letta dal gateway. Il gateway usa HTTP sulla LAN: eventuali credenziali per un programma locale richiedono un archivio protetto fuori dal repository e non devono comparire nei log.
+
 ## Confini dell'audit Nilan tramite il gateway
 
 - **Verificato il 09/11 dal catalogo e dal pannello admin:** il driver `NILAN-CTS602_it` del gateway mappa 89 grandezze Compact P, di cui 32 leggibili con `user` e 57 aggiuntive tramite la lettura diretta riservata all'admin. Fra le 89, 46 risultano `RW` nel driver: questa etichetta descrive il registro, non autorizza a scriverlo. Il gateway ha risposto su `192.168.1.171:80`; HA esponeva 39/39 valori del batch Nilan. Nel pannello admin, le grandezze delle schede Temperature, States, Impostazioni, Eventi, Ingressi, Uscite, Avanzate e Resistenza avevano valori aggiornati al 09/11 22:52.

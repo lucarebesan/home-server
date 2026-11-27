@@ -1,6 +1,6 @@
 # Gateway Higeco (Nilan, Toshiba, contatori)
 
-Ultima verifica: 2026-11-26 (ripresa del batch e attesa dopo un errore di lettura). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
+Ultima verifica: 2026-11-27 (batch attivo e ricostruzione della protezione originaria). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
 
 ## Cos'è
 
@@ -37,6 +37,7 @@ Ultima verifica: 2026-11-26 (ripresa del batch e attesa dopo un errore di lettur
 - `sensor.compactp_offset_raffrescamento` resta un command_line separato: passando da un template il valore "+4" diventerebbe il numero 4, mentre WRITE si aspetta la stringa.
 - Cadenza: il driver del gateway interroga la Nilan ogni 15 s e i valori cambiano entro 10–20 s; la lettura dura 6–9,5 s. Con 20 s il gateway resta libero più di metà del tempo, anche per le scritture di WRITE. Sotto i 15 s il margine non basta.
 - Dopo un errore con zero valori validi, il batch attende almeno 5 minuti prima di contattare di nuovo Higeco. L'offset separato rispetta l'attesa comune e attende a sua volta 5 minuti se fallisce la propria lettura, lasciando operativo il batch riuscito. I due lettori accettano solo una sessione con `auth=1` e tentano al massimo un login nuovo per esecuzione. I file di attesa sono `nilan_letture_attesa` e `nilan_offset_attesa` in `/config/tmp`. Il backup pre-intervento del 26/11 è `/config/tmp/backup_nilan_attesa_mdxc88xx/`. Per il ripristino usare le versioni precedenti di `nilan_batch.py` e `nilan_sensor.sh`; HA esegue gli script al ciclo successivo senza reload.
+- Protezione storica (repo HA, 04/09): `4a8ad19` applicava ai sensori che usavano lo script condiviso una pausa di 30 s dopo tre errori di trasporto in 30 s e un intervallo minimo di 60 s fra nuovi login. `78167f9` aggiungeva l'uscita `NILAN_UNAVAILABLE` su `Permission Denied` conservando il cookie, senza rifare il login. `0493b6a` ha ripristinato lo script precedente e rimosso queste protezioni. Il batch introdotto in `9b22cc2` ha ereditato il nuovo login dopo un rifiuto. L'attesa introdotta il 26/11 ha un comportamento diverso dalla regola storica.
 - Verifica: `sensor.nilan_batch` ha restituito 40 valori validi; il 17/11 il proxy ha seguito la sonda Toshiba fra 21,5 e 24,5 °C durante i test. Il registro setpoint `1999108 Id6` ha accettato e restituito 28,5 e 28 °C a macchina accesa, poi 29 °C di ripristino.
 - **Rollback senza fermare HA** (backup in `/config/tmp/backup_nilan_batch/`):
   1. `docker exec homeassistant cp /config/tmp/backup_nilan_batch/nilan_sensori.yaml.bak /config/packages/nilan_sensori.yaml`;

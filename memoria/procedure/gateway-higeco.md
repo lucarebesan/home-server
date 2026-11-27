@@ -46,6 +46,22 @@ Ultima verifica: 2026-11-27 (batch attivo e ricostruzione della protezione origi
   4. `command_line.reload`: i vecchi sensori riprendono gli `entity_id` originali;
   5. se serve, `git revert 9b22cc2` sul repo HA e cancellare `scripts/nilan_batch.py`.
 
+## Proposta del 27/11 per la gestione dei guasti di lettura
+
+Da approvare. Il batch, l'offset raffrescamento e la WRITE che usano `user` consultano lo stesso stato per Higeco. Il batch è l'unico autorizzato ad aprire o rinnovare la sessione. Una sola verifica può essere in corso, anche se coincidono più richieste o si riavvia Home Assistant. Stato, motivo e orario della prossima prova persistono sul mini PC.
+
+| Esito | Decisione proposta |
+| --- | --- |
+| Risposta valida con singoli dati assenti o errore limitato a un modulo | I soli dati interessati diventano `unavailable`. Proseguono le letture valide, usando la sessione già attiva. |
+| Gateway irraggiungibile, timeout, risposta illeggibile o batch con zero valori validi | Sospendere tutte le richieste automatiche per 5 minuti. Fare una sola lettura di prova con la sessione esistente. Se il cookie manca, il batch può fare un solo login prima della lettura. |
+| `Permission Denied` per l'intera richiesta o autenticazione rifiutata (`auth=-1`) | Conservare il cookie, sospendere tutte le richieste automatiche per 5 minuti, poi consentire al batch un solo login nuovo e una sola lettura di prova. Un cookie vale solo se il gateway restituisce `auth=1`. |
+| Prova ancora fallita | Mantenere sospese le richieste automatiche. Registrare il motivo e inviare una sola notifica in HA. Dopo la verifica dell'accesso, una richiesta manuale autorizza una nuova prova singola. |
+| Prova riuscita | Riprendere il polling ordinario con i dati validi appena ricevuti. La WRITE rivaluta le richieste correnti e invia un comando solo se dispone dei dati validi necessari per quel comando. |
+
+Una prova riesce quando il gateway accetta la sessione e restituisce almeno una misura prevista con valore valido. L'ora in cui HA ha ricevuto la risposta va distinta dall'ora della misura, quando il gateway la fornisce. Le ultime misure valide rimangono consultabili nello storico. Durante l'attesa HA espone le letture dipendenti da Higeco come indisponibili e le automazioni usano i dati aggiornati che ciascuna richiede.
+
+Parametri proposti per la revisione del 27/11. Validare con risposte simulate un dato isolato mancante, un timeout, un rifiuto globale, due richieste contemporanee, un riavvio durante l'attesa, una prova fallita e una riuscita. In esercizio verificare che la schermata Sessioni mostri al massimo un nuovo login per prova e che il ritorno delle letture non riproponga comandi arretrati.
+
 ## Storico (datalogger)
 
 - Inizia il 2026-07-04 06:03. Compact P, Split e modulo I/O ogni 60 s; contatori ogni 600 s.

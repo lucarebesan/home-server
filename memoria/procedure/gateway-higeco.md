@@ -1,12 +1,12 @@
 # Gateway Higeco (Nilan, Toshiba, contatori)
 
-Ultima verifica: 2026-11-27 (VPN temporaneamente spenta, accesso admin rifiutato, richieste HA al gateway in pausa; recupero VPN programmato). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
+Ultima verifica: 2026-11-27 13:18 (VPN riattivata, Exrg su iPhone ancora bloccata, HA nuovamente attivo con attesa guasti 5/30 minuti; niente nuove richieste admin). Documentazione completa del protocollo, catalogo delle 228 grandezze e mappature: `sorgenti/ecm-engine/docs/gateway/` (`acts.md`, `catalogo_grandezze.csv`, `import_mapping.md`).
 
 ## Cos'è
 
 - Higeco GWCV4-M1-2ETH, `http://192.168.1.171`, firmware core 25.12.1, impianto "Rebesan-Foletto", collegato al cloud `exrg-data.it`.
 - Dispositivi Modbus: Compact P (driver Nilan CTS602, 89 grandezze), Split Toshiba (IntesisBox, 21), modulo I/O iSMA (temperatura EGWK, 21), contatori di energia SDM120 di Compact e Split (9 ciascuno), sanificatore Jonix (20), ingressi della scheda (3).
-- HA legge e scrive attraverso `/config/scripts/nilan_sensor.sh` e `nilan_write.sh`, con l'utente di sola lettura predefinito. Dal 27/11 le richieste dirette sono temporaneamente in pausa, come indicato sotto.
+- HA legge e scrive attraverso `/config/scripts/nilan_batch.py`, `nilan_sensor.sh` e `nilan_write.sh`, con l'utente `user`. La pausa temporanea del 27/11 è stata rimossa su richiesta di Luca; i guasti sono ora regolati dall'attesa condivisa descritta sotto.
 
 ## Connessione Exrg e VPN (verifica del 27/11)
 
@@ -38,33 +38,47 @@ Ultima verifica: 2026-11-27 (VPN temporaneamente spenta, accesso admin rifiutato
   `auth=-1`; anche il tentativo di ripristino e il timer di riserva hanno
   fallito. Il gateway potrebbe aver bloccato temporaneamente le nuove
   sessioni dopo troppi accessi; la causa e la durata non sono verificate.
-  **All'ultima verifica la VPN era ancora spenta.** Non fare nuovi login
-  ripetuti per diagnosticarla. Il cookie `user` di HA è ancora accettato per
+  La VPN è rimasta spenta fino al recupero riportato sotto. Non fare login
+  ripetuti per diagnosticarla. Il cookie `user` di HA era ancora accettato per
   `getStatus`, ma non ha i permessi per `serverCgi/getServerConf` (`ERR=2`).
-- Recupero automatico: sorgente `sorgenti/higeco-password/recover_vpn.py`,
-  copia `/home/home/higeco-password/recover_vpn.py`; backup privato sopra.
-  Cron di `home` marcato `HIGECO_VPN_RECOVERY` controlla ogni 15 minuti il
-  file locale `~/.local/state/higeco-password/vpn-recovery.json`. Il primo
-  **singolo** nuovo login admin è previsto non prima delle **16:28 del
-  27/11/2026**; se fallisce, il successivo è almeno 4 ore dopo. Lo stato
-  viene salvato prima del tentativo. Quando può, lo script riattiva la VPN,
-  verifica `abilVpn=1`, server configurato originario e collegamento
-  `successo=1`, chiude la sessione e invia notifica iPhone tramite HA.
-  `successo=1` verifica il collegamento gateway-server, non il refresh
-  dell'app: quest'ultimo va provato dall'iPhone. La pausa HA rimane attiva.
-  Stato senza login: `python3 /home/home/higeco-password/recover_vpn.py status`.
-  Log: `~/.local/state/higeco-password/vpn-recovery.log`. Il 27/11 alle
-  12:33 locali: `complete=False`, `attempts=0`, prossimo tentativo 16:28;
-  cron e sentinella HA presenti. Prima di un eventuale recupero manuale,
-  disarmare soltanto la riga cron marcata e conservare backup e stato.
+- **Recupero riuscito alle 13:03 locali del 27/11:** dopo circa 30 minuti
+  senza togliere corrente, Luca ha segnalato che i nuovi accessi erano tornati.
+  `recover_vpn.py now` ha fatto un solo login admin, riattivato `abilVpn=1`,
+  verificato il nome server originario e `getServerStatus.successo=1`, poi
+  chiuso la sessione. Stato persistente: `complete=True`, `attempts=1`,
+  notifica non pendente; Luca ha ricevuto l'avviso sull'iPhone. **Exrg rimaneva
+  però bloccata nell'app**: toccare i comandi non produceva effetti. Il solo
+  `successo=1` non certifica il funzionamento dell'app o del server cloud.
+  Su richiesta di Luca, non fare altre richieste admin a `.171` per ora.
+- Sorgente del recupero `sorgenti/higeco-password/recover_vpn.py`, copia sul
+  mini PC `/home/home/higeco-password/recover_vpn.py`, backup privato sopra.
+  La riga cron temporanea `HIGECO_VPN_RECOVERY` è stata rimossa dopo il
+  successo, con backup del crontab in
+  `~/.local/state/higeco-password/crontab.after-vpn-recovery`. Restano le
+  due righe distinte `HIGECO_PASSWORD` per il rinnovo bimestrale. Per leggere
+  lo stato senza login: `python3 /home/home/higeco-password/recover_vpn.py status`.
 - Luca può togliere da remoto la corrente all'intera centrale termica,
   probabilmente anche al gateway. Non è stato fatto: fermerebbe più
   apparecchi e non è verificato che cancelli il blocco login.
 - Higeco descrive separatamente [dashboard cloud e gestione utenti](https://www.higeco.com/en/cloud-services/)
   e [Page creator sul datalogger](https://www.higeco.com/en/software/).
-  La schermata Exrg può quindi avere componenti locali e cloud; il livello
-  di modifica disponibile per questo impianto e i permessi dell'account Exrg
-  non sono ancora verificati. La prova VPN resta da chiudere con il recupero.
+  La schermata Exrg può quindi avere componenti locali e cloud. Nel portale
+  dell'impianto la pagina APP V2 è una pagina personalizzata del plugin
+  `gpc-exrgapp`, versione 26.5.20, con grafica SVG `home.svg`; questo conferma
+  che la grafica attuale è una pagina custom. Non sono ancora verificati i
+  permessi di modifica dell'account né come distribuire una nuova versione.
+- Alle 13:24 del 27/11, dal mini PC DNS di `exrg-data.it` risolveva e
+  `https://exrg-data.it/cns3/login` rispondeva `HTTP 200`; HA riportava
+  40 valori Nilan aggiornati. Questo restringe il guasto osservato al
+  percorso portale/account/app dopo la pagina di login, senza identificarne
+  la causa. Con autorizzazione di Luca, il portale è stato aperto in sola
+  lettura: APP V2 mostrava solo `---` e la pagina API-CP1 rimaneva con lo
+  spinner. La console del browser registrava un errore nel visualizzatore
+  (`Cannot read properties of null (reading 'itemCfg')`) dopo una richiesta
+  remota fallita. **Inferenza:** il portale non riceve la configurazione/dati
+  necessari per renderizzare il plugin; non è un problema limitato all'app
+  iPhone. La causa precisa del fallimento remoto resta aperta. Nessuna
+  modifica al portale e nessun ulteriore accesso admin a `.171`.
 
 ## Utenti
 
@@ -102,26 +116,23 @@ Ultima verifica: 2026-11-27 (VPN temporaneamente spenta, accesso admin rifiutato
 
 ## Lettura da Home Assistant (dall'8/11)
 
-**Pausa temporanea del 27/11:** su richiesta di Luca, la sentinella
-`/config/tmp/nilan_gateway_paused` nel container HA fa terminare prima di
-qualsiasi accesso a `.171` i quattro script diretti: `nilan_batch.py`,
-`nilan_sensor.sh`, `nilan_write.sh`, `nilan_gest_split_automode.sh`. Le guardie
-sono nei commit HA `9426e1a` e `a25c787` (il secondo ripristina i permessi
-originali). Backup degli script precedenti in
-`/config/tmp/backup_nilan_gateway_pause_20261127`. Sintassi Python/shell e
-uscite in pausa verificate, senza chiamate al gateway. `sensor.nilan_batch`
-vale 0 durante la pausa; i dati dipendenti diventano indisponibili. **Non
-rimuovere la sentinella automaticamente al ripristino VPN:** prima verificare
-app Exrg, stato del gateway, e che gli script non creino nuove sessioni in
-serie. Rimuovere solo su decisione di Luca dopo la verifica; il polling
-riparte al ciclo HA successivo senza reload. Il blocco riguarda gli script
-HA diretti elencati, non dimostra che altri client sulla LAN siano fermi.
+**Pausa temporanea del 27/11, conclusa:** su richiesta di Luca era stata
+creata `/config/tmp/nilan_gateway_paused`. La sentinella fa uscire i quattro
+script HA prima di qualsiasi richiesta a `.171` (commit `9426e1a`, `a25c787`).
+Luca ha chiesto di riprendere HA dopo il ritorno degli accessi; la sentinella
+è stata rimossa e verificata assente. Rimane disponibile per un fermo manuale
+futuro. Backup degli script di quella fase in
+`/config/tmp/backup_nilan_gateway_pause_20261127`.
 
-- `/config/scripts/nilan_batch.py`: una login con cookie proprio (`/config/tmp/gwc_batch_cookie.txt`, separato da quello di `nilan_write.sh`), poi una sola richiesta con 31 `sendCommand` e due `getShm` (1999237 per lo split, 1999690 per l'umidità). Stampa un JSON con un valore per unique_id, oppure null. Dal commit HA `cf449de` include la sonda ambiente Toshiba `1999108 Id1`.
+- `/config/scripts/nilan_batch.py`: una sola sessione `user` condivisa con offset e scritture (`/config/tmp/gwc_batch_cookie.txt`), poi una richiesta con 31 `sendCommand` e due `getShm` (1999237 per lo split, 1999690 per l'umidità). Stampa un JSON con un valore per unique_id, oppure null. Dal commit HA `cf449de` include la sonda ambiente Toshiba `1999108 Id1`.
 - In `packages/nilan_sensori.yaml`: il command_line "Nilan Batch" (ogni 20 s, timeout 18 s, dal commit `126230e`; stato = numero di valori validi) e 40 sensori template. La sonda nuova è esposta stabilmente come `sensor.ecm_toshiba_sonda_ambiente`; una vecchia entità ripristinata con nome Toshiba può restare `unavailable` fino a riavvio e non è usata dalla logica. `sensor.nilan_batch` è escluso dal recorder (vale dal prossimo riavvio di HA).
 - `sensor.compactp_offset_raffrescamento` resta un command_line separato: passando da un template il valore "+4" diventerebbe il numero 4, mentre WRITE si aspetta la stringa.
 - Cadenza: il driver del gateway interroga la Nilan ogni 15 s e i valori cambiano entro 10–20 s; la lettura dura 6–9,5 s. Con 20 s il gateway resta libero più di metà del tempo, anche per le scritture di WRITE. Sotto i 15 s il margine non basta.
-- Dopo un errore con zero valori validi, il batch attende almeno 5 minuti prima di contattare di nuovo Higeco. L'offset separato rispetta l'attesa comune e attende a sua volta 5 minuti se fallisce la propria lettura, lasciando operativo il batch riuscito. I due lettori accettano solo una sessione con `auth=1` e tentano al massimo un login nuovo per esecuzione. I file di attesa sono `nilan_letture_attesa` e `nilan_offset_attesa` in `/config/tmp`. Il backup pre-intervento del 26/11 è `/config/tmp/backup_nilan_attesa_mdxc88xx/`. Per il ripristino usare le versioni precedenti di `nilan_batch.py` e `nilan_sensor.sh`; HA esegue gli script al ciclo successivo senza reload.
+- L'attesa di 5 minuti per il solo batch/offset introdotta il 26/11 è stata
+  sostituita il 27/11 dalla gestione comune sotto. Il vecchio file
+  `nilan_letture_attesa` viene rimosso dal batch dopo una lettura riuscita;
+  `nilan_offset_attesa` resta per i guasti limitati al solo offset. Backup
+  pre-intervento del 26/11: `/config/tmp/backup_nilan_attesa_mdxc88xx/`.
 - Protezione storica (repo HA, 04/09): `4a8ad19` applicava ai sensori che usavano lo script condiviso una pausa di 30 s dopo tre errori di trasporto in 30 s e un intervallo minimo di 60 s fra nuovi login. `78167f9` aggiungeva l'uscita `NILAN_UNAVAILABLE` su `Permission Denied` conservando il cookie, senza rifare il login. `0493b6a` ha ripristinato lo script precedente e rimosso queste protezioni. Il batch introdotto in `9b22cc2` ha ereditato il nuovo login dopo un rifiuto. L'attesa introdotta il 26/11 ha un comportamento diverso dalla regola storica.
 - Verifica: `sensor.nilan_batch` ha restituito 40 valori validi; il 17/11 il proxy ha seguito la sonda Toshiba fra 21,5 e 24,5 °C durante i test. Il registro setpoint `1999108 Id6` ha accettato e restituito 28,5 e 28 °C a macchina accesa, poi 29 °C di ripristino.
 - **Rollback senza fermare HA** (backup in `/config/tmp/backup_nilan_batch/`):
@@ -131,21 +142,47 @@ HA diretti elencati, non dimostra che altri client sulla LAN siano fermi.
   4. `command_line.reload`: i vecchi sensori riprendono gli `entity_id` originali;
   5. se serve, `git revert 9b22cc2` sul repo HA e cancellare `scripts/nilan_batch.py`.
 
-## Proposta del 27/11 per la gestione dei guasti di lettura
+## Gestione dei guasti delle chiamate HA (attiva dal 27/11)
 
-Da approvare. Il batch, l'offset raffrescamento e la WRITE che usano `user` consultano lo stesso stato per Higeco. Il batch è l'unico autorizzato ad aprire o rinnovare la sessione. Una sola verifica può essere in corso, anche se coincidono più richieste o si riavvia Home Assistant. Stato, motivo e orario della prossima prova persistono sul mini PC.
+Commit HA `09aa04a`. Il batch, l'offset e le due scritture usano la stessa
+sessione `user` in `/config/tmp/gwc_batch_cookie.txt`. **Solo il batch** può
+fare un nuovo login `user`, massimo uno per tentativo; nessuno di questi
+script usa `admin`. Il file condiviso
+`/config/tmp/nilan_gateway_health.json` conserva numero di fallimenti,
+motivo e scadenza della prossima prova anche se HA viene riavviato.
 
-| Esito | Decisione proposta |
+| Evento | Comportamento implementato |
 | --- | --- |
-| Risposta valida con singoli dati assenti o errore limitato a un modulo | I soli dati interessati diventano `unavailable`. Proseguono le letture valide, usando la sessione già attiva. |
-| Gateway irraggiungibile, timeout, risposta illeggibile o batch con zero valori validi | Sospendere tutte le richieste automatiche per 5 minuti. Fare una sola lettura di prova con la sessione esistente. Se il cookie manca, il batch può fare un solo login prima della lettura. |
-| `Permission Denied` per l'intera richiesta o autenticazione rifiutata (`auth=-1`) | Conservare il cookie, sospendere tutte le richieste automatiche per 5 minuti, poi consentire al batch un solo login nuovo e una sola lettura di prova. Un cookie vale solo se il gateway restituisce `auth=1`. |
-| Prova ancora fallita | Mantenere sospese le richieste automatiche. Registrare il motivo e inviare una sola notifica in HA. Dopo la verifica dell'accesso, una richiesta manuale autorizza una nuova prova singola. |
-| Prova riuscita | Riprendere il polling ordinario con i dati validi appena ricevuti. La WRITE rivaluta le richieste correnti e invia un comando solo se dispone dei dati validi necessari per quel comando. |
+| Batch con almeno un valore valido, altri dati assenti | I singoli dati assenti restano `unavailable`; il circuito rimane aperto alle letture e scritture ordinarie. |
+| Batch senza alcun valore valido o interrotto dal timeout HA | Tutti e quattro gli script sospendono le richieste a `.171` per **5 minuti**. |
+| Prima prova dopo 5 minuti ancora fallita | Attesa di **30 minuti**. Le successive prove restano una ogni 30 minuti, senza ciclo ogni 5. |
+| Prova periodica durante il guasto | Prima TCP porta 80, poi **una sola grandezza** Compact P (`1999494 Id1`) con cookie `user`; se non è valida non parte il batch completo. Se il cookie è negato, il batch può fare un solo nuovo login `user`. |
+| Prova valida | Esegue il batch completo; se arriva almeno un valore valido rimuove lo stato di guasto e offset/scritture riprendono. |
 
-Una prova riesce quando il gateway accetta la sessione e restituisce almeno una misura prevista con valore valido. L'ora in cui HA ha ricevuto la risposta va distinta dall'ora della misura, quando il gateway la fornisce. Le ultime misure valide rimangono consultabili nello storico. Durante l'attesa HA espone le letture dipendenti da Higeco come indisponibili e le automazioni usano i dati aggiornati che ciascuna richiede.
+Il lock `/config/tmp/nilan_gateway_batch.lock` impedisce due batch
+contemporanei. Il marcatore `nilan_gateway_batch_inflight` riconosce un batch
+ucciso dal timeout di HA, evitando tentativi ogni 20 secondi. Durante un
+guasto `nilan_sensor.sh` restituisce `NILAN_UNAVAILABLE`, le scritture
+restituiscono `GATEWAY_WAITING`; se manca il cookie restituiscono
+`NO_USER_SESSION` senza creare sessioni. Il batch conserva il cookie fra
+tentativi e lo sostituisce in modo atomico dopo un login valido. Guasti
+limitati all'offset hanno ancora la propria attesa di 5 minuti.
 
-Parametri proposti per la revisione del 27/11. Validare con risposte simulate un dato isolato mancante, un timeout, un rifiuto globale, due richieste contemporanee, un riavvio durante l'attesa, una prova fallita e una riuscita. In esercizio verificare che la schermata Sessioni mostri al massimo un nuovo login per prova e che il ritorno delle letture non riproponga comandi arretrati.
+**Verifica del deploy:** tre test simulati nel container HA (timeout, attesa
+5/30 minuti, singola prova leggera), sintassi Python/shell e `check_config`
+riusciti. Dopo il deploy `sensor.nilan_batch=40`, offset `+4` con
+`last_reported` recente; nessun file di guasto o pausa presente. Non è stato
+provocato un guasto reale né comandata una scrittura alla macchina per test.
+Verificare nel tempo il comportamento in un guasto reale e l'eventuale
+necessità di una notifica iPhone per guasto prolungato. Le scritture fallite
+da sole non aprono il circuito finché il batch continua a leggere.
+
+**Ripristino:** backup immediatamente precedente in
+`/config/tmp/backup_nilan_gateway_retries_20261127`. Mettere prima la
+sentinella `/config/tmp/nilan_gateway_paused`, copiare i quattro script dal
+backup con i permessi originali (batch/write/split `644`, sensor `755`),
+controllare sintassi e `check_config`, poi rimuovere la sentinella. Un deploy
+GitHub richiede anche il revert del commit `09aa04a` nel repo HA.
 
 ## Storico (datalogger)
 

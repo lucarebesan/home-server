@@ -94,7 +94,7 @@ def restore_once():
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=("arm", "scheduled", "status"))
+    parser.add_argument("mode", choices=("arm", "scheduled", "status", "now"))
     args = parser.parse_args()
     STATE_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
     os.chmod(STATE_DIR, 0o700)
@@ -130,7 +130,9 @@ def main():
                     state["notification_pending"] = False
                     atomic_json(STATE, state)
             return
-        if time.time() < state["next_attempt"]:
+        if args.mode == "now" and state["attempts"] != 0:
+            raise RuntimeError("Tentativo immediato già usato; rispettare l'attesa di quattro ore")
+        if args.mode == "scheduled" and time.time() < state["next_attempt"]:
             return
         # La prossima scadenza viene salvata PRIMA del login: un crash non
         # provoca tentativi ripetuti al giro successivo di cron.

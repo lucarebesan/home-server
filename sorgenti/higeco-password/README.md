@@ -62,13 +62,20 @@ recupero prima della verifica.
 
 La prova temporanea senza VPN ha mostrato che l'app Exrg su rete cellulare
 apre l'impianto ma lascia dati e comandi fermi. Nuovi login admin sono stati
-poi rifiutati; la VPN è rimasta spenta. `recover_vpn.py` è installato sul mini
-PC e pianificato con riga cron `HIGECO_VPN_RECOVERY`. Legge il backup privato
-`~/.local/state/higeco-password/vpn-test-before.json`, attende almeno quattro
-ore fra singoli tentativi admin e chiude la sessione. Il primo tentativo è
-previsto non prima delle 16:28 del 27/11. Al successo verifica VPN e
-collegamento gateway-server e invia un avviso iPhone; la risposta effettiva
-dell'app Exrg va verificata separatamente. La pausa delle richieste HA rimane.
+poi rifiutati. Dopo circa 30 minuti senza altri accessi Luca ha segnalato il
+ritorno della possibilità di login. `recover_vpn.py now` ha fatto un singolo
+accesso admin alle 13:03 del 27/11, ripristinato VPN e collegamento
+gateway-server, chiuso la sessione e inviato un avviso iPhone ricevuto da
+Luca. **L'app Exrg restava però senza dati e comandi**: lo stato del server
+letto dal gateway non prova l'esito dell'app. Su richiesta di Luca non fare
+altri accessi admin per ora.
+
+Il backup privato della configurazione iniziale è
+`~/.local/state/higeco-password/vpn-test-before.json`. La riga cron
+temporanea `HIGECO_VPN_RECOVERY` è stata rimossa dopo il successo; il suo
+stato rimane `complete=True`, `attempts=1`, notifica non pendente. Le
+richieste HA sono state riprese su richiesta di Luca e ora hanno un'attesa
+condivisa per i guasti (procedura Higeco).
 
 Stato senza contattare il gateway:
 `python3 /home/home/higeco-password/recover_vpn.py status`. Dettagli,

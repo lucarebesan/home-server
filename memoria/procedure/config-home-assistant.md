@@ -1,6 +1,6 @@
 # Modificare la configurazione di Home Assistant
 
-Ultima verifica: 2026-11-27 (package filtri ECM caricato; richieste dirette HA al gateway Higeco temporaneamente in pausa).
+Ultima verifica: 2026-11-27 (package filtri ECM caricato; chiamate HA al gateway riprese con attesa guasti 5/30 minuti).
 
 ## Prerequisiti
 
@@ -197,16 +197,17 @@ eseguire `check_config` e ricaricare `automation`, `input_datetime`,
 
 ## Attenzioni
 
-- **Pausa Higeco dal 27/11:** su richiesta di Luca, il file
+- **Pausa Higeco disponibile:** il file
   `/config/tmp/nilan_gateway_paused` interrompe prima di ogni chiamata a
   `.171` `nilan_batch.py`, `nilan_sensor.sh`, `nilan_write.sh` e
   `nilan_gest_split_automode.sh`. Guardie nei commit HA `9426e1a` e
   `a25c787`, backup precedente in
-  `/config/tmp/backup_nilan_gateway_pause_20261127`. Il recupero VPN
-  programmato **non** toglie la sentinella. Solo dopo la verifica dell'app
-  Exrg e della disponibilità delle sessioni, Luca potrà decidere di
-  riprendere HA rimuovendo il file; gli script ripartono al ciclo successivo.
-  Vedi `gateway-higeco.md` per l'incidente, il recupero e le verifiche.
+  `/config/tmp/backup_nilan_gateway_pause_20261127`. Attivata
+  temporaneamente il 27/11 su richiesta di Luca, poi rimossa su sua richiesta:
+  alla verifica delle 13:16 il file era assente e HA leggeva 40 valori.
+  Dal commit HA `09aa04a` i guasti completi attivano attesa condivisa di
+  5 minuti, poi prove leggere ogni 30 minuti. Dettagli e rollback in
+  `gateway-higeco.md`.
 
 - **Mai `docker stop` su HA prima di spegnere il server**: dopo il riavvio il container resta fermo. Per spegnere usare `poweroff`; per riavviare HA usare `docker restart homeassistant`.
 - Il database del recorder (`/config/home-assistant_v2.db`, circa 3 GB su HDD lento) va interrogato solo in sola lettura (`file:...?mode=ro`), un'entità alla volta, senza `COUNT(*)` né scansioni complete: fanno salire l'I/O di tutto il server.

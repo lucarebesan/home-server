@@ -226,8 +226,13 @@ def renew(client, secret):
         raise problem
     for name in ("admin", "user"):
         GatewayClient(client.base).login(name, secret[name])
-    atomic_json(STATE, {"last_success": date.today().isoformat()})
+    today = date.today()
+    atomic_json(STATE, {
+        "last_success": today.isoformat(),
+        "success_notice_pending": today.isoformat(),
+    })
     print("Password di user e admin rinnovate; regole originali ripristinate e verificate")
+    retry_success_notice()
 
 
 def due_today(today):
@@ -239,10 +244,19 @@ def due_today(today):
     return last < due.isoformat()
 
 
-def notify_failure(message):
+def next_due(after):
+    for year in (after.year, after.year + 1, after.year + 2):
+        for month in (1, 3, 5, 7, 9, 11):
+            candidate = date(year, month, 1)
+            if candidate >= FIRST_DUE and candidate > after:
+                return candidate
+    raise RenewalError("Prossima data di rinnovo non calcolabile")
+
+
+def send_phone(message):
     token_file = Path.home() / ".config/ecm/ha_token"
     if not token_file.is_file():
-        return
+        return False
     try:
         token = token_file.read_text(encoding="utf-8").strip()
         body = json.dumps({
@@ -256,8 +270,33 @@ def notify_failure(message):
         )
         with urllib.request.urlopen(request, timeout=5):
             pass
+        return True
     except Exception:
         print("Notifica HA non inviata", file=sys.stderr)
+        return False
+
+
+def retry_success_notice():
+    if not STATE.exists():
+        return
+    state = read_json(STATE)
+    pending = state.get("success_notice_pending")
+    if not pending:
+        return
+    renewed = date.fromisoformat(pending)
+    following = next_due(renewed)
+    message = (
+        f"Password Higeco di user e admin rinnovate il {renewed:%d/%m/%Y}; "
+        f"regole ripristinate. Prossimo rinnovo previsto il {following:%d/%m/%Y}."
+    )
+    if send_phone(message):
+        state.pop("success_notice_pending")
+        atomic_json(STATE, state)
+        print("Notifica di successo accettata da Home Assistant")
+
+
+def notify_failure(message):
+    send_phone(message)
 
 
 def main():
@@ -280,6 +319,8 @@ def main():
             if JOURNAL.exists():
                 restore(client, secret["admin"])
                 print("Regole originali recuperate")
+            if not args.check:
+                retry_success_notice()
             if args.check:
                 client.login("admin", secret["admin"])
                 user_ids(client)

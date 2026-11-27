@@ -55,11 +55,16 @@ class RenewalTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.saved = (renew.STATE_DIR, renew.JOURNAL, renew.STATE, renew.GatewayClient)
+        self.saved = (
+            renew.STATE_DIR, renew.JOURNAL, renew.STATE,
+            renew.GatewayClient, renew.send_phone,
+        )
         renew.STATE_DIR = Path(self.temp.name)
         renew.JOURNAL = renew.STATE_DIR / "restore-rules.json"
         renew.STATE = renew.STATE_DIR / "renewal.json"
         renew.GatewayClient = FakeGateway
+        self.notices = []
+        renew.send_phone = lambda message: self.notices.append(message) or True
         self.addCleanup(self.restore_globals)
         FakeGateway.rules = {
             "passExpire": 90, "minLen": 4, "maxLen": 64,
@@ -71,7 +76,8 @@ class RenewalTests(unittest.TestCase):
         self.secrets = {"admin": "Admin123!", "user": "simple"}
 
     def restore_globals(self):
-        renew.STATE_DIR, renew.JOURNAL, renew.STATE, renew.GatewayClient = self.saved
+        (renew.STATE_DIR, renew.JOURNAL, renew.STATE,
+         renew.GatewayClient, renew.send_phone) = self.saved
 
     def test_both_passwords_one_relaxed_window_then_restore(self):
         original = dict(FakeGateway.rules)
@@ -79,6 +85,8 @@ class RenewalTests(unittest.TestCase):
         self.assertEqual(FakeGateway.rules, original)
         self.assertFalse(renew.JOURNAL.exists())
         self.assertTrue(renew.STATE.exists())
+        self.assertEqual(len(self.notices), 1)
+        self.assertNotIn("success_notice_pending", renew.read_json(renew.STATE))
         changes = [event[1]["id"] for event in FakeGateway.events if event[0] == "modPass"]
         self.assertEqual(changes, [2, 1])
         saves = [event for event in FakeGateway.events if event[0] == "setPasswordRules"]
@@ -109,6 +117,18 @@ class RenewalTests(unittest.TestCase):
         renew.atomic_json(renew.STATE, {"last_success": "2027-01-03"})
         self.assertFalse(renew.due_today(renew.date(2027, 2, 10)))
         self.assertTrue(renew.due_today(renew.date(2027, 3, 1)))
+
+    def test_success_notification_is_retried_after_delivery_failure(self):
+        renew.send_phone = lambda message: False
+        renew.renew(FakeGateway(), self.secrets)
+        self.assertEqual(
+            renew.read_json(renew.STATE)["success_notice_pending"],
+            renew.date.today().isoformat(),
+        )
+        renew.send_phone = lambda message: self.notices.append(message) or True
+        renew.retry_success_notice()
+        self.assertEqual(len(self.notices), 1)
+        self.assertNotIn("success_notice_pending", renew.read_json(renew.STATE))
 
 
 class ProtocolTests(unittest.TestCase):

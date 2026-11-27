@@ -1,7 +1,9 @@
 # Rinnovo password gateway Higeco
 
-Bozza pronta per la prova reale, **non ancora installata**. `renew.py` usa la stessa API
-HTTP della pagina Utenti del gateway `192.168.1.171`, senza librerie Python esterne.
+Installato sul mini PC il 27/11/2026 in `/home/home/higeco-password/renew.py`.
+La prova reale ha rinnovato `user` e `admin`, ripristinato le regole e lasciato
+`sensor.nilan_batch` a 40 valori aggiornati. `renew.py` usa la stessa API HTTP
+della pagina Utenti del gateway `192.168.1.171`, senza librerie Python esterne.
 
 ## Sequenza
 
@@ -14,23 +16,25 @@ HTTP della pagina Utenti del gateway `192.168.1.171`, senza librerie Python este
 Se un passaggio fallisce, il programma tenta il ripristino immediato. Il file
 `~/.local/state/higeco-password/restore-rules.json` consente di riprovarlo al
 successivo avvio dopo un'interruzione. Un errore del rinnovo invia una notifica
-all'iPhone tramite Home Assistant, se il token HA locale è disponibile.
+all'iPhone tramite Home Assistant, se il token HA locale è disponibile. Dopo
+un rinnovo riuscito invia una notifica di successo; se HA non la accetta, la
+ritenta al successivo controllo giornaliero. La notifica del rinnovo di prova
+del 27/11 è stata ricevuta sull'iPhone di Luca.
 
 Le password sono inserite dall'utente in un prompt nascosto e conservate solo in
 `~/.config/higeco-password/credentials.json` sul mini PC, con permessi `600`.
 Non inserirle in chat, nella riga di comando o nel repository. Il gateway usa
 HTTP sulla LAN, come già fa la sua pagina web.
 
-## Prova controllata
+## Verifica e ripetizione della prova
 
-1. Installare una copia del file in `/home/home/higeco-password/renew.py`.
-2. Da una shell interattiva, eseguire `python3 /home/home/higeco-password/renew.py --setup`.
-3. Eseguire `python3 /home/home/higeco-password/renew.py --check`: accede a entrambi
+1. Se le password cambiano, aggiornare il file locale delle credenziali in
+   modo interattivo; `--setup` crea il file solo se è assente e non lo sovrascrive.
+2. Eseguire `python3 /home/home/higeco-password/renew.py --check`: accede a entrambi
    gli account e legge utenti/regole, senza scrivere sul gateway.
-4. Con l'utente presente e l'accesso admin funzionante, eseguire
+3. Con l'utente presente e l'accesso admin funzionante, eseguire
    `python3 /home/home/higeco-password/renew.py --renew`. Controllare l'esito,
    le regole nel pannello, entrambi i login e `sensor.nilan_batch` in HA.
-5. Installare la pianificazione solo dopo il successo della prova reale.
 
 Il programma può essere eseguito una volta al giorno con `--scheduled`. Rinnova
 solo se manca un successo dal **1° gennaio, marzo, maggio, luglio, settembre o
@@ -38,11 +42,11 @@ novembre** più recente, a partire dal 2027. Una giornata saltata viene recupera
 alla prima esecuzione successiva. Un controllo al boot serve anche a ripristinare
 regole rimaste temporaneamente disattivate. Le esecuzioni concorrenti sono bloccate.
 
-Pianificazione prevista nel crontab di `home`, **da non aggiungere prima del test**:
+Pianificazione attiva nel crontab di `home` dal 27/11/2026:
 
 ```cron
 15 3 * * * /usr/bin/python3 /home/home/higeco-password/renew.py --scheduled >>/home/home/.local/state/higeco-password/renew.log 2>&1 # HIGECO_PASSWORD
-@reboot /bin/sh -c 'sleep 120; /usr/bin/python3 /home/home/higeco-password/renew.py --scheduled >>/home/home/.local/state/higeco-password/renew.log 2>&1' # HIGECO_PASSWORD_BOOT
+@reboot /bin/sleep 120 && /usr/bin/python3 /home/home/higeco-password/renew.py --scheduled >>/home/home/.local/state/higeco-password/renew.log 2>&1 # HIGECO_PASSWORD_BOOT
 ```
 
 Per fermare il rinnovo, togliere solo le due righe marcate `HIGECO_PASSWORD` dal

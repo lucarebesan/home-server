@@ -1,6 +1,6 @@
 # Inventario home server
 
-Ultima verifica: 2026-11-26 (quattro meter Sonoff; gli altri stati restano alle date indicate sotto).
+Ultima verifica: 2026-11-27 (rinnovo password Higeco; gli altri stati restano alle date indicate sotto).
 
 **Dal 09/11 alle 16:04 il server è il mini PC.** L'HP (`hp-homeassistant`) è spento con i
 container fermati apposta: è la copia di riserva. Migrazione, ripristino e
@@ -87,6 +87,7 @@ dettagli in `procedure/migrazione-minipc.md`.
 ## Attività pianificate
 
 - Crontab di `home`: rinnovo del certificato alle 04:17 (vedi `procedure/duckdns-certificato.md`).
+- Crontab di `home`: `HIGECO_PASSWORD` alle 03:15 ogni giorno e dopo il boot; lo script rinnova `admin` e `user` solo dal primo dei mesi dispari a partire dal 1° gennaio 2027, con recupero delle date saltate. Prova reale riuscita il 27/11; regole password a 90 giorni e notifica di successo all'iPhone verificata. Dettagli e ripristino in `procedure/gateway-higeco.md`.
 - `ecm-engine`: un campione ogni 60 s, apprendimento ogni 15 minuti; dal 09/11 campiona anche bollitore alto/basso e marcatore della prova ACS indiretta. Dal 10/11 pubblica stime W separate CP/SPLIT; la resa termica delle coppie resta da misurare. Prove automatiche verificate spente il 10/11.
 - Dal 14/11 è armata una **campagna automatica consumi delle sei coppie CP HEAT/SPLIT HEAT**, con cron separato e ripresa persistente. È indipendente dall'interruttore "Prove automatiche" del motore, che resta spento. Stato, soglie, percorsi e disattivazione dopo sei acquisizioni in `procedure/ecm-engine.md`, sezione "Campagna automatica consumi"; prima di un comando climatico controllare se esiste un tentativo attivo.
 - HA: `00-NILAN WRITE` è accesa in modalità isolata ACS, ricambio minimo e
@@ -142,6 +143,7 @@ dettagli in `procedure/migrazione-minipc.md`.
 ## Segreti (solo posizione)
 
 - Token API di HA: `~/.config/ecm/ha_token` sul server (permessi 600).
+- Credenziali locali per il rinnovo Higeco: `~/.config/higeco-password/credentials.json` di `home` sul mini PC (permessi `600`); mai nel repository.
 - Deploy key GitHub del repo HA: `/config/.ssh/github_homeassistant` nel container.
 - Token DuckDNS: nel compose dello stack Portainer "server" (variabili `TOKEN` e `DUCKDNS_TOKEN`).
 - Password per le app Gmail: `~/.config/gmail-imap/app-password` di `home`
